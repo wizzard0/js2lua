@@ -82,6 +82,16 @@ local Math = {
 -- Object
 local Object = {}
 
+-- Array
+local Array = {}
+
+-- Function
+local Function = {}
+
+-- String
+local String = {}
+
+
 -- LIBRARY END
 
 local function _USD_ERROR(s)

@@ -29,11 +29,12 @@ function ComparePrograms(fn: string): any {
     var hasWith = /with[ ]?\(/.exec(source);
     var hasTry = /try( {|{)/.exec(source);
     var hasOther = /LUA_SKIP/.exec(source);
-    var onlyStrict = /\"use strict\"/.exec(source);
+    var onlyStrict = /\"use strict\"/.exec(source);    
     var hasGlobalDeleteTest = /Compound Assignment Operator calls PutValue\(lref, v\)/.exec(source);
+    var hasBrokenDate = /S15\.9\.3\.1_A5/.exec(source);
     var expectErrors = false;
 
-    if (hasEval || hasWith || hasTry || hasOther || hasGlobalDeleteTest || onlyStrict) {
+    if (hasEval || hasWith || hasTry || hasOther || hasBrokenDate || hasGlobalDeleteTest || onlyStrict) {
         console.log(" [SKIP]");
         return "skip";
     }
