@@ -49,6 +49,9 @@ function EmitExpression(ex, emit, alloc) {
         case "ArrayExpression":
             EmitArray(ex, emit, alloc);
             break;
+        case "ObjectExpression":
+            EmitObject(ex, emit, alloc);
+            break;
         case "MemberExpression":
             EmitMember(ex, emit, alloc);
             break;
@@ -142,6 +145,20 @@ function EmitArray(ast, emit, alloc) {
         var arg = ast.elements[si];
         EmitExpression(arg, emit, alloc);
         if (si != ast.elements.length - 1) {
+            emit(", ");
+        }
+    }
+    emit("}");
+}
+function EmitObject(ast, emit, alloc) {
+    emit("{");
+    for (var si = 0; si < ast.properties.length; si++) {
+        var arg = ast.properties[si];
+        emit("[\"");
+        EmitExpression(arg.key, emit, alloc);
+        emit("\"]=");
+        EmitExpression(arg.value, emit, alloc);
+        if (si != ast.properties.length - 1) {
             emit(", ");
         }
     }

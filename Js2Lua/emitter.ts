@@ -54,6 +54,9 @@ function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void
         case "ArrayExpression":
             EmitArray(<esprima.Syntax.ArrayExpression>ex, emit, alloc);
             break;
+        case "ObjectExpression":
+            EmitObject(<esprima.Syntax.ObjectExpression>ex, emit, alloc);
+            break;
         case "MemberExpression":
             EmitMember(<esprima.Syntax.MemberExpression>ex, emit, alloc);
             break;
@@ -148,6 +151,21 @@ function EmitArray(ast: esprima.Syntax.ArrayExpression, emit: (s: string) => voi
         var arg = ast.elements[si];
         EmitExpression(arg, emit, alloc);
         if (si != ast.elements.length - 1) {
+            emit(", ");
+        }
+    }
+    emit("}");
+}
+
+function EmitObject(ast: esprima.Syntax.ObjectExpression, emit: (s: string) => void, alloc: () => number) {
+    emit("{");
+    for (var si = 0; si < ast.properties.length; si++) {
+        var arg = ast.properties[si];
+        emit("[\"");
+        EmitExpression(arg.key, emit, alloc);
+        emit("\"]=");
+        EmitExpression(arg.value, emit, alloc);
+        if (si != ast.properties.length - 1) {
             emit(", ");
         }
     }
