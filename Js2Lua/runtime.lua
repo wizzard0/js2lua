@@ -7,6 +7,8 @@ local function __Typeof(value)
 	if type(value) == 'table' and __Singletons[value] then
 		return value.__TypeofValue
 	end
+	if value == nil then return 'undefined' end
+
     print("__Typeof: unsupported! got " .. type(value))
     return '_unknown';
 end
@@ -16,9 +18,7 @@ local function __ToString(value)
     if type(value) == 'table' and __Singletons[value] then
 		return value.__ToStringValue
 	end
-    if value == nil then
-		return 'undefined'
-	end
+    if value == nil then return 'undefined' end
 	return tostring(value)
 end
 

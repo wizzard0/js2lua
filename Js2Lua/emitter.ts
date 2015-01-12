@@ -242,6 +242,8 @@ function EmitUnary(ast: esprima.Syntax.UnaryExpression, emit: (s: string) => voi
         emit(")");
     } else if (aop == 'delete') {
         EmitDelete(ast, emit, alloc);        
+    } else if (aop == 'void') {
+        emit("nil");
     } else if (aop == '!') {
         emit("(not ");
         EmitExpression(ast.argument, emit, alloc);

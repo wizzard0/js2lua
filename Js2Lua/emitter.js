@@ -240,6 +240,9 @@ function EmitUnary(ast, emit, alloc) {
     else if (aop == 'delete') {
         EmitDelete(ast, emit, alloc);
     }
+    else if (aop == 'void') {
+        emit("nil");
+    }
     else if (aop == '!') {
         emit("(not ");
         EmitExpression(ast.argument, emit, alloc);
