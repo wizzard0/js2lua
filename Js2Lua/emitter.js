@@ -40,6 +40,9 @@ function EmitExpression(ex, emit, alloc) {
         case "BinaryExpression":
             EmitBinary(ex, emit, alloc);
             break;
+        case "LogicalExpression":
+            EmitLogical(ex, emit, alloc);
+            break;
         case "UpdateExpression":
             EmitUpdate(ex, emit, alloc);
             break;
@@ -307,6 +310,20 @@ function EmitBinary(ast, emit, alloc) {
         EmitExpression(ast.right, emit, alloc);
         emit(")");
     }
+}
+function EmitLogical(ast, emit, alloc) {
+    var aop = ast.operator;
+    if (aop == '||') {
+        aop = 'or';
+    }
+    if (aop == '&&') {
+        aop = 'and';
+    }
+    emit("(");
+    EmitExpression(ast.left, emit, alloc);
+    emit(aop);
+    EmitExpression(ast.right, emit, alloc);
+    emit(")");
 }
 function EmitMember(ast, emit, alloc) {
     if (ast.property.name == 'length') {

@@ -45,6 +45,9 @@ function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void
         case "BinaryExpression":
             EmitBinary(<esprima.Syntax.BinaryExpression>ex, emit, alloc);
             break;
+        case "LogicalExpression":
+            EmitLogical(<esprima.Syntax.LogicalExpression>ex, emit, alloc);
+            break;
         case "UpdateExpression":
             EmitUpdate(<esprima.Syntax.UpdateExpression>ex, emit, alloc);
             break;
@@ -309,6 +312,22 @@ function EmitBinary(ast: esprima.Syntax.BinaryExpression, emit: (s: string) => v
         EmitExpression(ast.right, emit, alloc);
         emit(")");
     }
+}
+
+function EmitLogical(ast: esprima.Syntax.BinaryExpression, emit: (s: string) => void, alloc: () => number) {
+    var aop = ast.operator;
+
+    if (aop == '||') {
+        aop = 'or';
+    }
+    if (aop == '&&') {
+        aop = 'and';
+    }
+    emit("(");
+    EmitExpression(ast.left, emit, alloc);
+    emit(aop);
+    EmitExpression(ast.right, emit, alloc);
+    emit(")");
 }
 
 function EmitMember(ast: esprima.Syntax.MemberExpression, emit: (s: string) => void, alloc: () => number) {

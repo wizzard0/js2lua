@@ -41,9 +41,16 @@ __Singletons[null] = true
 
 -- Number
 local Infinity = 1/0
-local Number = {}
+local NaN = 0/0
+local Number = {
+	["NaN"] = NaN, 
+	["POSITIVE_INFINITY"] = Infinity, 
+	["NEGATIVE_INFINITY"] = -Infinity
+}
 
 -- Math
-local Math = {}
+local Math = {
+	["pow"] = math.pow
+}
 
 -- LIBRARY END

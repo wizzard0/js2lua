@@ -32,7 +32,7 @@ function ComparePrograms(fn) {
             eval(jsRT + source);
             var lua_stdout = RunProgram(luaRT + luasrc, flua);
             if (js_stdout.trim().length == 0 || lua_stdout.trim().length == 0) {
-                console.log("NEG FAIL!");
+                console.log("NEG FAIL!\r\n===========================================");
                 return false;
             }
             else {
@@ -50,7 +50,7 @@ function ComparePrograms(fn) {
         eval(jsRT + source);
         var lua_stdout = RunProgram(luaRT + luasrc, flua);
         if (js_stdout.trim().length != 0 || lua_stdout.trim().length != 0) {
-            console.log("POS FAIL!");
+            console.log("POS FAIL!\r\n===========================================");
             console.log("JS:", js_stdout);
             console.log("Lua:", lua_stdout);
             return false;
