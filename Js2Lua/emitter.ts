@@ -51,6 +51,9 @@ function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void
         case "LogicalExpression":
             EmitLogical(<esprima.Syntax.LogicalExpression>ex, emit, alloc);
             break;
+        case "ConditionalExpression":
+            EmitConditional(<esprima.Syntax.ConditionalExpression>ex, emit, alloc);
+            break;
         case "UpdateExpression":
             EmitUpdate(<esprima.Syntax.UpdateExpression>ex, emit, alloc);
             break;
@@ -117,7 +120,7 @@ function EmitForInStatement(ast: esprima.Syntax.ForInStatement, emit: (s: string
         var vd = <esprima.Syntax.VariableDeclaration><any>ast.left;
         EmitExpression(vd.declarations[0].id, emit, alloc);
     } else {
-        EmitExpression(ast.left, emit, alloc);    
+        EmitExpression(ast.left, emit, alloc);
     }
     emit(",");
     EmitExpression({ type: 'Identifier', name: '_tmp' + alloc() }, emit, alloc);
@@ -218,25 +221,23 @@ function EmitBlock(ast: esprima.Syntax.BlockStatement, emit: (s: string) => void
 
 function EmitAssignment(ast: esprima.Syntax.AssignmentExpression, emit: (s: string) => void, alloc: () => number) {
     var aop = ast.operator;
-    if (aop != '=' && aop.length != 2) {
-        emit("--[[4"); emit(ast.type); emit("]]");
-        console.log(util.inspect(ast, false, 999, true));
-        return;
-    }
+    //if (aop != '=' && aop.length != 2 && aop.length != 3) {
+    //    emit("--[[4"); emit(ast.type); emit("]]");
+    //    console.log(util.inspect(ast, false, 999, true));
+    //    return;
+    //}
     EmitExpression(ast.left, emit, alloc);
     if (aop == '=') {
         emit(aop);
         EmitExpression(ast.right, emit, alloc);
-    } else if (aop.length == 2) {
+    } else {
         emit('=');
         EmitBinary({
             type: 'BinaryExpression',
-            operator: aop.substr(0, 1),
+            operator: aop.substr(0, aop.length - 1),
             left: ast.left,
             right: ast.right
         }, emit, alloc);
-    } else {
-        throw new Error("EmitAssignment");
     }
 }
 
@@ -268,7 +269,7 @@ function EmitUnary(ast: esprima.Syntax.UnaryExpression, emit: (s: string) => voi
         EmitExpression(ast.argument, emit, alloc);
         emit(")");
     } else if (aop == 'delete') {
-        EmitDelete(ast, emit, alloc);        
+        EmitDelete(ast, emit, alloc);
     } else if (aop == 'void') {
         emit("nil");
     } else if (aop == '!') {
@@ -335,7 +336,10 @@ function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void
             EmitBlock(<esprima.Syntax.BlockStatement>stmt, emit, alloc);
             break;
         case "ExpressionStatement":
+            var et = ((<esprima.Syntax.ExpressionStatement>stmt).expression).type;
+            if (et != 'AssignmentExpression' && et != 'UpdateExpression') { emit(" __Sink("); }
             EmitExpression((<esprima.Syntax.ExpressionStatement>stmt).expression, emit, alloc);
+            if (et != 'AssignmentExpression' && et != 'UpdateExpression') { emit(")"); }
             break;
         case "VariableDeclaration":
             EmitVariableDeclaration((<esprima.Syntax.VariableDeclaration>stmt), emit, alloc);
@@ -387,10 +391,19 @@ function EmitBreak(ast: esprima.Syntax.BreakStatement, emit: (s: string) => void
 
 function EmitBinary(ast: esprima.Syntax.BinaryExpression, emit: (s: string) => void, alloc: () => number) {
     var aop = ast.operator;
-    if (aop == '+') {
+    var remap = {
+        '<<': 'bit32.lshift',
+        '>>>': 'bit32.rshift',
+        '>>': 'bit32.arshift',
+        '&': 'bit32.band',
+        '^': 'bit32.bxor',
+        '|': 'bit32.bor',
+        '+': '__PlusOp',
+    };
+    if (aop in remap) {
         EmitCall({
             type: 'CallExpression',
-            callee: { 'type': 'Identifier', 'name': '__PlusOp' },
+            callee: { 'type': 'Identifier', 'name': remap[aop] },
             arguments: [ast.left, ast.right]
         }, emit, alloc);
     } else {
@@ -422,6 +435,16 @@ function EmitLogical(ast: esprima.Syntax.BinaryExpression, emit: (s: string) => 
     emit(aop);
     EmitExpression(ast.right, emit, alloc);
     emit(")");
+}
+
+function EmitConditional(ast: esprima.Syntax.ConditionalExpression, emit: (s: string) => void, alloc: () => number) {
+    emit("(((");
+    EmitExpression(ast.test, emit, alloc);
+    emit(") and __TernarySave(");
+    EmitExpression(ast.consequent, emit, alloc);
+    emit(") or __TernarySave(");
+    EmitExpression(ast.alternate, emit, alloc);
+    emit(")) and __TernaryRestore())");
 }
 
 function EmitMember(ast: esprima.Syntax.MemberExpression, emit: (s: string) => void, alloc: () => number) {

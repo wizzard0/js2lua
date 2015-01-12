@@ -63,6 +63,7 @@ function ComparePrograms(fn) {
         var luasrc = emitter.convertFile(source, fn);
         if (/--\[\[/.exec(luasrc)) {
             console.log(" [FAIL] NO CODE GENERATED");
+            console.log("PARTIAL: ", luasrc);
             return "nocode";
         }
         vm.runInNewContext(jsRT + source, { print: print }, fn);
@@ -93,6 +94,7 @@ filenames.forEach(function (fn) {
     }
     else if (pass == "nocode") {
         nocode++;
+        throw new Error("giving up");
     }
     else if (pass) {
         passed++;

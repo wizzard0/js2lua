@@ -60,6 +60,16 @@ local function __Iterate(obj)
 	return ipairs(obj)
 end
 
+local function __Sink()
+end
+
+-- Ternary via stack!
+local __TernarySave, __TernaryRestore do
+  local o_saved
+  __TernarySave = function(o) o_saved = o; return true end
+  __TernaryRestore = function() return o_saved end
+end
+
 -- Null
 local null = {["__TypeofValue"] = "object", ["__ToStringValue"] = "null"} -- Singleton
 __Singletons[null] = true
