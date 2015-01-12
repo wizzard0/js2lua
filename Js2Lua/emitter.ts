@@ -90,13 +90,13 @@ function EmitForStatement(ast: esprima.Syntax.ForStatement, emit: (s: string) =>
     if (ast.init) {
         EmitVariableDeclaratorOrExpression(ast.init, emit, alloc);
     }
-    emit("while ");
+    emit("while __ToBoolean(");
     if (ast.test) {
         EmitExpression(ast.test, emit, alloc);
     } else {
         emit("true");
     }
-    emit(" do\r\n");
+    emit(") do\r\n");
     if (ast.body) {
         EmitStatement(ast.body, emit, alloc);
     }
@@ -335,9 +335,9 @@ function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void
 }
 
 function EmitIf(ast: esprima.Syntax.IfStatement, emit: (s: string) => void, alloc: () => number) {
-    emit("if ");
+    emit("if __ToBoolean(");
     EmitExpression(ast.test, emit, alloc);
-    emit(" then\r\n");
+    emit(") then\r\n");
     EmitStatement(ast.consequent, emit, alloc);
     if (ast.alternate) {
         emit(" else\r\n");

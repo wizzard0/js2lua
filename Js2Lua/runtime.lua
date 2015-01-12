@@ -22,6 +22,17 @@ local function __ToString(value)
 	return tostring(value)
 end
 
+local function __ToBoolean(value)
+	if type(value) == 'boolean' then return value end
+	if type(value) == 'table' and __Singletons[value] then
+		return value.__BooleanValue
+	end
+	if type(value) == 'number' and value ~= value then return false end
+	if type(value) == 'number' then return value ~= 0 end
+	print("__ToBoolean: unsupported! got " .. __ToString(value))
+	return value
+end
+
 local function __Delete(location, key)
 	location[key] = nil
 	return true

@@ -86,14 +86,14 @@ function EmitForStatement(ast, emit, alloc) {
     if (ast.init) {
         EmitVariableDeclaratorOrExpression(ast.init, emit, alloc);
     }
-    emit("while ");
+    emit("while __ToBoolean(");
     if (ast.test) {
         EmitExpression(ast.test, emit, alloc);
     }
     else {
         emit("true");
     }
-    emit(" do\r\n");
+    emit(") do\r\n");
     if (ast.body) {
         EmitStatement(ast.body, emit, alloc);
     }
@@ -338,9 +338,9 @@ function EmitStatement(stmt, emit, alloc) {
     }
 }
 function EmitIf(ast, emit, alloc) {
-    emit("if ");
+    emit("if __ToBoolean(");
     EmitExpression(ast.test, emit, alloc);
-    emit(" then\r\n");
+    emit(") then\r\n");
     EmitStatement(ast.consequent, emit, alloc);
     if (ast.alternate) {
         emit(" else\r\n");

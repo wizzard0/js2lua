@@ -2,6 +2,7 @@ var fs = require("fs");
 var sh = require("execsync-ng");
 var emitter = require("./emitter");
 var glob = require("glob");
+var vm = require("vm");
 function RunProgram(src, ff) {
     fs.writeFileSync(ff, src);
     var rc = sh.exec("C:/bin/zbs/bin/lua " + ff);
@@ -24,9 +25,10 @@ function ComparePrograms(fn) {
     var hasEval = /eval\(/.exec(source);
     var hasWith = /with[ ]?\(/.exec(source);
     var hasOther = /LUA_SKIP/.exec(source);
+    var onlyStrict = /\"use strict\"/.exec(source);
     var hasGlobalDeleteTest = /Compound Assignment Operator calls PutValue\(lref, v\)/.exec(source);
     var expectErrors = false;
-    if (hasEval || hasWith || hasOther || hasGlobalDeleteTest) {
+    if (hasEval || hasWith || hasOther || hasGlobalDeleteTest || onlyStrict) {
         console.log(" [SKIP]");
         return "skip";
     }
@@ -37,14 +39,15 @@ function ComparePrograms(fn) {
     if (expectErrors) {
         try {
             var luasrc = emitter.convertFile(source, fn);
-            eval(jsRT + source);
+            vm.runInNewContext(jsRT + source, { print: print }, fn);
+            //eval(jsRT + source);
             var lua_stdout = RunProgram(luaRT + luasrc, flua);
             if (js_stdout.trim().length == 0 || lua_stdout.trim().length == 0) {
-                console.log("NEG FAIL!\r\n===========================================");
+                console.log(" NEG FAIL!\r\n===========================================");
                 return false;
             }
             else {
-                console.log("NEG OK");
+                console.log(" NEG OK");
                 return true;
             }
         }
@@ -55,10 +58,10 @@ function ComparePrograms(fn) {
     }
     else {
         var luasrc = emitter.convertFile(source, fn);
-        eval(jsRT + source);
+        vm.runInNewContext(jsRT + source, { print: print }, fn);
         var lua_stdout = RunProgram(luaRT + luasrc, flua);
         if (js_stdout.trim().length != 0 || lua_stdout.trim().length != 0) {
-            console.log("POS FAIL!\r\n===========================================");
+            console.log(" POS FAIL!\r\n===========================================");
             console.log("JS:", js_stdout);
             console.log("Lua:", lua_stdout);
             return false;
