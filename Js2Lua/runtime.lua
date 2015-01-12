@@ -1,7 +1,7 @@
 ﻿local __Singletons = {}
 local self = _G
 local function __Typeof(value)
-    if type(value) == 'boolean' or type(value) == 'number' then
+    if type(value) == 'boolean' or type(value) == 'number' or type(value) == 'string' then
         return type(value)
     end
 	if type(value) == 'table' and __Singletons[value] then
