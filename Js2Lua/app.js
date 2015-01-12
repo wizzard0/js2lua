@@ -21,7 +21,7 @@ function ComparePrograms(fn) {
     var source = fs.readFileSync(fn).toString();
     var luaRT = fs.readFileSync("runtime.lua").toString();
     var jsRT = fs.readFileSync("runtime.js").toString();
-    var ns = /negative: (.*)/.exec(source);
+    var ns = /@negative|negative: (.*)/.exec(source);
     var hasEval = /eval\(/.exec(source);
     var hasWith = /with[ ]?\(/.exec(source);
     var hasTry = /try( {|{)/.exec(source);
