@@ -21,6 +21,7 @@ function ComparePrograms(fn: string) {
     var jsRT = fs.readFileSync("runtime.js").toString();
     var ns = /negative: (.*)/.exec(source);
     var expectErrors = false;
+   
     if (ns) {
         console.log("NEG: ", ns[1]);
         expectErrors = true;

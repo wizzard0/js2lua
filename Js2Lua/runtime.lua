@@ -1,7 +1,7 @@
 ﻿local __Singletons = {}
 local function __Typeof(value)
-    if type(value) == 'boolean' then
-        return 'boolean'
+    if type(value) == 'boolean' or type(value) == 'number' then
+        return type(value)
     end
 	if type(value) == 'table' and __Singletons[value] then
 		return value.__TypeofValue
@@ -26,7 +26,19 @@ local function __PlusOp(left, right)
 	end
 end
 
+local function __Iterate(obj)
+	return ipairs(obj)
+end
+
+-- Null
 local null = {["__TypeofValue"] = "object", ["__ToStringValue"] = "null"} -- Singleton
 __Singletons[null] = true
 -- we use nil as undefined
+
+-- Number
+local Infinity = 1/0
+
+-- Math
+local Math = {}
+
 -- LIBRARY END
