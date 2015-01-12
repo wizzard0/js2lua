@@ -14,6 +14,10 @@ local function _USD_ERROR(s)
     print("ERROR: ", s)
 end
 
+local function _USD_PRINT(s)
+    print("INFO: ", s)
+end
+
 local function __Length(value)
 	return #value
 end
