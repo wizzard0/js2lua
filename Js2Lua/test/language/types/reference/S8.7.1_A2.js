@@ -9,7 +9,7 @@ es5id: 8.7.1_A2
 description: Try to delete y, where y is var y=1
 flags: [noStrict]
 ---*/
-
+// LUA_SKIP
 var y = 1;
 
 //////////////////////////////////////////////////////////////////////////////

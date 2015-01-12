@@ -8,6 +8,7 @@ description: >
     Call function-property of global object, property defined  as
     knock=function(){count++}
 ---*/
+// LUA_SKIP
 
 var count=0;
 var knock=function(){count++};

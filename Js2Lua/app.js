@@ -22,8 +22,9 @@ function ComparePrograms(fn) {
     var jsRT = fs.readFileSync("runtime.js").toString();
     var ns = /negative: (.*)/.exec(source);
     var hasEval = /eval\(/.exec(source);
+    var hasOther = /LUA_SKIP/.exec(source);
     var expectErrors = false;
-    if (hasEval) {
+    if (hasEval || hasOther) {
         console.log(" [SKIP]");
         return "skip";
     }

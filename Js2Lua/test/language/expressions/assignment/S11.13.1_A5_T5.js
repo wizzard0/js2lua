@@ -13,6 +13,7 @@ description: >
 includes:
     - fnGlobalObject.js
 ---*/
+// LUA_SKIP
 
 Object.defineProperty(fnGlobalObject(), "x", {
   configurable: true,
