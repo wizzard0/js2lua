@@ -11,3 +11,8 @@ function runTestCase(testcase) {
         $ERROR("Test case returned non-true value!");
     }
 }
+
+var __globalObject = Function("return this;")();
+function fnGlobalObject() {
+    return __globalObject;
+}

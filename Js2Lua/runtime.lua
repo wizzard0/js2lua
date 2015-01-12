@@ -41,6 +41,10 @@ local function runTestCase(testcase)
     end
 end
 
+local function fnGlobalObject()
+     return _G
+end
+
 
 local function __Length(value)
 	return #value
