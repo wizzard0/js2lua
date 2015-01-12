@@ -3,11 +3,12 @@ var util = require("util");
 function EmitProgram(ast, emit) {
     // hack
     emit("\r\n-- BEGIN\r\n");
-    var rootFunctionBody = ast.body[0].body.body;
-    for (var si = 0; si < rootFunctionBody.length; si++) {
-        var stmt = rootFunctionBody[si];
-        EmitStatement(stmt, emit);
-    }
+    EmitBlock(ast, emit);
+    //var rootFunctionBody = (<esprima.Syntax.FunctionDeclaration>ast.body[0]).body.body;
+    //for (var si = 0; si < rootFunctionBody.length; si++) {
+    //    var stmt = rootFunctionBody[si];
+    //    EmitStatement(stmt, emit);
+    //}
     emit("\r\n-- END\r\n");
 }
 function EmitVariableDeclaration(ex, emit) {
@@ -25,8 +26,14 @@ function EmitExpression(ex, emit) {
         case "CallExpression":
             EmitCall(ex, emit);
             break;
+        case "AssignmentExpression":
+            EmitAssignment(ex, emit);
+            break;
         case "BinaryExpression":
             EmitBinary(ex, emit);
+            break;
+        case "UnaryExpression":
+            EmitUnary(ex, emit);
             break;
         case "FunctionExpression":
             EmitFunctionExpr(ex, emit);
@@ -69,7 +76,7 @@ function EmitFunctionDeclaration(ast, emit) {
     EmitFunctionExpr(ast, emit);
 }
 function EmitBlock(ast, emit) {
-    if (ast.type != 'BlockStatement') {
+    if (ast.type != 'BlockStatement' && ast.type != 'Program') {
         emit("--[[3");
         emit(ast.type);
         emit("]]");
@@ -81,6 +88,35 @@ function EmitBlock(ast, emit) {
         EmitStatement(arg, emit);
         emit("\r\n");
     }
+}
+function EmitAssignment(ast, emit) {
+    var aop = ast.operator;
+    if (aop != '=') {
+        emit("--[[4");
+        emit(ast.type);
+        emit("]]");
+        console.log(util.inspect(ast, false, 999, true));
+        return;
+    }
+    EmitExpression(ast.left, emit);
+    emit(aop);
+    //    emit("(");
+    EmitExpression(ast.right, emit);
+    //    emit(")");
+}
+function EmitUnary(ast, emit) {
+    var aop = ast.operator;
+    if (aop != 'typeof') {
+        emit("--[[5");
+        emit(ast.type);
+        emit("]]");
+        console.log(util.inspect(ast, false, 999, true));
+        return;
+    }
+    emit("__Typeof");
+    emit("(");
+    EmitExpression(ast.argument, emit);
+    emit(")");
 }
 function EmitStatement(stmt, emit) {
     switch (stmt.type) {
@@ -130,6 +166,9 @@ function EmitBinary(ast, emit) {
     var aop = ast.operator;
     if (aop == '!==' || aop == '!=') {
         aop = '~=';
+    }
+    if (aop == '===') {
+        aop = '==';
     }
     emit("(");
     EmitExpression(ast.left, emit);

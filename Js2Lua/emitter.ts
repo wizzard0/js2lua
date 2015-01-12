@@ -5,11 +5,12 @@ import util = require("util");
 function EmitProgram(ast: esprima.Syntax.Program, emit: (s: string) => void) {
     // hack
     emit("\r\n-- BEGIN\r\n");
-    var rootFunctionBody = (<esprima.Syntax.FunctionDeclaration>ast.body[0]).body.body;
-    for (var si = 0; si < rootFunctionBody.length; si++) {
-        var stmt = rootFunctionBody[si];
-        EmitStatement(stmt, emit);
-    }
+    EmitBlock(ast, emit);
+    //var rootFunctionBody = (<esprima.Syntax.FunctionDeclaration>ast.body[0]).body.body;
+    //for (var si = 0; si < rootFunctionBody.length; si++) {
+    //    var stmt = rootFunctionBody[si];
+    //    EmitStatement(stmt, emit);
+    //}
     emit("\r\n-- END\r\n");
 }
 
@@ -30,8 +31,14 @@ function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void
         case "CallExpression":
             EmitCall(<esprima.Syntax.CallExpression>ex, emit);
             break;
+        case "AssignmentExpression":
+            EmitAssignment(<esprima.Syntax.AssignmentExpression>ex, emit);
+            break;
         case "BinaryExpression":
             EmitBinary(<esprima.Syntax.BinaryExpression>ex, emit);
+            break;
+        case "UnaryExpression":
+            EmitUnary(<esprima.Syntax.UnaryExpression>ex, emit);
             break;
         case "FunctionExpression":
             EmitFunctionExpr(<esprima.Syntax.FunctionExpression>ex, emit);
@@ -75,7 +82,7 @@ function EmitFunctionDeclaration(ast: esprima.Syntax.FunctionDeclaration, emit: 
 }
 
 function EmitBlock(ast: esprima.Syntax.BlockStatement, emit: (s: string) => void) {
-    if (ast.type != 'BlockStatement') {
+    if (ast.type != 'BlockStatement' && ast.type != 'Program') {
         emit("--[[3"); emit(ast.type); emit("]]");
         console.log(util.inspect(ast, false, 999, true));
         return;
@@ -86,6 +93,34 @@ function EmitBlock(ast: esprima.Syntax.BlockStatement, emit: (s: string) => void
         emit("\r\n");
     }
 }
+
+function EmitAssignment(ast: esprima.Syntax.AssignmentExpression, emit: (s: string) => void) {
+    var aop = ast.operator;
+    if (aop != '=') {
+        emit("--[[4"); emit(ast.type); emit("]]");
+        console.log(util.inspect(ast, false, 999, true));
+        return;
+    }
+    EmitExpression(ast.left, emit);
+    emit(aop);
+    //    emit("(");
+    EmitExpression(ast.right, emit);
+    //    emit(")");
+}
+
+function EmitUnary(ast: esprima.Syntax.UnaryExpression, emit: (s: string) => void) {
+    var aop = ast.operator;
+    if (aop != 'typeof') {
+        emit("--[[5"); emit(ast.type); emit("]]");
+        console.log(util.inspect(ast, false, 999, true));
+        return;
+    }
+    emit("__Typeof");
+    emit("(");
+    EmitExpression(ast.argument, emit);
+    emit(")");
+}
+
 
 function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void) {
     //console.warn(ex.type);
@@ -138,6 +173,9 @@ function EmitBinary(ast: esprima.Syntax.BinaryExpression, emit: (s: string) => v
     var aop = ast.operator;
     if (aop == '!==' || aop == '!=') {
         aop = '~=';
+    }
+    if (aop == '===') {
+        aop = '==';
     }
     emit("(");
     EmitExpression(ast.left, emit);
