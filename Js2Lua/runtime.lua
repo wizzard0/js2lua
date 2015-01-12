@@ -37,6 +37,7 @@ __Singletons[null] = true
 
 -- Number
 local Infinity = 1/0
+local Number = {}
 
 -- Math
 local Math = {}

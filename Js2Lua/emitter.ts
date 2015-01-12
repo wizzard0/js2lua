@@ -86,7 +86,10 @@ function EmitForStatement(ast: esprima.Syntax.ForStatement, emit: (s: string) =>
 }
 
 function EmitForInStatement(ast: esprima.Syntax.ForInStatement, emit: (s: string) => void, alloc: () => number) {
+    emit("for ");
     EmitExpression(ast.left, emit, alloc);
+    emit(",");
+    EmitExpression({ type: 'Identifier', name: '_tmp' + alloc() }, emit, alloc);
     emit(" in ");
     EmitCall({
         type: 'CallExpression',
@@ -244,6 +247,9 @@ function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void
         case "ForStatement":
             EmitForStatement(<esprima.Syntax.ForStatement>stmt, emit, alloc);
             break;
+        case "ForInStatement":
+            EmitForInStatement(<esprima.Syntax.ForInStatement>stmt, emit, alloc);
+            break;
         case "BlockStatement":
             EmitBlock(<esprima.Syntax.BlockStatement>stmt, emit, alloc);
             break;
@@ -336,7 +342,7 @@ function EmitLiteral(ex: esprima.Syntax.Literal, emit: (s: string) => void, allo
     emit(JSON.stringify(ex.value)); // TODO
 }
 
-export function convertFile(source: string, fn: string, alloc: () => number): string {
+export function convertFile(source: string, fn: string): string {
     var allocIndex = 0;
     var alloc = function () {
         allocIndex++;

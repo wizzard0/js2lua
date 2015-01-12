@@ -81,7 +81,10 @@ function EmitForStatement(ast, emit, alloc) {
     emit(" end"); // any breaks?
 }
 function EmitForInStatement(ast, emit, alloc) {
+    emit("for ");
     EmitExpression(ast.left, emit, alloc);
+    emit(",");
+    EmitExpression({ type: 'Identifier', name: '_tmp' + alloc() }, emit, alloc);
     emit(" in ");
     EmitCall({
         type: 'CallExpression',
@@ -243,6 +246,9 @@ function EmitStatement(stmt, emit, alloc) {
         case "ForStatement":
             EmitForStatement(stmt, emit, alloc);
             break;
+        case "ForInStatement":
+            EmitForInStatement(stmt, emit, alloc);
+            break;
         case "BlockStatement":
             EmitBlock(stmt, emit, alloc);
             break;
@@ -331,7 +337,7 @@ function EmitCall(ast, emit, alloc) {
 function EmitLiteral(ex, emit, alloc) {
     emit(JSON.stringify(ex.value)); // TODO
 }
-function convertFile(source, fn, alloc) {
+function convertFile(source, fn) {
     var allocIndex = 0;
     var alloc = function () {
         allocIndex++;
