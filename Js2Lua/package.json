@@ -1,0 +1,14 @@
+{
+  "name": "Js2Lua",
+  "version": "0.0.0",
+  "description": "Js2Lua",
+  "main": "app.js",
+  "author": {
+    "name": "User",
+    "email": ""
+  },
+  "dependencies": {
+    "escope": "^2.0.2",
+    "esprima": "^1.2.2"
+  }
+}
