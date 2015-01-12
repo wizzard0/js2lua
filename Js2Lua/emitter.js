@@ -84,6 +84,16 @@ function EmitExpression(ex, emit, alloc) {
             break;
     }
 }
+function EmitTryStatement(ast, emit, alloc) {
+    //console.log(util.inspect(ast, false, 999, true));
+    // TODO we're fucking optimistic, just emit try and finally, no catch!
+    EmitStatement(ast.block, emit, alloc);
+    emit("-- no catch, just finally\r\n");
+    // handlerS, not handler!
+    if (ast.finalizer) {
+        EmitStatement(ast.finalizer, emit, alloc);
+    }
+}
 function EmitForStatement(ast, emit, alloc) {
     //console.log(util.inspect(ast, false, 999, true));
     if (ast.init) {
@@ -326,6 +336,9 @@ function EmitStatement(stmt, emit, alloc) {
             break;
         case "ForStatement":
             EmitForStatement(stmt, emit, alloc);
+            break;
+        case "TryStatement":
+            EmitTryStatement(stmt, emit, alloc);
             break;
         case "ForInStatement":
             EmitForInStatement(stmt, emit, alloc);

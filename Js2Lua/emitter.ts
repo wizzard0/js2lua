@@ -88,6 +88,18 @@ function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void
     }
 }
 
+function EmitTryStatement(ast: esprima.Syntax.TryStatement, emit: (s: string) => void, alloc: () => number) {
+    //console.log(util.inspect(ast, false, 999, true));
+    // TODO we're fucking optimistic, just emit try and finally, no catch!
+    EmitStatement(ast.block, emit, alloc);
+    emit("-- no catch, just finally\r\n");
+    // handlerS, not handler!
+    if (ast.finalizer) {
+        EmitStatement(ast.finalizer, emit, alloc);
+    }
+}
+
+
 function EmitForStatement(ast: esprima.Syntax.ForStatement, emit: (s: string) => void, alloc: () => number) {
     //console.log(util.inspect(ast, false, 999, true));
     if (ast.init) {
@@ -325,6 +337,9 @@ function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void
             break;
         case "ForStatement":
             EmitForStatement(<esprima.Syntax.ForStatement>stmt, emit, alloc);
+            break;
+        case "TryStatement":
+            EmitTryStatement(<esprima.Syntax.TryStatement>stmt, emit, alloc);
             break;
         case "ForInStatement":
             EmitForInStatement(<esprima.Syntax.ForInStatement>stmt, emit, alloc);
