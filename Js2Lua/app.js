@@ -24,14 +24,14 @@ function ComparePrograms(fn) {
     var ns = /@negative|negative: (.*)/.exec(source);
     var hasEval = /eval\(/.exec(source);
     var hasWith = /with[ ]?\(/.exec(source);
-    var hasTry = /try( {|{)/.exec(source);
+    //var hasTry = /try( {|{)/.exec(source);
     var hasOther = /LUA_SKIP/.exec(source);
     var onlyStrict = /\"use strict\"/.exec(source);
     var hasGlobalDeleteTest = /Compound Assignment Operator calls PutValue\(lref, v\)/.exec(source);
     var hasBrokenDate = /S15\.9\.3\.1_A5/.exec(source);
     var hasIntl = /testIntl|\bIntl\b/.exec(source);
     var expectErrors = false;
-    if (hasEval || hasWith || hasTry || hasOther || hasBrokenDate || hasGlobalDeleteTest || hasIntl || onlyStrict) {
+    if (hasEval || hasWith || hasOther || hasBrokenDate || hasGlobalDeleteTest || hasIntl || onlyStrict) {
         console.log(" [SKIP]");
         return "skip";
     }
@@ -94,7 +94,6 @@ filenames.forEach(function (fn) {
     }
     else if (pass == "nocode") {
         nocode++;
-        throw new Error("giving up");
     }
     else if (pass) {
         passed++;

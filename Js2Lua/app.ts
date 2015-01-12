@@ -27,7 +27,7 @@ function ComparePrograms(fn: string): any {
     var ns = /@negative|negative: (.*)/.exec(source);
     var hasEval = /eval\(/.exec(source);
     var hasWith = /with[ ]?\(/.exec(source);
-    var hasTry = /try( {|{)/.exec(source);
+    //var hasTry = /try( {|{)/.exec(source);
     var hasOther = /LUA_SKIP/.exec(source);
     var onlyStrict = /\"use strict\"/.exec(source);    
     var hasGlobalDeleteTest = /Compound Assignment Operator calls PutValue\(lref, v\)/.exec(source);
@@ -35,7 +35,9 @@ function ComparePrograms(fn: string): any {
     var hasIntl = /testIntl|\bIntl\b/.exec(source);
     var expectErrors = false;
 
-    if (hasEval || hasWith || hasTry || hasOther || hasBrokenDate || hasGlobalDeleteTest || hasIntl || onlyStrict) {
+    if (hasEval || hasWith
+        //|| hasTry
+        || hasOther || hasBrokenDate || hasGlobalDeleteTest || hasIntl || onlyStrict) {
         console.log(" [SKIP]");
         return "skip";
     }
@@ -91,7 +93,10 @@ var nocode = 0;
 filenames.forEach(function (fn) {
     var pass = ComparePrograms(fn);
     if (pass == "skip") { skipped++ }
-    else if (pass == "nocode") { nocode++; throw new Error("giving up"); }
+    else if (pass == "nocode") {
+        nocode++;
+        //throw new Error("giving up");
+    }
     else if (pass) { passed++ } else { failed++ }
 });
 
