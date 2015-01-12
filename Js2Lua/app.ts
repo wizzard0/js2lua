@@ -26,10 +26,11 @@ function ComparePrograms(fn: string): any {
     var jsRT = fs.readFileSync("runtime.js").toString();
     var ns = /negative: (.*)/.exec(source);
     var hasEval = /eval\(/.exec(source);
+    var hasWith = /with[ ]?\(/.exec(source);
     var hasOther = /LUA_SKIP/.exec(source);
     var expectErrors = false;
 
-    if (hasEval || hasOther) {
+    if (hasEval || hasWith || hasOther) {
         console.log(" [SKIP]");
         return "skip";
     }
