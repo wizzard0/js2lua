@@ -21,19 +21,23 @@ function ComparePrograms(fn) {
         console.log("NEG: ", ns[1]);
         expectErrors = true;
     }
-    try {
-        //console.log(source);
+    if (expectErrors) {
+        try {
+            var luasrc = emitter.convertFile(source, fn);
+            console.log("JS==");
+            eval(jsRT + source);
+            console.log("LUA==");
+            RunProgram(luaRT + luasrc, flua);
+        }
+        catch (e) {
+        }
+    }
+    else {
         var luasrc = emitter.convertFile(source, fn);
-        //console.log(luasrc);
         console.log("JS==");
         eval(jsRT + source);
         console.log("LUA==");
         RunProgram(luaRT + luasrc, flua);
-    }
-    catch (e) {
-        if (!expectErrors) {
-            console.log(e);
-        }
     }
 }
 var arg = process.argv[2];

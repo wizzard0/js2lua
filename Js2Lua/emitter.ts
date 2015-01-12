@@ -26,6 +26,10 @@ function EmitVariableDeclaration(ex: esprima.Syntax.VariableDeclaration, emit: (
 }
 
 function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void) {
+    if (!ex) {
+        emit('nil');
+        return;
+    }
     //console.warn(ex.type);
     switch (ex.type) {
         case "CallExpression":
@@ -37,6 +41,12 @@ function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void
         case "BinaryExpression":
             EmitBinary(<esprima.Syntax.BinaryExpression>ex, emit);
             break;
+        case "ArrayExpression":
+            EmitArray(<esprima.Syntax.ArrayExpression>ex, emit);
+            break;
+        case "MemberExpression":
+            EmitMember(<esprima.Syntax.MemberExpression>ex, emit);
+            break;
         case "UnaryExpression":
             EmitUnary(<esprima.Syntax.UnaryExpression>ex, emit);
             break;
@@ -44,9 +54,7 @@ function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void
             EmitFunctionExpr(<esprima.Syntax.FunctionExpression>ex, emit);
             break;
         case "Identifier":
-            var ein = (<esprima.Syntax.Identifier>ex).name;
-            ein = ein.replace("$", "_USD_");
-            emit(ein);
+            EmitIdentifier(<esprima.Syntax.Identifier>ex, emit);
             break;
         case "Literal":
             EmitLiteral(<esprima.Syntax.Literal>ex, emit);
@@ -56,6 +64,15 @@ function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void
             console.log(util.inspect(ex, false, 999, true));
             break;
     }
+}
+
+function EmitIdentifier(ast: esprima.Syntax.Identifier, emit: (s: string) => void) {
+    var ein = (<esprima.Syntax.Identifier>ast).name;
+    ein = ein.replace("$", "_USD_");
+    if (ein == 'arguments') { // HACK
+        ein = 'arg';
+    }
+    emit(ein);
 }
 
 function EmitFunctionExpr(ast: esprima.Syntax.FunctionExpression, emit: (s: string) => void) {
@@ -70,6 +87,18 @@ function EmitFunctionExpr(ast: esprima.Syntax.FunctionExpression, emit: (s: stri
     emit(")");
     EmitBlock(ast.body, emit);
     emit(" end"); // any breaks?
+}
+
+function EmitArray(ast: esprima.Syntax.ArrayExpression, emit: (s: string) => void) {
+    emit("{");
+    for (var si = 0; si < ast.elements.length; si++) {
+        var arg = ast.elements[si];
+        EmitExpression(arg, emit);
+        if (si != ast.elements.length - 1) {
+            emit(", ");
+        }
+    }
+    emit("}");
 }
 
 function EmitFunctionDeclaration(ast: esprima.Syntax.FunctionDeclaration, emit: (s: string) => void) {
@@ -133,6 +162,9 @@ function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void
         case "ReturnStatement":
             EmitReturn(<esprima.Syntax.ReturnStatement>stmt, emit);
             break;
+        case "EmptyStatement":
+            emit(";");
+            break;
         case "IfStatement":
             EmitIf(<esprima.Syntax.IfStatement>stmt, emit);
             break;
@@ -159,10 +191,10 @@ function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void
 function EmitIf(ast: esprima.Syntax.IfStatement, emit: (s: string) => void) {
     emit("if ");
     EmitExpression(ast.test, emit);
-    emit(" then ");
+    emit(" then\r\n");
     EmitStatement(ast.consequent, emit);
     if (ast.alternate) {
-        emit(" else ");
+        emit(" else\r\n");
         EmitStatement(ast.alternate, emit);
     }
     emit(" end");
@@ -176,17 +208,39 @@ function EmitReturn(ast: esprima.Syntax.ReturnStatement, emit: (s: string) => vo
 
 function EmitBinary(ast: esprima.Syntax.BinaryExpression, emit: (s: string) => void) {
     var aop = ast.operator;
-    if (aop == '!==' || aop == '!=') {
-        aop = '~=';
+    if (aop == '+') {
+        EmitCall({
+            type: 'CallExpression',
+            callee: { 'type': 'Identifier', 'name': '__PlusOp' },
+            arguments: [ast.left, ast.right]
+        }, emit);
+    } else {
+        if (aop == '!==' || aop == '!=') {
+            aop = '~=';
+        }
+        if (aop == '===') {
+            aop = '==';
+        }
+        emit("(");
+        EmitExpression(ast.left, emit);
+        emit(aop);
+        EmitExpression(ast.right, emit);
+        emit(")");
     }
-    if (aop == '===') {
-        aop = '==';
+}
+
+function EmitMember(ast: esprima.Syntax.MemberExpression, emit: (s: string) => void) {
+    if (ast.property.name == 'length') {
+        EmitCall({
+            type: 'CallExpression',
+            callee: { 'type': 'Identifier', 'name': '__Length' },
+            arguments: [ ast.object ]
+        }, emit);
+    } else {
+        EmitExpression(ast.object, emit);
+        emit(".");
+        EmitExpression(ast.property, emit);
     }
-    emit("(");
-    EmitExpression(ast.left, emit);
-    emit(aop);
-    EmitExpression(ast.right, emit);
-    emit(")");
 }
 
 function EmitCall(ast: esprima.Syntax.CallExpression, emit: (s: string) => void) {

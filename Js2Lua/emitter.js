@@ -22,6 +22,10 @@ function EmitVariableDeclaration(ex, emit) {
     }
 }
 function EmitExpression(ex, emit) {
+    if (!ex) {
+        emit('nil');
+        return;
+    }
     switch (ex.type) {
         case "CallExpression":
             EmitCall(ex, emit);
@@ -32,6 +36,12 @@ function EmitExpression(ex, emit) {
         case "BinaryExpression":
             EmitBinary(ex, emit);
             break;
+        case "ArrayExpression":
+            EmitArray(ex, emit);
+            break;
+        case "MemberExpression":
+            EmitMember(ex, emit);
+            break;
         case "UnaryExpression":
             EmitUnary(ex, emit);
             break;
@@ -39,9 +49,7 @@ function EmitExpression(ex, emit) {
             EmitFunctionExpr(ex, emit);
             break;
         case "Identifier":
-            var ein = ex.name;
-            ein = ein.replace("$", "_USD_");
-            emit(ein);
+            EmitIdentifier(ex, emit);
             break;
         case "Literal":
             EmitLiteral(ex, emit);
@@ -53,6 +61,14 @@ function EmitExpression(ex, emit) {
             console.log(util.inspect(ex, false, 999, true));
             break;
     }
+}
+function EmitIdentifier(ast, emit) {
+    var ein = ast.name;
+    ein = ein.replace("$", "_USD_");
+    if (ein == 'arguments') {
+        ein = 'arg';
+    }
+    emit(ein);
 }
 function EmitFunctionExpr(ast, emit) {
     emit("function (");
@@ -66,6 +82,17 @@ function EmitFunctionExpr(ast, emit) {
     emit(")");
     EmitBlock(ast.body, emit);
     emit(" end"); // any breaks?
+}
+function EmitArray(ast, emit) {
+    emit("{");
+    for (var si = 0; si < ast.elements.length; si++) {
+        var arg = ast.elements[si];
+        EmitExpression(arg, emit);
+        if (si != ast.elements.length - 1) {
+            emit(", ");
+        }
+    }
+    emit("}");
 }
 function EmitFunctionDeclaration(ast, emit) {
     emit("local ");
@@ -130,6 +157,9 @@ function EmitStatement(stmt, emit) {
         case "ReturnStatement":
             EmitReturn(stmt, emit);
             break;
+        case "EmptyStatement":
+            emit(";");
+            break;
         case "IfStatement":
             EmitIf(stmt, emit);
             break;
@@ -157,10 +187,10 @@ function EmitStatement(stmt, emit) {
 function EmitIf(ast, emit) {
     emit("if ");
     EmitExpression(ast.test, emit);
-    emit(" then ");
+    emit(" then\r\n");
     EmitStatement(ast.consequent, emit);
     if (ast.alternate) {
-        emit(" else ");
+        emit(" else\r\n");
         EmitStatement(ast.alternate, emit);
     }
     emit(" end");
@@ -171,17 +201,40 @@ function EmitReturn(ast, emit) {
 }
 function EmitBinary(ast, emit) {
     var aop = ast.operator;
-    if (aop == '!==' || aop == '!=') {
-        aop = '~=';
+    if (aop == '+') {
+        EmitCall({
+            type: 'CallExpression',
+            callee: { 'type': 'Identifier', 'name': '__PlusOp' },
+            arguments: [ast.left, ast.right]
+        }, emit);
     }
-    if (aop == '===') {
-        aop = '==';
+    else {
+        if (aop == '!==' || aop == '!=') {
+            aop = '~=';
+        }
+        if (aop == '===') {
+            aop = '==';
+        }
+        emit("(");
+        EmitExpression(ast.left, emit);
+        emit(aop);
+        EmitExpression(ast.right, emit);
+        emit(")");
     }
-    emit("(");
-    EmitExpression(ast.left, emit);
-    emit(aop);
-    EmitExpression(ast.right, emit);
-    emit(")");
+}
+function EmitMember(ast, emit) {
+    if (ast.property.name == 'length') {
+        EmitCall({
+            type: 'CallExpression',
+            callee: { 'type': 'Identifier', 'name': '__Length' },
+            arguments: [ast.object]
+        }, emit);
+    }
+    else {
+        EmitExpression(ast.object, emit);
+        emit(".");
+        EmitExpression(ast.property, emit);
+    }
 }
 function EmitCall(ast, emit) {
     EmitExpression(ast.callee, emit);
