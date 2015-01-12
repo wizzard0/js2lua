@@ -61,6 +61,9 @@ function EmitExpression(ex, emit) {
         case "BinaryExpression":
             EmitBinary(ex, emit);
             break;
+        case "FunctionExpression":
+            EmitFunctionExpr(ex, emit);
+            break;
         case "Identifier":
             emit(ex.name);
             break;
@@ -74,6 +77,50 @@ function EmitExpression(ex, emit) {
             console.log(util.inspect(ex, false, 999, true));
             break;
     }
+}
+function EmitFunctionExpr(ast, emit) {
+    emit("function (");
+    for (var si = 0; si < ast.params.length; si++) {
+        var arg = ast.params[si];
+        EmitExpression(arg, emit);
+        if (si != ast.params.length - 1) {
+            emit(",");
+        }
+    }
+    emit(")");
+    EmitBlock(ast.body, emit);
+    emit(" end"); // any breaks?
+}
+function EmitBlock(ast, emit) {
+    if (ast.type != 'BlockStatement') {
+        emit("--[[");
+        emit(ast.type);
+        emit("]]");
+        console.log(util.inspect(ast, false, 999, true));
+        return;
+    }
+    for (var si = 0; si < ast.body.length; si++) {
+        var arg = ast.body[si];
+        EmitStatement(arg, emit);
+        emit("\r\n");
+    }
+}
+function EmitStatement(ex, emit) {
+    switch (ex.type) {
+        case "ReturnStatement":
+            EmitReturn(ex, emit);
+            break;
+        default:
+            emit("--[[");
+            emit(ex.type);
+            emit("]]");
+            console.log(util.inspect(ex, false, 999, true));
+            break;
+    }
+}
+function EmitReturn(ast, emit) {
+    emit("return ");
+    EmitExpression(ast.argument, emit);
 }
 function EmitBinary(ast, emit) {
     emit("(");

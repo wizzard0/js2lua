@@ -70,6 +70,9 @@ function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void
         case "BinaryExpression":
             EmitBinary(<esprima.Syntax.BinaryExpression>ex, emit);
             break;
+        case "FunctionExpression":
+            EmitFunctionExpr(<esprima.Syntax.FunctionExpression>ex, emit);
+            break;
         case "Identifier":
             emit((<esprima.Syntax.Identifier>ex).name);
             break;
@@ -77,13 +80,57 @@ function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void
             EmitLiteral(<esprima.Syntax.Literal>ex, emit);
             break;
         default:
-            emit("--[[");
-            emit(ex.type);
-            emit("]]");
+            emit("--[["); emit(ex.type); emit("]]");
             console.log(util.inspect(ex, false, 999, true));
             break;
     }
 }
+
+function EmitFunctionExpr(ast: esprima.Syntax.FunctionExpression, emit: (s: string) => void) {
+    emit("function (");
+    for (var si = 0; si < ast.params.length; si++) {
+        var arg = ast.params[si];
+        EmitExpression(arg, emit);
+        if (si != ast.params.length - 1) {
+            emit(",");
+        }
+    }
+    emit(")");
+    EmitBlock(ast.body, emit);
+    emit(" end"); // any breaks?
+}
+
+function EmitBlock(ast: esprima.Syntax.BlockStatement, emit: (s: string) => void) {
+    if (ast.type != 'BlockStatement') {
+        emit("--[["); emit(ast.type); emit("]]");
+        console.log(util.inspect(ast, false, 999, true));
+        return;
+    }
+    for (var si = 0; si < ast.body.length; si++) {
+        var arg = ast.body[si];
+        EmitStatement(arg, emit);
+        emit("\r\n");
+    }
+}
+
+function EmitStatement(ex: esprima.Syntax.Statement, emit: (s: string) => void) {
+    //console.warn(ex.type);
+    switch (ex.type) {
+        case "ReturnStatement":
+            EmitReturn(<esprima.Syntax.ReturnStatement>ex, emit);
+            break;
+        default:
+            emit("--[["); emit(ex.type); emit("]]");
+            console.log(util.inspect(ex, false, 999, true));
+            break;
+    }
+}
+
+function EmitReturn(ast: esprima.Syntax.ReturnStatement, emit: (s: string) => void) {
+    emit("return ");
+    EmitExpression(ast.argument, emit);
+}
+
 
 function EmitBinary(ast: esprima.Syntax.BinaryExpression, emit: (s: string) => void) {
     emit("(");
