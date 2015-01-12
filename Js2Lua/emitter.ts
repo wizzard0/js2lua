@@ -343,9 +343,9 @@ function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void
             break;
         case "ExpressionStatement":
             var et = ((<esprima.Syntax.ExpressionStatement>stmt).expression).type;
-            if (et != 'AssignmentExpression' && et != 'UpdateExpression') { emit(" __Sink("); }
+            if (et != 'AssignmentExpression' && et != 'UpdateExpression' && et != 'CallExpression') { emit(" __Sink("); }
             EmitExpression((<esprima.Syntax.ExpressionStatement>stmt).expression, emit, alloc);
-            if (et != 'AssignmentExpression' && et != 'UpdateExpression') { emit(")"); }
+            if (et != 'AssignmentExpression' && et != 'UpdateExpression' && et != 'CallExpression') { emit(")"); }
             break;
         case "VariableDeclaration":
             EmitVariableDeclaration((<esprima.Syntax.VariableDeclaration>stmt), emit, alloc);
@@ -371,6 +371,9 @@ function EmitLabeled(ast: esprima.Syntax.LabeledStatement, emit: (s: string) => 
     EmitExpression(ast.label, emit, alloc);
     emit(":: ");
     EmitStatement(ast.body, emit, alloc);
+    emit("::");
+    EmitExpression(ast.label, emit, alloc);
+    emit("__After:: ");
 }
 
 function EmitDoWhileStatement(ast: esprima.Syntax.DoWhileStatement, emit: (s: string) => void, alloc: () => number) {
@@ -402,6 +405,7 @@ function EmitBreak(ast: esprima.Syntax.BreakStatement, emit: (s: string) => void
     if (ast.label) {
         emit(" goto ");
         EmitExpression(ast.label, emit, alloc);
+        emit("__After");
     } else {
         emit("break ");
     }

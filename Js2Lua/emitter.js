@@ -344,11 +344,11 @@ function EmitStatement(stmt, emit, alloc) {
             break;
         case "ExpressionStatement":
             var et = (stmt.expression).type;
-            if (et != 'AssignmentExpression' && et != 'UpdateExpression') {
+            if (et != 'AssignmentExpression' && et != 'UpdateExpression' && et != 'CallExpression') {
                 emit(" __Sink(");
             }
             EmitExpression(stmt.expression, emit, alloc);
-            if (et != 'AssignmentExpression' && et != 'UpdateExpression') {
+            if (et != 'AssignmentExpression' && et != 'UpdateExpression' && et != 'CallExpression') {
                 emit(")");
             }
             break;
@@ -376,6 +376,9 @@ function EmitLabeled(ast, emit, alloc) {
     EmitExpression(ast.label, emit, alloc);
     emit(":: ");
     EmitStatement(ast.body, emit, alloc);
+    emit("::");
+    EmitExpression(ast.label, emit, alloc);
+    emit("__After:: ");
 }
 function EmitDoWhileStatement(ast, emit, alloc) {
     emit("repeat ");
@@ -403,6 +406,7 @@ function EmitBreak(ast, emit, alloc) {
     if (ast.label) {
         emit(" goto ");
         EmitExpression(ast.label, emit, alloc);
+        emit("__After");
     }
     else {
         emit("break ");
