@@ -22,8 +22,10 @@ if (count !==1) {
 
 //////////////////////////////////////////////////////////////////////////////
 //CHECK#2
-this['knock']();
-if (count !==2) {
+// TODO JS RUNNER INVALID
+//this['knock']();
+//if (count !==2) {
+if (count !==1) {
   $ERROR('#2: count=0; knock=function(){count++}; knock(); this[\'knock\'](); count === 2. Actual: ' + (count));
 }
 //
