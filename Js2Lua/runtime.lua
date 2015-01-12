@@ -92,6 +92,8 @@ local function _USD_PRINT(s)
     print("INFO: ", s)
 end
 
+local function _USD_INCLUDE() end
+
 local function runTestCase(testcase)
     if (testcase() ~= true) then
         _USD_ERROR("Test case returned non-true value!")

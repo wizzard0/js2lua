@@ -6,6 +6,8 @@ var $PRINT = function (s) {
     print("INFO: ", s);
 }
 
+function $INCLUDE(message) { }
+
 function runTestCase(testcase) {
     if (testcase() !== true) {
         $ERROR("Test case returned non-true value!");
@@ -214,4 +216,27 @@ function accessorPropertyAttributesAreCorrect(obj,
     }
     
     return attributesCorrect;
+}
+
+var prec;
+function isEqual(num1, num2) {
+    if ((num1 === Infinity) && (num2 === Infinity)) {
+        return (true);
+    }
+    if ((num1 === -Infinity) && (num2 === -Infinity)) {
+        return (true);
+    }
+    prec = getPrecision(Math.min(Math.abs(num1), Math.abs(num2)));
+    return (Math.abs(num1 - num2) <= prec);
+    //return(num1 === num2);
+}
+
+function getPrecision(num) {
+    //TODO: Create a table of prec's,
+    //      because using Math for testing Math isn't that correct.
+    
+    var log2num = Math.log(Math.abs(num)) / Math.LN2;
+    var pernum = Math.ceil(log2num);
+    return (2 * Math.pow(2, -52 + pernum));
+    //return(0);
 }
