@@ -336,6 +336,12 @@ function EmitStatement(stmt, emit, alloc) {
         case "BlockStatement":
             EmitBlock(stmt, emit, alloc);
             break;
+        case "LabeledStatement":
+            EmitLabeled(stmt, emit, alloc);
+            break;
+        case "ContinueStatement":
+            EmitContinue(stmt, emit, alloc);
+            break;
         case "ExpressionStatement":
             var et = (stmt.expression).type;
             if (et != 'AssignmentExpression' && et != 'UpdateExpression') {
@@ -361,6 +367,16 @@ function EmitStatement(stmt, emit, alloc) {
             break;
     }
 }
+function EmitContinue(ast, emit, alloc) {
+    emit(" goto "); // TODO nonlabeled continue to end of loop
+    EmitExpression(ast.label, emit, alloc);
+}
+function EmitLabeled(ast, emit, alloc) {
+    emit("::");
+    EmitExpression(ast.label, emit, alloc);
+    emit(":: ");
+    EmitStatement(ast.body, emit, alloc);
+}
 function EmitDoWhileStatement(ast, emit, alloc) {
     emit("repeat ");
     EmitStatement(ast.body, emit, alloc);
@@ -384,10 +400,12 @@ function EmitReturn(ast, emit, alloc) {
     EmitExpression(ast.argument, emit, alloc);
 }
 function EmitBreak(ast, emit, alloc) {
-    emit("break ");
     if (ast.label) {
-        console.log(util.inspect(ast, false, 999, true));
-        throw new Error("label unsupported!");
+        emit(" goto ");
+        EmitExpression(ast.label, emit, alloc);
+    }
+    else {
+        emit("break ");
     }
 }
 function EmitBinary(ast, emit, alloc) {

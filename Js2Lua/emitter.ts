@@ -335,6 +335,12 @@ function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void
         case "BlockStatement":
             EmitBlock(<esprima.Syntax.BlockStatement>stmt, emit, alloc);
             break;
+        case "LabeledStatement":
+            EmitLabeled(<esprima.Syntax.LabeledStatement>stmt, emit, alloc);
+            break;
+        case "ContinueStatement":
+            EmitContinue(<esprima.Syntax.ContinueStatement>stmt, emit, alloc);
+            break;
         case "ExpressionStatement":
             var et = ((<esprima.Syntax.ExpressionStatement>stmt).expression).type;
             if (et != 'AssignmentExpression' && et != 'UpdateExpression') { emit(" __Sink("); }
@@ -353,6 +359,18 @@ function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void
             console.log(util.inspect(stmt, false, 999, true));
             break;
     }
+}
+
+function EmitContinue(ast: esprima.Syntax.ContinueStatement, emit: (s: string) => void, alloc: () => number) {
+    emit(" goto "); // TODO nonlabeled continue to end of loop
+    EmitExpression(ast.label, emit, alloc);   
+}
+
+function EmitLabeled(ast: esprima.Syntax.LabeledStatement, emit: (s: string) => void, alloc: () => number) {
+    emit("::");
+    EmitExpression(ast.label, emit, alloc);
+    emit(":: ");
+    EmitStatement(ast.body, emit, alloc);
 }
 
 function EmitDoWhileStatement(ast: esprima.Syntax.DoWhileStatement, emit: (s: string) => void, alloc: () => number) {
@@ -381,10 +399,11 @@ function EmitReturn(ast: esprima.Syntax.ReturnStatement, emit: (s: string) => vo
 }
 
 function EmitBreak(ast: esprima.Syntax.BreakStatement, emit: (s: string) => void, alloc: () => number) {
-    emit("break ");
     if (ast.label) {
-        console.log(util.inspect(ast, false, 999, true));
-        throw new Error("label unsupported!");
+        emit(" goto ");
+        EmitExpression(ast.label, emit, alloc);
+    } else {
+        emit("break ");
     }
 }
 
