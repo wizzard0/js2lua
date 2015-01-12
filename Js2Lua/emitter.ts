@@ -39,6 +39,9 @@ function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void
         case "CallExpression":
             EmitCall(<esprima.Syntax.CallExpression>ex, emit, alloc);
             break;
+        case "SequenceExpression":
+            EmitSequence(<esprima.Syntax.SequenceExpression>ex, emit, alloc);
+            break;
         case "NewExpression":
             EmitNew(<esprima.Syntax.NewExpression>ex, emit, alloc);
             break;
@@ -192,6 +195,20 @@ function EmitArray(ast: esprima.Syntax.ArrayExpression, emit: (s: string) => voi
         }
     }
     emit("}");
+}
+
+function EmitSequence(ast: esprima.Syntax.SequenceExpression, emit: (s: string) => void, alloc: () => number) {
+    emit("{");
+    for (var si = 0; si < ast.expressions.length; si++) {
+        var arg = ast.expressions[si];
+        EmitExpression(arg, emit, alloc);
+        if (si != ast.expressions.length - 1) {
+            emit(", ");
+        }
+    }
+    emit("}["); // TODO this is awful, optimize this
+    emit(ast.expressions.length.toString());
+    emit("]");
 }
 
 function EmitObject(ast: esprima.Syntax.ObjectExpression, emit: (s: string) => void, alloc: () => number) {

@@ -34,6 +34,9 @@ function EmitExpression(ex, emit, alloc) {
         case "CallExpression":
             EmitCall(ex, emit, alloc);
             break;
+        case "SequenceExpression":
+            EmitSequence(ex, emit, alloc);
+            break;
         case "NewExpression":
             EmitNew(ex, emit, alloc);
             break;
@@ -186,6 +189,19 @@ function EmitArray(ast, emit, alloc) {
         }
     }
     emit("}");
+}
+function EmitSequence(ast, emit, alloc) {
+    emit("{");
+    for (var si = 0; si < ast.expressions.length; si++) {
+        var arg = ast.expressions[si];
+        EmitExpression(arg, emit, alloc);
+        if (si != ast.expressions.length - 1) {
+            emit(", ");
+        }
+    }
+    emit("}["); // TODO this is awful, optimize this
+    emit(ast.expressions.length.toString());
+    emit("]");
 }
 function EmitObject(ast, emit, alloc) {
     emit("{");
