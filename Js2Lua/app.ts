@@ -28,9 +28,10 @@ function ComparePrograms(fn: string): any {
     var hasEval = /eval\(/.exec(source);
     var hasWith = /with[ ]?\(/.exec(source);
     var hasOther = /LUA_SKIP/.exec(source);
+    var hasGlobalDeleteTest = /Compound Assignment Operator calls PutValue\(lref, v\)/.exec(source);
     var expectErrors = false;
 
-    if (hasEval || hasWith || hasOther) {
+    if (hasEval || hasWith || hasOther || hasGlobalDeleteTest) {
         console.log(" [SKIP]");
         return "skip";
     }
