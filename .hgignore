@@ -5,3 +5,4 @@ Js2Lua/node_modules/*
 *.suo
 .ntvs_analysis.dat
 *.js.map
+Js2Lua/test/**/*.lua

@@ -106,17 +106,24 @@ function EmitAssignment(ast, emit) {
 }
 function EmitUnary(ast, emit) {
     var aop = ast.operator;
-    if (aop != 'typeof') {
+    if (aop == 'typeof') {
+        emit("__Typeof");
+        emit("(");
+        EmitExpression(ast.argument, emit);
+        emit(")");
+    }
+    else if (aop == '!') {
+        emit("(not ");
+        EmitExpression(ast.argument, emit);
+        emit(")");
+    }
+    else {
         emit("--[[5");
         emit(ast.type);
         emit("]]");
         console.log(util.inspect(ast, false, 999, true));
         return;
     }
-    emit("__Typeof");
-    emit("(");
-    EmitExpression(ast.argument, emit);
-    emit(")");
 }
 function EmitStatement(stmt, emit) {
     switch (stmt.type) {
@@ -196,7 +203,7 @@ function convertFile(source, fn) {
     var luasrc = "";
     var emit = function (code) {
         luasrc += code;
-        process.stdout.write(code);
+        //process.stdout.write(code);
     };
     EmitProgram(ast, emit);
     return luasrc;

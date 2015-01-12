@@ -110,15 +110,20 @@ function EmitAssignment(ast: esprima.Syntax.AssignmentExpression, emit: (s: stri
 
 function EmitUnary(ast: esprima.Syntax.UnaryExpression, emit: (s: string) => void) {
     var aop = ast.operator;
-    if (aop != 'typeof') {
+    if (aop == 'typeof') {
+        emit("__Typeof");
+        emit("(");
+        EmitExpression(ast.argument, emit);
+        emit(")");
+    } else if (aop == '!') {
+        emit("(not ");
+        EmitExpression(ast.argument, emit);
+        emit(")");
+    } else {
         emit("--[[5"); emit(ast.type); emit("]]");
         console.log(util.inspect(ast, false, 999, true));
         return;
     }
-    emit("__Typeof");
-    emit("(");
-    EmitExpression(ast.argument, emit);
-    emit(")");
 }
 
 
@@ -207,7 +212,7 @@ export function convertFile(source: string, fn: string): string {
     var luasrc = "";
     var emit = function (code) {
         luasrc += code;
-        process.stdout.write(code);
+        //process.stdout.write(code);
     }
 
     EmitProgram(ast, emit);
