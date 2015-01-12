@@ -4,6 +4,9 @@ var fs = require("fs");
 var sh = require("execsync-ng");
 var print = console.log;
 var tc = function t() {
+    var $ERROR = function (s) {
+        print("ERROR: ", s);
+    };
     var s = 2 + 2;
     var adder = function (a, b) {
         return a + b;
@@ -16,10 +19,26 @@ var tc = function t() {
             return n * fac(n - 1);
         }
     }
+    function S8_3_A1_T1() {
+        if (x !== undefined) {
+            $ERROR("#0 x !== undefined, but actual is " + x);
+        }
+        ////////////////////////////////////////////////////////////////////////
+        // CHECK#1
+        var x = true;
+        var y = false;
+        if (x !== true) {
+            $ERROR("#1.1 x !== true, but actual is " + x);
+        }
+        if (y !== false) {
+            $ERROR("#1.1 y !== false, but actual is " + y);
+        }
+    }
     print(s);
     print(adder(s, s));
     print(fac(6));
-    print("foobar");
+    print("==TEST262");
+    S8_3_A1_T1();
 };
 var source = tc.toString();
 console.log('js2lua');
@@ -36,25 +55,7 @@ function EmitProgram(ast, emit) {
     var rootFunctionBody = ast.body[0].body.body;
     for (var si = 0; si < rootFunctionBody.length; si++) {
         var stmt = rootFunctionBody[si];
-        switch (stmt.type) {
-            case "ExpressionStatement":
-                EmitExpression(stmt.expression, emit);
-                emit(";\r\n");
-                break;
-            case "VariableDeclaration":
-                EmitVariableDeclaration(stmt, emit);
-                break;
-            case "FunctionDeclaration":
-                EmitFunctionDeclaration(stmt, emit);
-                emit(";\r\n");
-                break;
-            default:
-                emit("--[[1");
-                emit(stmt.type);
-                emit("]]");
-                console.log(util.inspect(stmt, false, 999, true));
-                break;
-        }
+        EmitStatement(stmt, emit);
     }
     emit("\r\n-- END\r\n");
 }
@@ -80,7 +81,9 @@ function EmitExpression(ex, emit) {
             EmitFunctionExpr(ex, emit);
             break;
         case "Identifier":
-            emit(ex.name);
+            var ein = ex.name;
+            ein = ein.replace("$", "_USD_");
+            emit(ein);
             break;
         case "Literal":
             EmitLiteral(ex, emit);
@@ -128,23 +131,32 @@ function EmitBlock(ast, emit) {
         emit("\r\n");
     }
 }
-function EmitStatement(ex, emit) {
-    switch (ex.type) {
+function EmitStatement(stmt, emit) {
+    switch (stmt.type) {
         case "ReturnStatement":
-            EmitReturn(ex, emit);
+            EmitReturn(stmt, emit);
             break;
         case "IfStatement":
-            EmitIf(ex, emit);
-            emit("\r\n");
+            EmitIf(stmt, emit);
             break;
         case "BlockStatement":
-            EmitBlock(ex, emit);
+            EmitBlock(stmt, emit);
+            break;
+        case "ExpressionStatement":
+            EmitExpression(stmt.expression, emit);
+            break;
+        case "VariableDeclaration":
+            EmitVariableDeclaration(stmt, emit);
+            break;
+        case "FunctionDeclaration":
+            EmitFunctionDeclaration(stmt, emit);
+            emit("\r\n");
             break;
         default:
-            emit("--[[4");
-            emit(ex.type);
+            emit("--[[1");
+            emit(stmt.type);
             emit("]]");
-            console.log(util.inspect(ex, false, 999, true));
+            console.log(util.inspect(stmt, false, 999, true));
             break;
     }
 }
@@ -153,8 +165,10 @@ function EmitIf(ast, emit) {
     EmitExpression(ast.test, emit);
     emit(" then ");
     EmitStatement(ast.consequent, emit);
-    emit(" else ");
-    EmitStatement(ast.alternate, emit);
+    if (ast.alternate) {
+        emit(" else ");
+        EmitStatement(ast.alternate, emit);
+    }
     emit(" end");
 }
 function EmitReturn(ast, emit) {
@@ -162,9 +176,13 @@ function EmitReturn(ast, emit) {
     EmitExpression(ast.argument, emit);
 }
 function EmitBinary(ast, emit) {
+    var aop = ast.operator;
+    if (aop == '!==' || aop == '!=') {
+        aop = '~=';
+    }
     emit("(");
     EmitExpression(ast.left, emit);
-    emit(ast.operator);
+    emit(aop);
     EmitExpression(ast.right, emit);
     emit(")");
 }
