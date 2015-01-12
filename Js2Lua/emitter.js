@@ -301,6 +301,9 @@ function EmitStatement(stmt, emit, alloc) {
         case "EmptyStatement":
             emit(";");
             break;
+        case "BreakStatement":
+            EmitBreak(stmt, emit, alloc);
+            break;
         case "IfStatement":
             EmitIf(stmt, emit, alloc);
             break;
@@ -345,6 +348,13 @@ function EmitIf(ast, emit, alloc) {
 function EmitReturn(ast, emit, alloc) {
     emit("return ");
     EmitExpression(ast.argument, emit, alloc);
+}
+function EmitBreak(ast, emit, alloc) {
+    emit("break ");
+    if (ast.label) {
+        console.log(util.inspect(ast, false, 999, true));
+        throw new Error("label unsupported!");
+    }
 }
 function EmitBinary(ast, emit, alloc) {
     var aop = ast.operator;

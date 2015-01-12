@@ -299,6 +299,9 @@ function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void
         case "EmptyStatement":
             emit(";");
             break;
+        case "BreakStatement":
+            EmitBreak(<esprima.Syntax.BreakStatement>stmt, emit, alloc);
+            break;
         case "IfStatement":
             EmitIf(<esprima.Syntax.IfStatement>stmt, emit, alloc);
             break;
@@ -343,6 +346,14 @@ function EmitIf(ast: esprima.Syntax.IfStatement, emit: (s: string) => void, allo
 function EmitReturn(ast: esprima.Syntax.ReturnStatement, emit: (s: string) => void, alloc: () => number) {
     emit("return ");
     EmitExpression(ast.argument, emit, alloc);
+}
+
+function EmitBreak(ast: esprima.Syntax.BreakStatement, emit: (s: string) => void, alloc: () => number) {
+    emit("break ");
+    if (ast.label) {
+        console.log(util.inspect(ast, false, 999, true));
+        throw new Error("label unsupported!");
+    }
 }
 
 
