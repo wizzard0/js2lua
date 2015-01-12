@@ -34,6 +34,9 @@ function EmitExpression(ex, emit, alloc) {
         case "CallExpression":
             EmitCall(ex, emit, alloc);
             break;
+        case "NewExpression":
+            EmitNew(ex, emit, alloc);
+            break;
         case "AssignmentExpression":
             EmitAssignment(ex, emit, alloc);
             break;
@@ -410,6 +413,19 @@ function EmitMember(ast, emit, alloc) {
 function EmitCall(ast, emit, alloc) {
     EmitExpression(ast.callee, emit, alloc);
     emit("(");
+    for (var si = 0; si < ast.arguments.length; si++) {
+        var arg = ast.arguments[si];
+        EmitExpression(arg, emit, alloc);
+        if (si != ast.arguments.length - 1) {
+            emit(",");
+        }
+    }
+    emit(")");
+}
+function EmitNew(ast, emit, alloc) {
+    emit("__New(");
+    EmitExpression(ast.callee, emit, alloc);
+    emit(", ");
     for (var si = 0; si < ast.arguments.length; si++) {
         var arg = ast.arguments[si];
         EmitExpression(arg, emit, alloc);

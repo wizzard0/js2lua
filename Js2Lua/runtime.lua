@@ -27,25 +27,6 @@ local function __Delete(location, key)
 	return true
 end
 
-local function _USD_ERROR(s)
-    print("ERROR: ", s)
-end
-
-local function _USD_PRINT(s)
-    print("INFO: ", s)
-end
-
-local function runTestCase(testcase)
-    if (testcase() ~= true) then
-        _USD_ERROR("Test case returned non-true value!")
-    end
-end
-
-local function fnGlobalObject()
-     return _G
-end
-
-
 local function __Length(value)
 	return #value
 end
@@ -56,6 +37,11 @@ local function __PlusOp(left, right)
 	else
 		return left + right
 	end
+end
+
+local function __New(ctor, ...)
+	-- TODO
+	return {}
 end
 
 local function __Iterate(obj)
@@ -82,3 +68,32 @@ local Math = {
 }
 
 -- LIBRARY END
+
+local function _USD_ERROR(s)
+    print("ERROR: ", s)
+end
+
+local function _USD_PRINT(s)
+    print("INFO: ", s)
+end
+
+local function runTestCase(testcase)
+    if (testcase() ~= true) then
+        _USD_ERROR("Test case returned non-true value!")
+    end
+end
+
+local function fnGlobalObject()
+     return _G
+end
+
+local function fnExists(...)
+	error("not implemented")
+	-- TODO
+    --[[for (var i = 0; i < __Length(arg); i++) {
+        if (typeof (arguments[i]) !== "function") return false;
+    }]]
+    return true;
+end
+
+-- HARNESS END

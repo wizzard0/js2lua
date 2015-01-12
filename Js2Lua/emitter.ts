@@ -39,6 +39,9 @@ function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void
         case "CallExpression":
             EmitCall(<esprima.Syntax.CallExpression>ex, emit, alloc);
             break;
+        case "NewExpression":
+            EmitNew(<esprima.Syntax.NewExpression>ex, emit, alloc);
+            break;
         case "AssignmentExpression":
             EmitAssignment(<esprima.Syntax.AssignmentExpression>ex, emit, alloc);
             break;
@@ -413,6 +416,20 @@ function EmitMember(ast: esprima.Syntax.MemberExpression, emit: (s: string) => v
 function EmitCall(ast: esprima.Syntax.CallExpression, emit: (s: string) => void, alloc: () => number) {
     EmitExpression(ast.callee, emit, alloc);
     emit("(");
+    for (var si = 0; si < ast.arguments.length; si++) {
+        var arg = ast.arguments[si];
+        EmitExpression(arg, emit, alloc);
+        if (si != ast.arguments.length - 1) {
+            emit(",");
+        }
+    }
+    emit(")");
+}
+
+function EmitNew(ast: esprima.Syntax.CallExpression, emit: (s: string) => void, alloc: () => number) {
+    emit("__New(");
+    EmitExpression(ast.callee, emit, alloc);
+    emit(", ");
     for (var si = 0; si < ast.arguments.length; si++) {
         var arg = ast.arguments[si];
         EmitExpression(arg, emit, alloc);
