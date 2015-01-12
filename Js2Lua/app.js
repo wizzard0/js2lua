@@ -29,7 +29,7 @@ function ComparePrograms(fn) {
     var onlyStrict = /\"use strict\"/.exec(source);
     var hasGlobalDeleteTest = /Compound Assignment Operator calls PutValue\(lref, v\)/.exec(source);
     var hasBrokenDate = /S15\.9\.3\.1_A5/.exec(source);
-    var hasIntl = /testIntl/.exec(source);
+    var hasIntl = /testIntl|\bIntl\b/.exec(source);
     var expectErrors = false;
     if (hasEval || hasWith || hasTry || hasOther || hasBrokenDate || hasGlobalDeleteTest || hasIntl || onlyStrict) {
         console.log(" [SKIP]");
@@ -61,6 +61,10 @@ function ComparePrograms(fn) {
     }
     else {
         var luasrc = emitter.convertFile(source, fn);
+        if (/--\[\[/.exec(luasrc)) {
+            console.log(" [FAIL] NO CODE GENERATED");
+            return "nocode";
+        }
         vm.runInNewContext(jsRT + source, { print: print }, fn);
         var lua_stdout = RunProgram(luaRT + luasrc, flua);
         if (js_stdout.trim().length != 0 || lua_stdout.trim().length != 0) {
@@ -81,10 +85,14 @@ var total = filenames.length;
 var passed = 0;
 var failed = 0;
 var skipped = 0;
+var nocode = 0;
 filenames.forEach(function (fn) {
     var pass = ComparePrograms(fn);
     if (pass == "skip") {
         skipped++;
+    }
+    else if (pass == "nocode") {
+        nocode++;
     }
     else if (pass) {
         passed++;
@@ -93,5 +101,5 @@ filenames.forEach(function (fn) {
         failed++;
     }
 });
-console.log("Passed:", passed, "Failed:", failed, "Skipped:", skipped, "Total:", total);
+console.log("Passed:", passed, "Failed:", failed, "Cannot Translate:", nocode, "Skipped:", skipped, "Total:", total);
 //# sourceMappingURL=app.js.map
