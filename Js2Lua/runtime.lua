@@ -85,11 +85,20 @@ local Object = {}
 -- Array
 local Array = {}
 
+-- Boolean
+local Boolean = {}
+
 -- Function
 local Function = {}
 
 -- String
 local String = {}
+
+-- Date
+local Date = {}
+
+-- JSON
+local JSON = {}
 
 
 -- LIBRARY END
