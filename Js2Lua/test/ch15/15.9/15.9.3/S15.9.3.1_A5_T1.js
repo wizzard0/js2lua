@@ -15,6 +15,8 @@
  * @path ch15/15.9/15.9.3/S15.9.3.1_A5_T1.js
  * @description 2 arguments, (year, month)
  */
+// LUA_SKIP
+// This does not match V8
 
 $INCLUDE("environment.js");
 $INCLUDE("numeric_conversion.js");
