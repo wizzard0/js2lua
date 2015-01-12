@@ -262,6 +262,11 @@ function EmitUnary(ast: esprima.Syntax.UnaryExpression, emit: (s: string) => voi
         emit("(");
         EmitExpression(ast.argument, emit, alloc);
         emit(")");
+    } else if (aop == '~') {
+        emit("bit32.bnot");
+        emit("(");
+        EmitExpression(ast.argument, emit, alloc);
+        emit(")");
     } else if (aop == 'delete') {
         EmitDelete(ast, emit, alloc);        
     } else if (aop == 'void') {

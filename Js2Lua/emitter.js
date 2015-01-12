@@ -261,6 +261,12 @@ function EmitUnary(ast, emit, alloc) {
         EmitExpression(ast.argument, emit, alloc);
         emit(")");
     }
+    else if (aop == '~') {
+        emit("bit32.bnot");
+        emit("(");
+        EmitExpression(ast.argument, emit, alloc);
+        emit(")");
+    }
     else if (aop == 'delete') {
         EmitDelete(ast, emit, alloc);
     }
