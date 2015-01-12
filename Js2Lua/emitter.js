@@ -65,7 +65,7 @@ function EmitExpression(ex, emit, alloc) {
             EmitIdentifier(ex, emit, alloc);
             break;
         case "ThisExpression":
-            emit("this");
+            emit("self");
             break;
         case "Literal":
             EmitLiteral(ex, emit, alloc);
@@ -237,6 +237,9 @@ function EmitUnary(ast, emit, alloc) {
         EmitExpression(ast.argument, emit, alloc);
         emit(")");
     }
+    else if (aop == 'delete') {
+        EmitDelete(ast, emit, alloc);
+    }
     else if (aop == '!') {
         emit("(not ");
         EmitExpression(ast.argument, emit, alloc);
@@ -253,6 +256,27 @@ function EmitUnary(ast, emit, alloc) {
         emit("]]");
         console.log(util.inspect(ast, false, 999, true));
         return;
+    }
+}
+function EmitDelete(ast, emit, alloc) {
+    //console.log(util.inspect(ast));
+    if (ast.argument.type == 'MemberExpression') {
+        var ma = ast.argument;
+        emit("__Delete"); // TODO emit callexpr
+        emit("(");
+        EmitExpression(ma.object, emit, alloc);
+        emit(", \"");
+        emit(ma.property.name);
+        emit("\")");
+    }
+    else if (ast.argument.type == 'Identifier') {
+        var mm = ast.argument;
+        emit("__Delete");
+        emit("(");
+        EmitExpression({ type: 'ThisExpression' }, emit, alloc);
+        emit(", \"");
+        emit(mm.name);
+        emit("\")");
     }
 }
 function EmitStatement(stmt, emit, alloc) {

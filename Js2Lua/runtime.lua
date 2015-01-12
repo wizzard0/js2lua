@@ -1,4 +1,5 @@
 ﻿local __Singletons = {}
+local self = _G
 local function __Typeof(value)
     if type(value) == 'boolean' or type(value) == 'number' then
         return type(value)
@@ -10,6 +11,11 @@ local function __Typeof(value)
     return '_unknown';
 end
 
+local function __Delete(location, key)
+	location[key] = nil
+	return true
+end
+
 local function _USD_ERROR(s)
     print("ERROR: ", s)
 end
@@ -17,6 +23,13 @@ end
 local function _USD_PRINT(s)
     print("INFO: ", s)
 end
+
+local function runTestCase(testcase)
+    if (testcase() ~= true) then
+        _USD_ERROR("Test case returned non-true value!")
+    end
+end
+
 
 local function __Length(value)
 	return #value

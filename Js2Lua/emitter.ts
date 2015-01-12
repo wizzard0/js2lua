@@ -70,7 +70,7 @@ function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void
             EmitIdentifier(<esprima.Syntax.Identifier>ex, emit, alloc);
             break;
         case "ThisExpression":
-            emit("this");
+            emit("self");
             break;
         case "Literal":
             EmitLiteral(<esprima.Syntax.Literal>ex, emit, alloc);
@@ -240,6 +240,8 @@ function EmitUnary(ast: esprima.Syntax.UnaryExpression, emit: (s: string) => voi
         emit("(");
         EmitExpression(ast.argument, emit, alloc);
         emit(")");
+    } else if (aop == 'delete') {
+        EmitDelete(ast, emit, alloc);        
     } else if (aop == '!') {
         emit("(not ");
         EmitExpression(ast.argument, emit, alloc);
@@ -255,6 +257,26 @@ function EmitUnary(ast: esprima.Syntax.UnaryExpression, emit: (s: string) => voi
     }
 }
 
+function EmitDelete(ast: esprima.Syntax.UnaryExpression, emit: (s: string) => void, alloc: () => number) {
+    //console.log(util.inspect(ast));
+    if (ast.argument.type == 'MemberExpression') {
+        var ma = <esprima.Syntax.MemberExpression>ast.argument;
+        emit("__Delete"); // TODO emit callexpr
+        emit("(");
+        EmitExpression(ma.object, emit, alloc);
+        emit(", \"");
+        emit(ma.property.name);
+        emit("\")");
+    } else if (ast.argument.type == 'Identifier') {
+        var mm = <esprima.Syntax.Identifier>ast.argument;
+        emit("__Delete");
+        emit("(");
+        EmitExpression({ type: 'ThisExpression' }, emit, alloc);
+        emit(", \"");
+        emit(mm.name);
+        emit("\")");
+    }
+}
 
 function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void, alloc: () => number) {
     //console.warn(ex.type);
