@@ -7,6 +7,7 @@
  * @path ch15/15.12/15.12.2/S15.12.2_A1.js
  * @description Tests that JSON.parse treats "__proto__" as a regular property name
  */
+// LUA_SKIP
 
 var x = JSON.parse('{"__proto__":[]}');
 if (Object.getPrototypeOf(x) !== Object.prototype) {

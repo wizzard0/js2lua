@@ -79,6 +79,9 @@ local Math = {
 	["pow"] = math.pow
 }
 
+-- Object
+local Object = {}
+
 -- LIBRARY END
 
 local function _USD_ERROR(s)
