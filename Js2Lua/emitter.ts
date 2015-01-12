@@ -84,13 +84,23 @@ function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void
 
 function EmitForStatement(ast: esprima.Syntax.ForStatement, emit: (s: string) => void, alloc: () => number) {
     //console.log(util.inspect(ast, false, 999, true));
-    EmitVariableDeclaratorOrExpression(ast.init, emit, alloc);
+    if (ast.init) {
+        EmitVariableDeclaratorOrExpression(ast.init, emit, alloc);
+    }
     emit("while ");
-    EmitExpression(ast.test, emit, alloc);
+    if (ast.test) {
+        EmitExpression(ast.test, emit, alloc);
+    } else {
+        emit("true");
+    }
     emit(" do\r\n");
-    EmitStatement(ast.body, emit, alloc);
+    if (ast.body) {
+        EmitStatement(ast.body, emit, alloc);
+    }
     emit("\r\n-- BODY END\r\n");
-    EmitExpression(ast.update, emit, alloc);
+    if (ast.update) {
+        EmitExpression(ast.update, emit, alloc);
+    }
     emit(" end"); // any breaks?
 }
 
