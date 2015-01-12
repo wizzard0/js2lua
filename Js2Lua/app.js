@@ -8,8 +8,17 @@ var tc = function t() {
     var adder = function (a, b) {
         return a + b;
     };
+    function fac(n) {
+        if (n == 0) {
+            return 1;
+        }
+        else {
+            return n * fac(n - 1);
+        }
+    }
     print(s);
     print(adder(s, s));
+    print(fac(6));
     print("foobar");
 };
 var source = tc.toString();
@@ -35,8 +44,12 @@ function EmitProgram(ast, emit) {
             case "VariableDeclaration":
                 EmitVariableDeclaration(stmt, emit);
                 break;
+            case "FunctionDeclaration":
+                EmitFunctionDeclaration(stmt, emit);
+                emit(";\r\n");
+                break;
             default:
-                emit("--[[");
+                emit("--[[1");
                 emit(stmt.type);
                 emit("]]");
                 console.log(util.inspect(stmt, false, 999, true));
@@ -73,7 +86,7 @@ function EmitExpression(ex, emit) {
             EmitLiteral(ex, emit);
             break;
         default:
-            emit("--[[");
+            emit("--[[2");
             emit(ex.type);
             emit("]]");
             console.log(util.inspect(ex, false, 999, true));
@@ -93,9 +106,17 @@ function EmitFunctionExpr(ast, emit) {
     EmitBlock(ast.body, emit);
     emit(" end"); // any breaks?
 }
+function EmitFunctionDeclaration(ast, emit) {
+    emit("local ");
+    EmitExpression(ast.id, emit);
+    emit(";");
+    EmitExpression(ast.id, emit);
+    emit(" = ");
+    EmitFunctionExpr(ast, emit);
+}
 function EmitBlock(ast, emit) {
     if (ast.type != 'BlockStatement') {
-        emit("--[[");
+        emit("--[[3");
         emit(ast.type);
         emit("]]");
         console.log(util.inspect(ast, false, 999, true));
@@ -112,13 +133,29 @@ function EmitStatement(ex, emit) {
         case "ReturnStatement":
             EmitReturn(ex, emit);
             break;
+        case "IfStatement":
+            EmitIf(ex, emit);
+            emit("\r\n");
+            break;
+        case "BlockStatement":
+            EmitBlock(ex, emit);
+            break;
         default:
-            emit("--[[");
+            emit("--[[4");
             emit(ex.type);
             emit("]]");
             console.log(util.inspect(ex, false, 999, true));
             break;
     }
+}
+function EmitIf(ast, emit) {
+    emit("if ");
+    EmitExpression(ast.test, emit);
+    emit(" then ");
+    EmitStatement(ast.consequent, emit);
+    emit(" else ");
+    EmitStatement(ast.alternate, emit);
+    emit(" end");
 }
 function EmitReturn(ast, emit) {
     emit("return ");

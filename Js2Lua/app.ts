@@ -5,13 +5,21 @@ import sh = require("execsync-ng");
 
 var print = console.log;
 
-var tc = function t() {
+var tc = function t() { 
     var s = 2 + 2;
     var adder = function (a, b) {
         return a + b;
     }
+    function fac(n) {
+        if (n == 0) {
+            return 1;
+        } else {
+            return n * fac(n - 1);
+        }
+    }
     print(s);
     print(adder(s, s));
+    print(fac(6));
     print("foobar");
 };
 var source = tc.toString();
@@ -41,10 +49,12 @@ function EmitProgram(ast: esprima.Syntax.Program, emit: (s: string) => void) {
             case "VariableDeclaration":
                 EmitVariableDeclaration((<esprima.Syntax.VariableDeclaration>stmt), emit);
                 break;
+            case "FunctionDeclaration":
+                EmitFunctionDeclaration((<esprima.Syntax.FunctionDeclaration>stmt), emit);
+                emit(";\r\n");
+                break;
             default:
-                emit("--[[");
-                emit(stmt.type);
-                emit("]]");
+                emit("--[[1"); emit(stmt.type); emit("]]");
                 console.log(util.inspect(stmt, false, 999, true));
                 break;
         }
@@ -82,7 +92,7 @@ function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void
             EmitLiteral(<esprima.Syntax.Literal>ex, emit);
             break;
         default:
-            emit("--[["); emit(ex.type); emit("]]");
+            emit("--[[2"); emit(ex.type); emit("]]");
             console.log(util.inspect(ex, false, 999, true));
             break;
     }
@@ -102,9 +112,18 @@ function EmitFunctionExpr(ast: esprima.Syntax.FunctionExpression, emit: (s: stri
     emit(" end"); // any breaks?
 }
 
+function EmitFunctionDeclaration(ast: esprima.Syntax.FunctionDeclaration, emit: (s: string) => void) {
+    emit("local ");
+    EmitExpression(ast.id, emit);
+    emit(";");
+    EmitExpression(ast.id, emit);
+    emit(" = ");
+    EmitFunctionExpr(ast, emit);
+}
+
 function EmitBlock(ast: esprima.Syntax.BlockStatement, emit: (s: string) => void) {
     if (ast.type != 'BlockStatement') {
-        emit("--[["); emit(ast.type); emit("]]");
+        emit("--[[3"); emit(ast.type); emit("]]");
         console.log(util.inspect(ast, false, 999, true));
         return;
     }
@@ -121,11 +140,28 @@ function EmitStatement(ex: esprima.Syntax.Statement, emit: (s: string) => void) 
         case "ReturnStatement":
             EmitReturn(<esprima.Syntax.ReturnStatement>ex, emit);
             break;
+        case "IfStatement":
+            EmitIf(<esprima.Syntax.IfStatement>ex, emit);
+            emit("\r\n");
+            break;
+        case "BlockStatement":
+            EmitBlock(<esprima.Syntax.BlockStatement>ex, emit);
+            break;
         default:
-            emit("--[["); emit(ex.type); emit("]]");
+            emit("--[[4"); emit(ex.type); emit("]]");
             console.log(util.inspect(ex, false, 999, true));
             break;
     }
+}
+
+function EmitIf(ast: esprima.Syntax.IfStatement, emit: (s: string) => void) {
+    emit("if ");
+    EmitExpression(ast.test, emit);
+    emit(" then ");
+    EmitStatement(ast.consequent, emit);
+    emit(" else ");
+    EmitStatement(ast.alternate, emit);
+    emit(" end");
 }
 
 function EmitReturn(ast: esprima.Syntax.ReturnStatement, emit: (s: string) => void) {
