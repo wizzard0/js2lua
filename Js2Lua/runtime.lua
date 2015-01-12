@@ -1,8 +1,12 @@
-﻿local function __Typeof(value)
+﻿local __Singletons = {}
+local function __Typeof(value)
     if type(value) == 'boolean' then
         return 'boolean'
     end
-    print("__Typeof: unsupported!")
+	if type(value) == 'table' and __Singletons[value] then
+		return value.__TypeofValue
+	end
+    print("__Typeof: unsupported! got " .. type(value))
     return '_unknown';
 end
 
@@ -21,3 +25,8 @@ local function __PlusOp(left, right)
 		return left + right
 	end
 end
+
+local null = {["__TypeofValue"] = "object", ["__ToStringValue"] = "null"} -- Singleton
+__Singletons[null] = true
+-- we use nil as undefined
+-- LIBRARY END
