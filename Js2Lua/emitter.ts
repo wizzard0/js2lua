@@ -326,6 +326,9 @@ function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void
         case "ReturnStatement":
             EmitReturn(<esprima.Syntax.ReturnStatement>stmt, emit, alloc);
             break;
+        case "ThrowStatement":
+            EmitThrow(<esprima.Syntax.ThrowStatement>stmt, emit, alloc);
+            break;
         case "EmptyStatement":
             emit(";");
             break;
@@ -414,6 +417,12 @@ function EmitIf(ast: esprima.Syntax.IfStatement, emit: (s: string) => void, allo
 function EmitReturn(ast: esprima.Syntax.ReturnStatement, emit: (s: string) => void, alloc: () => number) {
     emit("return ");
     EmitExpression(ast.argument, emit, alloc);
+}
+
+function EmitThrow(ast: esprima.Syntax.ThrowStatement, emit: (s: string) => void, alloc: () => number) {
+    emit("error("); // TODO proper exceptions
+    EmitExpression(ast.argument, emit, alloc);
+    emit(")");
 }
 
 function EmitBreak(ast: esprima.Syntax.BreakStatement, emit: (s: string) => void, alloc: () => number) {

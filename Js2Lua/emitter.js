@@ -325,6 +325,9 @@ function EmitStatement(stmt, emit, alloc) {
         case "ReturnStatement":
             EmitReturn(stmt, emit, alloc);
             break;
+        case "ThrowStatement":
+            EmitThrow(stmt, emit, alloc);
+            break;
         case "EmptyStatement":
             emit(";");
             break;
@@ -414,6 +417,11 @@ function EmitIf(ast, emit, alloc) {
 function EmitReturn(ast, emit, alloc) {
     emit("return ");
     EmitExpression(ast.argument, emit, alloc);
+}
+function EmitThrow(ast, emit, alloc) {
+    emit("error("); // TODO proper exceptions
+    EmitExpression(ast.argument, emit, alloc);
+    emit(")");
 }
 function EmitBreak(ast, emit, alloc) {
     if (ast.label) {
