@@ -33,13 +33,16 @@ function ComparePrograms(fn) {
             var lua_stdout = RunProgram(luaRT + luasrc, flua);
             if (js_stdout.trim().length == 0 || lua_stdout.trim().length == 0) {
                 console.log("NEG FAIL!");
+                return false;
             }
             else {
                 console.log("NEG OK");
+                return true;
             }
         }
         catch (e) {
             console.log(" [OK-]");
+            return true;
         }
     }
     else {
@@ -50,15 +53,27 @@ function ComparePrograms(fn) {
             console.log("POS FAIL!");
             console.log("JS:", js_stdout);
             console.log("Lua:", lua_stdout);
+            return false;
         }
         else {
             console.log(" [OK+]");
+            return true;
         }
     }
 }
 var arg = process.argv[2];
 var filenames = glob.sync(arg.replace("\\", "/"));
+var total = filenames.length;
+var passed = 0;
+var failed = 0;
 filenames.forEach(function (fn) {
-    ComparePrograms(fn);
+    var pass = ComparePrograms(fn);
+    if (pass) {
+        passed++;
+    }
+    else {
+        failed++;
+    }
 });
+console.log("Passed:", passed, "Failed:", failed, "Total:", total);
 //# sourceMappingURL=app.js.map
