@@ -1,6 +1,6 @@
 ﻿import esprima = require("esprima");
 import util = require("util");
-
+import esutils = require("esutils");
 
 function EmitProgram(ast: esprima.Syntax.Program, emit: (s: string) => void) {
     // hack
@@ -17,12 +17,16 @@ function EmitProgram(ast: esprima.Syntax.Program, emit: (s: string) => void) {
 function EmitVariableDeclaration(ex: esprima.Syntax.VariableDeclaration, emit: (s: string) => void) {
     for (var i = 0; i < ex.declarations.length; i++) {
         var vd = ex.declarations[i];
-        emit("local ");
-        EmitExpression(vd.id, emit); // identifier
-        emit(" = ");
-        EmitExpression(vd.init, emit);
-        emit(";\r\n");
+        EmitVariableDeclarator(vd, emit);
     }
+}
+
+function EmitVariableDeclarator(vd: esprima.Syntax.VariableDeclarator, emit: (s: string) => void) {
+    emit("local ");
+    EmitExpression(vd.id, emit); // identifier
+    emit(" = ");
+    EmitExpression(vd.init, emit);
+    emit(";\r\n");
 }
 
 function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void) {
@@ -40,6 +44,9 @@ function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void
             break;
         case "BinaryExpression":
             EmitBinary(<esprima.Syntax.BinaryExpression>ex, emit);
+            break;
+        case "UpdateExpression":
+            EmitUpdate(<esprima.Syntax.UpdateExpression>ex, emit);
             break;
         case "ArrayExpression":
             EmitArray(<esprima.Syntax.ArrayExpression>ex, emit);
@@ -63,6 +70,29 @@ function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void
             emit("--[[2"); emit(ex.type); emit("]]");
             console.log(util.inspect(ex, false, 999, true));
             break;
+    }
+}
+
+function EmitForStatement(ast: esprima.Syntax.ForStatement, emit: (s: string) => void) {
+    //console.log(util.inspect(ast, false, 999, true));
+    EmitVariableDeclaratorOrExpression(ast.init, emit);
+    emit("while ");
+    EmitExpression(ast.test, emit);
+    emit(" do\r\n");
+    EmitStatement(ast.body, emit);
+    emit("\r\n-- BODY END\r\n");
+    EmitExpression(ast.update, emit);
+    emit(" end"); // any breaks?
+}
+
+function EmitVariableDeclaratorOrExpression(ast: esprima.Syntax.VariableDeclaratorOrExpression, emit: (s: string) => void) {
+    if (ast.type == 'VariableDeclaration') {
+        EmitVariableDeclaration(<esprima.Syntax.VariableDeclaration><any>ast, emit);
+    } else if (esutils.ast.isExpression(ast)) {
+        EmitExpression(ast, emit);
+    } else {
+        emit("--[[5"); emit(ast.type); emit("]]");
+        console.log(util.inspect(ast, false, 999, true));
     }
 }
 
@@ -125,16 +155,41 @@ function EmitBlock(ast: esprima.Syntax.BlockStatement, emit: (s: string) => void
 
 function EmitAssignment(ast: esprima.Syntax.AssignmentExpression, emit: (s: string) => void) {
     var aop = ast.operator;
-    if (aop != '=') {
+    if (aop != '=' && aop.length != 2) {
         emit("--[[4"); emit(ast.type); emit("]]");
         console.log(util.inspect(ast, false, 999, true));
         return;
     }
     EmitExpression(ast.left, emit);
-    emit(aop);
-    //    emit("(");
-    EmitExpression(ast.right, emit);
-    //    emit(")");
+    if (aop == '=') {
+        emit(aop);
+        EmitExpression(ast.right, emit);
+    } else if (aop.length == 2) {
+        emit('=');
+        EmitBinary({
+            type: 'BinaryExpression',
+            operator: aop.substr(0, 1),
+            left: ast.left,
+            right: ast.right
+        }, emit);
+    } else {
+        throw new Error("EmitAssignment");
+    }
+}
+
+function EmitUpdate(ast: esprima.Syntax.UpdateExpression, emit: (s: string) => void) {
+    var aop = ast.operator;
+    if (aop != '++' && aop != '--') {
+        emit("--[[6"); emit(ast.type); emit("]]");
+        console.log(util.inspect(ast, false, 999, true));
+        return;
+    }
+    EmitAssignment({
+        type: 'AssignmentExpression',
+        operator: aop.substr(0, 1) + '=',
+        left: ast.argument,
+        right: { type: 'Literal', value: 1, raw: '1' }
+    }, emit);
 }
 
 function EmitUnary(ast: esprima.Syntax.UnaryExpression, emit: (s: string) => void) {
@@ -167,6 +222,9 @@ function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void
             break;
         case "IfStatement":
             EmitIf(<esprima.Syntax.IfStatement>stmt, emit);
+            break;
+        case "ForStatement":
+            EmitForStatement(<esprima.Syntax.ForStatement>stmt, emit);
             break;
         case "BlockStatement":
             EmitBlock(<esprima.Syntax.BlockStatement>stmt, emit);
@@ -234,7 +292,7 @@ function EmitMember(ast: esprima.Syntax.MemberExpression, emit: (s: string) => v
         EmitCall({
             type: 'CallExpression',
             callee: { 'type': 'Identifier', 'name': '__Length' },
-            arguments: [ ast.object ]
+            arguments: [ast.object]
         }, emit);
     } else {
         EmitExpression(ast.object, emit);

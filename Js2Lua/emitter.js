@@ -1,5 +1,6 @@
 var esprima = require("esprima");
 var util = require("util");
+var esutils = require("esutils");
 function EmitProgram(ast, emit) {
     // hack
     emit("\r\n-- BEGIN\r\n");
@@ -14,12 +15,15 @@ function EmitProgram(ast, emit) {
 function EmitVariableDeclaration(ex, emit) {
     for (var i = 0; i < ex.declarations.length; i++) {
         var vd = ex.declarations[i];
-        emit("local ");
-        EmitExpression(vd.id, emit); // identifier
-        emit(" = ");
-        EmitExpression(vd.init, emit);
-        emit(";\r\n");
+        EmitVariableDeclarator(vd, emit);
     }
+}
+function EmitVariableDeclarator(vd, emit) {
+    emit("local ");
+    EmitExpression(vd.id, emit); // identifier
+    emit(" = ");
+    EmitExpression(vd.init, emit);
+    emit(";\r\n");
 }
 function EmitExpression(ex, emit) {
     if (!ex) {
@@ -35,6 +39,9 @@ function EmitExpression(ex, emit) {
             break;
         case "BinaryExpression":
             EmitBinary(ex, emit);
+            break;
+        case "UpdateExpression":
+            EmitUpdate(ex, emit);
             break;
         case "ArrayExpression":
             EmitArray(ex, emit);
@@ -60,6 +67,31 @@ function EmitExpression(ex, emit) {
             emit("]]");
             console.log(util.inspect(ex, false, 999, true));
             break;
+    }
+}
+function EmitForStatement(ast, emit) {
+    //console.log(util.inspect(ast, false, 999, true));
+    EmitVariableDeclaratorOrExpression(ast.init, emit);
+    emit("while ");
+    EmitExpression(ast.test, emit);
+    emit(" do\r\n");
+    EmitStatement(ast.body, emit);
+    emit("\r\n-- BODY END\r\n");
+    EmitExpression(ast.update, emit);
+    emit(" end"); // any breaks?
+}
+function EmitVariableDeclaratorOrExpression(ast, emit) {
+    if (ast.type == 'VariableDeclaration') {
+        EmitVariableDeclaration(ast, emit);
+    }
+    else if (esutils.ast.isExpression(ast)) {
+        EmitExpression(ast, emit);
+    }
+    else {
+        emit("--[[5");
+        emit(ast.type);
+        emit("]]");
+        console.log(util.inspect(ast, false, 999, true));
     }
 }
 function EmitIdentifier(ast, emit) {
@@ -118,7 +150,7 @@ function EmitBlock(ast, emit) {
 }
 function EmitAssignment(ast, emit) {
     var aop = ast.operator;
-    if (aop != '=') {
+    if (aop != '=' && aop.length != 2) {
         emit("--[[4");
         emit(ast.type);
         emit("]]");
@@ -126,10 +158,38 @@ function EmitAssignment(ast, emit) {
         return;
     }
     EmitExpression(ast.left, emit);
-    emit(aop);
-    //    emit("(");
-    EmitExpression(ast.right, emit);
-    //    emit(")");
+    if (aop == '=') {
+        emit(aop);
+        EmitExpression(ast.right, emit);
+    }
+    else if (aop.length == 2) {
+        emit('=');
+        EmitBinary({
+            type: 'BinaryExpression',
+            operator: aop.substr(0, 1),
+            left: ast.left,
+            right: ast.right
+        }, emit);
+    }
+    else {
+        throw new Error("EmitAssignment");
+    }
+}
+function EmitUpdate(ast, emit) {
+    var aop = ast.operator;
+    if (aop != '++' && aop != '--') {
+        emit("--[[6");
+        emit(ast.type);
+        emit("]]");
+        console.log(util.inspect(ast, false, 999, true));
+        return;
+    }
+    EmitAssignment({
+        type: 'AssignmentExpression',
+        operator: aop.substr(0, 1) + '=',
+        left: ast.argument,
+        right: { type: 'Literal', value: 1, raw: '1' }
+    }, emit);
 }
 function EmitUnary(ast, emit) {
     var aop = ast.operator;
@@ -162,6 +222,9 @@ function EmitStatement(stmt, emit) {
             break;
         case "IfStatement":
             EmitIf(stmt, emit);
+            break;
+        case "ForStatement":
+            EmitForStatement(stmt, emit);
             break;
         case "BlockStatement":
             EmitBlock(stmt, emit);
