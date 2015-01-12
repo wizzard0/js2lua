@@ -66,6 +66,9 @@ function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void
         case "Identifier":
             EmitIdentifier(<esprima.Syntax.Identifier>ex, emit, alloc);
             break;
+        case "ThisExpression":
+            emit("this");
+            break;
         case "Literal":
             EmitLiteral(<esprima.Syntax.Literal>ex, emit, alloc);
             break;

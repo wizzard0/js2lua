@@ -61,6 +61,9 @@ function EmitExpression(ex, emit, alloc) {
         case "Identifier":
             EmitIdentifier(ex, emit, alloc);
             break;
+        case "ThisExpression":
+            emit("this");
+            break;
         case "Literal":
             EmitLiteral(ex, emit, alloc);
             break;
