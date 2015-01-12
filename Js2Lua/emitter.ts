@@ -358,7 +358,7 @@ function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void
 function EmitDoWhileStatement(ast: esprima.Syntax.DoWhileStatement, emit: (s: string) => void, alloc: () => number) {
     emit("repeat ");
     EmitStatement(ast.body, emit, alloc);
-    emit(" until __ToBoolean(");
+    emit(" until not __ToBoolean(");
     EmitExpression(ast.test, emit, alloc);
     emit(")");
 }
@@ -425,10 +425,10 @@ function EmitLogical(ast: esprima.Syntax.BinaryExpression, emit: (s: string) => 
     var aop = ast.operator;
 
     if (aop == '||') {
-        aop = 'or';
+        aop = ' or ';
     }
     if (aop == '&&') {
-        aop = 'and';
+        aop = ' and ';
     }
     emit("(");
     EmitExpression(ast.left, emit, alloc);

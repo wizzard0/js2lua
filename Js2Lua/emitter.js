@@ -364,7 +364,7 @@ function EmitStatement(stmt, emit, alloc) {
 function EmitDoWhileStatement(ast, emit, alloc) {
     emit("repeat ");
     EmitStatement(ast.body, emit, alloc);
-    emit(" until __ToBoolean(");
+    emit(" until not __ToBoolean(");
     EmitExpression(ast.test, emit, alloc);
     emit(")");
 }
@@ -425,10 +425,10 @@ function EmitBinary(ast, emit, alloc) {
 function EmitLogical(ast, emit, alloc) {
     var aop = ast.operator;
     if (aop == '||') {
-        aop = 'or';
+        aop = ' or ';
     }
     if (aop == '&&') {
-        aop = 'and';
+        aop = ' and ';
     }
     emit("(");
     EmitExpression(ast.left, emit, alloc);

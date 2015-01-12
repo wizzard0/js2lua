@@ -91,7 +91,7 @@ var nocode = 0;
 filenames.forEach(function (fn) {
     var pass = ComparePrograms(fn);
     if (pass == "skip") { skipped++ }
-    else if (pass == "nocode") { nocode++ }
+    else if (pass == "nocode") { nocode++; throw new Error("giving up"); }
     else if (pass) { passed++ } else { failed++ }
 });
 
