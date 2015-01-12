@@ -29,6 +29,7 @@ local function __ToBoolean(value)
 	end
 	if type(value) == 'number' and value ~= value then return false end
 	if type(value) == 'number' then return value ~= 0 end
+	if type(value) == 'string' then return value ~= "" end
 	print("__ToBoolean: unsupported! got " .. __ToString(value))
 	return value
 end
