@@ -101,11 +101,21 @@ function EmitForStatement(ast, emit, alloc) {
     if (ast.update) {
         EmitExpression(ast.update, emit, alloc);
     }
-    emit(" end"); // any breaks?
+    emit(" end --For\r\n"); // any breaks?
 }
 function EmitForInStatement(ast, emit, alloc) {
+    //console.log(util.inspect(ast, false, 999, true));
+    if (ast.left.type == 'VariableDeclaration') {
+        EmitVariableDeclaration(ast.left, emit, alloc);
+    }
     emit("for ");
-    EmitExpression(ast.left, emit, alloc);
+    if (ast.left.type == 'VariableDeclaration') {
+        var vd = ast.left;
+        EmitExpression(vd.declarations[0].id, emit, alloc);
+    }
+    else {
+        EmitExpression(ast.left, emit, alloc);
+    }
     emit(",");
     EmitExpression({ type: 'Identifier', name: '_tmp' + alloc() }, emit, alloc);
     emit(" in ");
@@ -116,7 +126,7 @@ function EmitForInStatement(ast, emit, alloc) {
     }, emit, alloc);
     emit(" do\r\n");
     EmitStatement(ast.body, emit, alloc);
-    emit(" end"); // any breaks?
+    emit(" end --ForIn\r\n"); // any breaks?
 }
 function EmitVariableDeclaratorOrExpression(ast, emit, alloc) {
     if (ast.type == 'VariableDeclaration') {
@@ -151,7 +161,7 @@ function EmitFunctionExpr(ast, emit, alloc) {
     }
     emit(")");
     EmitBlock(ast.body, emit, alloc);
-    emit(" end"); // any breaks?
+    emit(" end --FunctionExpr\r\n"); // any breaks?
 }
 function EmitArray(ast, emit, alloc) {
     emit("{");
@@ -316,6 +326,9 @@ function EmitStatement(stmt, emit, alloc) {
         case "ForInStatement":
             EmitForInStatement(stmt, emit, alloc);
             break;
+        case "DoWhileStatement":
+            EmitDoWhileStatement(stmt, emit, alloc);
+            break;
         case "BlockStatement":
             EmitBlock(stmt, emit, alloc);
             break;
@@ -336,6 +349,13 @@ function EmitStatement(stmt, emit, alloc) {
             console.log(util.inspect(stmt, false, 999, true));
             break;
     }
+}
+function EmitDoWhileStatement(ast, emit, alloc) {
+    emit("repeat ");
+    EmitStatement(ast.body, emit, alloc);
+    emit(" until __ToBoolean(");
+    EmitExpression(ast.test, emit, alloc);
+    emit(")");
 }
 function EmitIf(ast, emit, alloc) {
     emit("if __ToBoolean(");

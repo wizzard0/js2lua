@@ -104,12 +104,21 @@ function EmitForStatement(ast: esprima.Syntax.ForStatement, emit: (s: string) =>
     if (ast.update) {
         EmitExpression(ast.update, emit, alloc);
     }
-    emit(" end"); // any breaks?
+    emit(" end --For\r\n"); // any breaks?
 }
 
 function EmitForInStatement(ast: esprima.Syntax.ForInStatement, emit: (s: string) => void, alloc: () => number) {
+    //console.log(util.inspect(ast, false, 999, true));
+    if (ast.left.type == 'VariableDeclaration') {
+        EmitVariableDeclaration(<esprima.Syntax.VariableDeclaration><any>ast.left, emit, alloc);
+    }
     emit("for ");
-    EmitExpression(ast.left, emit, alloc);
+    if (ast.left.type == 'VariableDeclaration') {
+        var vd = <esprima.Syntax.VariableDeclaration><any>ast.left;
+        EmitExpression(vd.declarations[0].id, emit, alloc);
+    } else {
+        EmitExpression(ast.left, emit, alloc);    
+    }
     emit(",");
     EmitExpression({ type: 'Identifier', name: '_tmp' + alloc() }, emit, alloc);
     emit(" in ");
@@ -120,7 +129,7 @@ function EmitForInStatement(ast: esprima.Syntax.ForInStatement, emit: (s: string
     }, emit, alloc);
     emit(" do\r\n");
     EmitStatement(ast.body, emit, alloc);
-    emit(" end"); // any breaks?
+    emit(" end --ForIn\r\n"); // any breaks?
 }
 
 
@@ -155,7 +164,7 @@ function EmitFunctionExpr(ast: esprima.Syntax.FunctionExpression, emit: (s: stri
     }
     emit(")");
     EmitBlock(ast.body, emit, alloc);
-    emit(" end"); // any breaks?
+    emit(" end --FunctionExpr\r\n"); // any breaks?
 }
 
 function EmitArray(ast: esprima.Syntax.ArrayExpression, emit: (s: string) => void, alloc: () => number) {
@@ -314,6 +323,9 @@ function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void
         case "ForInStatement":
             EmitForInStatement(<esprima.Syntax.ForInStatement>stmt, emit, alloc);
             break;
+        case "DoWhileStatement":
+            EmitDoWhileStatement(<esprima.Syntax.DoWhileStatement>stmt, emit, alloc);
+            break;
         case "BlockStatement":
             EmitBlock(<esprima.Syntax.BlockStatement>stmt, emit, alloc);
             break;
@@ -332,6 +344,14 @@ function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void
             console.log(util.inspect(stmt, false, 999, true));
             break;
     }
+}
+
+function EmitDoWhileStatement(ast: esprima.Syntax.DoWhileStatement, emit: (s: string) => void, alloc: () => number) {
+    emit("repeat ");
+    EmitStatement(ast.body, emit, alloc);
+    emit(" until __ToBoolean(");
+    EmitExpression(ast.test, emit, alloc);
+    emit(")");
 }
 
 function EmitIf(ast: esprima.Syntax.IfStatement, emit: (s: string) => void, alloc: () => number) {
