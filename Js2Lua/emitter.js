@@ -417,7 +417,7 @@ function EmitCall(ast, emit, alloc) {
         var arg = ast.arguments[si];
         EmitExpression(arg, emit, alloc);
         if (si != ast.arguments.length - 1) {
-            emit(",");
+            emit(", ");
         }
     }
     emit(")");
@@ -425,13 +425,10 @@ function EmitCall(ast, emit, alloc) {
 function EmitNew(ast, emit, alloc) {
     emit("__New(");
     EmitExpression(ast.callee, emit, alloc);
-    emit(", ");
     for (var si = 0; si < ast.arguments.length; si++) {
+        emit(", ");
         var arg = ast.arguments[si];
         EmitExpression(arg, emit, alloc);
-        if (si != ast.arguments.length - 1) {
-            emit(",");
-        }
     }
     emit(")");
 }
