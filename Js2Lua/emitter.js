@@ -86,7 +86,7 @@ function EmitForStatement(ast, emit, alloc) {
     if (ast.init) {
         EmitVariableDeclaratorOrExpression(ast.init, emit, alloc);
     }
-    emit("while __ToBoolean(");
+    emit("\r\nwhile __ToBoolean(");
     if (ast.test) {
         EmitExpression(ast.test, emit, alloc);
     }
