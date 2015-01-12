@@ -1,5 +1,7 @@
 ﻿import esprima = require("esprima");
 import util = require("util");
+import fs = require("fs");
+import sh = require("execsync-ng");
 
 var print = console.log;
 
@@ -157,5 +159,16 @@ function EmitLiteral(ex: esprima.Syntax.Literal, emit: (s: string) => void) {
     emit(JSON.stringify(ex.value)); // TODO
 }
 
+function RunProgram(src: string) {
+    fs.writeFileSync("x.lua", src);
+    var rc = sh.exec("C:/bin/zbs/bin/lua x.lua");
+    console.log(rc.stdout);
+    console.log("Return Code", rc.code);
+}
 
 EmitProgram(ast, emit);
+
+console.log("JS==");
+tc();
+console.log("LUA==");
+RunProgram(luasrc);

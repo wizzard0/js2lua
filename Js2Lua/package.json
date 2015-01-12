@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "escope": "^2.0.2",
-    "esprima": "^1.2.2"
+    "esprima": "^1.2.2",
+    "execsync-ng": "0.0.6"
   }
 }
