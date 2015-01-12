@@ -21,7 +21,12 @@ function ComparePrograms(fn) {
     var luaRT = fs.readFileSync("runtime.lua").toString();
     var jsRT = fs.readFileSync("runtime.js").toString();
     var ns = /negative: (.*)/.exec(source);
+    var hasEval = /eval\(/.exec(source);
     var expectErrors = false;
+    if (hasEval) {
+        console.log(" [SKIP]");
+        return "skip";
+    }
     if (ns) {
         //console.log("NEG: ", ns[1]);
         expectErrors = true;
@@ -66,14 +71,18 @@ var filenames = glob.sync(arg.replace("\\", "/"));
 var total = filenames.length;
 var passed = 0;
 var failed = 0;
+var skipped = 0;
 filenames.forEach(function (fn) {
     var pass = ComparePrograms(fn);
-    if (pass) {
+    if (pass == "skip") {
+        skipped++;
+    }
+    else if (pass) {
         passed++;
     }
     else {
         failed++;
     }
 });
-console.log("Passed:", passed, "Failed:", failed, "Total:", total);
+console.log("Passed:", passed, "Failed:", failed, "Skipped:", skipped, "Total:", total);
 //# sourceMappingURL=app.js.map
