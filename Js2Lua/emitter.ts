@@ -106,7 +106,14 @@ function EmitTryStatement(ast: esprima.Syntax.TryStatement, emit: (s: string) =>
 function EmitForStatement(ast: esprima.Syntax.ForStatement, emit: (s: string) => void, alloc: () => number) {
     //console.log(util.inspect(ast, false, 999, true));
     if (ast.init) {
+        var ait = ast.init.type;
+        if (['VariableDeclaration', 'AssignmentExpression', 'CallExpression'].indexOf(ait) == -1) {
+            emit("__Sink(");
+        }
         EmitVariableDeclaratorOrExpression(ast.init, emit, alloc);
+        if (['VariableDeclaration', 'AssignmentExpression', 'CallExpression'].indexOf(ait) == -1) {
+            emit(")");
+        }
     }
     emit("\r\nwhile __ToBoolean(");
     if (ast.test) {
@@ -123,7 +130,14 @@ function EmitForStatement(ast: esprima.Syntax.ForStatement, emit: (s: string) =>
     }
     emit("\r\n-- BODY END\r\n");
     if (ast.update) {
+        var aut = ast.update.type;
+        if (['VariableDeclaration', 'AssignmentExpression', 'CallExpression'].indexOf(aut) == -1) {
+            emit("__Sink(");
+        }
         EmitExpression(ast.update, emit, alloc);
+        if (['VariableDeclaration', 'AssignmentExpression', 'CallExpression'].indexOf(aut) == -1) {
+            emit(")");
+        }
     }
     emit(" end --For\r\n"); // any breaks?
 }
@@ -600,6 +614,10 @@ function EmitCall(ast: esprima.Syntax.CallExpression, emit: (s: string) => void,
     }
     for (var si = 0; si < ast.arguments.length; si++) {
         var arg = ast.arguments[si];
+        if (arg.type == 'AssignmentExpression' || arg.type == 'UpdateExpression') {
+            console.log("Inline Assignment Codegen not implemented");
+            emit("--[[IAC]]")
+        }
         EmitExpression(arg, emit, alloc);
         if (si != ast.arguments.length - 1) {
             emit(", ");
