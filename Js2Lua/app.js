@@ -11,7 +11,7 @@ function RunProgram(src, ff) {
     return rc.stdout;
 }
 function ComparePrograms(fn) {
-    process.stdout.write("Test: " + fn);
+    process.stdout.write(".");
     var js_stdout = "";
     var print = function (s) {
         js_stdout += s + "\r\n";
@@ -46,23 +46,23 @@ function ComparePrograms(fn) {
             vm.runInNewContext(jsRT + source, { print: print, console: { log: print } }, fn);
             var lua_stdout = RunProgram(luaRT + luasrc, flua);
             if (js_stdout.trim().length == 0 || lua_stdout.trim().length == 0) {
-                console.log(" NEG FAIL! ===========================================");
+                console.log(" NEG FAIL! == " + fn);
                 return false;
             }
             else {
-                console.log(" NEG OK");
+                //console.log(" NEG OK");
                 return true;
             }
         }
         catch (e) {
-            console.log(" [OK-]");
+            //console.log(" [OK-]");
             return true;
         }
     }
     else {
         var luasrc = emitter.convertFile(source, fn);
         if (/--\[\[/.exec(luasrc)) {
-            console.log(" [FAIL] NO CODE GENERATED");
+            console.log(" [FAIL] NO CODE GENERATED " + fn);
             console.log("PARTIAL: ", luasrc);
             return "nocode";
         }
@@ -70,21 +70,21 @@ function ComparePrograms(fn) {
         var lua_stdout = RunProgram(luaRT + luasrc, flua);
         if (js_stdout.trim().length != 0 || lua_stdout.trim().length != 0) {
             if (/expected/.exec(lua_stdout) && !/table expected, got/.exec(lua_stdout) && !/number expected, got/.exec(lua_stdout)) {
-                console.log(" [SYNTAX] FAIL ===========================================");
+                console.log(" [SYNTAX] FAIL == " + fn);
                 console.log("JS:", js_stdout);
                 console.log("\r\nLua SRC:", luasrc);
                 console.log("\r\nLua:", lua_stdout);
                 return "nocode"; // generated invalid Lua code
             }
             else {
-                console.log(" [RUNTIME] FAIL ===========================================");
+                console.log(" [RUNTIME] FAIL == " + fn);
                 console.log("JS:", js_stdout);
                 console.log("Lua:", lua_stdout);
                 return false;
             }
         }
         else {
-            console.log(" [OK+]");
+            //console.log(" [OK+]");
             return true;
         }
     }
