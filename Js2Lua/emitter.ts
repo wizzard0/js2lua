@@ -593,7 +593,7 @@ function EmitCall(ast: esprima.Syntax.CallExpression, emit: (s: string) => void,
         EmitExpression(me.object, emit, alloc);
         emit(",\"");
         EmitExpression(me.property, emit, alloc);
-        emit("\",");
+        emit(ast.arguments.length ? "\"," : "\"");
     } else {
         EmitExpression(ast.callee, emit, alloc);
         emit("(");

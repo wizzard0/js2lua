@@ -598,7 +598,7 @@ function EmitCall(ast, emit, alloc) {
         EmitExpression(me.object, emit, alloc);
         emit(",\"");
         EmitExpression(me.property, emit, alloc);
-        emit("\",");
+        emit(ast.arguments.length ? "\"," : "\"");
     }
     else {
         EmitExpression(ast.callee, emit, alloc);
