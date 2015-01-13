@@ -220,7 +220,8 @@ function EmitIdentifier(ast: esprima.Syntax.Identifier, emit: (s: string) => voi
     var ein = (<esprima.Syntax.Identifier>ast).name;
     ein = ein.replace(/\$/g, "_USD_");
     if (ein == 'arguments') { // HACK
-        ein = 'arg';
+        ein = '{...}';
+        strictCheck = false;
     }
     if (Object.prototype.hasOwnProperty.call(reservedLuaKeys, ein)) {
         ein = '_R_' + ein;
@@ -240,7 +241,7 @@ function EmitFunctionExpr(ast: esprima.Syntax.FunctionExpression, emit: (s: stri
         emit(",");
         EmitExpression(arg, emit, alloc, false, false);
     }
-    emit(")");
+    emit(")\r\n");
     EmitBlock(ast.body, emit, alloc);
     emit(" end) --FunctionExpr\r\n"); // any breaks?
 }

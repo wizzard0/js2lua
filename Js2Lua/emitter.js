@@ -222,7 +222,8 @@ function EmitIdentifier(ast, emit, alloc, rvalue, strictCheck) {
     var ein = ast.name;
     ein = ein.replace(/\$/g, "_USD_");
     if (ein == 'arguments') {
-        ein = 'arg';
+        ein = '{...}';
+        strictCheck = false;
     }
     if (Object.prototype.hasOwnProperty.call(reservedLuaKeys, ein)) {
         ein = '_R_' + ein;
@@ -245,7 +246,7 @@ function EmitFunctionExpr(ast, emit, alloc) {
         emit(",");
         EmitExpression(arg, emit, alloc, false, false);
     }
-    emit(")");
+    emit(")\r\n");
     EmitBlock(ast.body, emit, alloc);
     emit(" end) --FunctionExpr\r\n"); // any breaks?
 }

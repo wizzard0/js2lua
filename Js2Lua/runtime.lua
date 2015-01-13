@@ -172,6 +172,7 @@ local function __DefineFunction(definition)
     setmetatable(obj, __ObjectMetatable)
     obj.__CallImpl = definition
     obj.__TypeofValue = "function"
+	obj.prototype = {}
     return obj
 end
 
@@ -186,6 +187,7 @@ local function __New(ctor, ...)
     obj.constructor = ctor
     obj.__TypeofValue = "object"
     setmetatable(obj, __ObjectMetatable)
+	-- print('new:[' .. to_string{...} .. ']')
     local rv2 = ctor.__CallImpl(obj, ...)
     if rv2 then return rv2 else return obj end
 end
@@ -269,8 +271,17 @@ __JsGlobalObjects.Function = Function
 -- Array
 local Array = __New(Function)
 __JsGlobalObjects.Array = Array
-Array.__CallImpl = function(self, val) 
-    -- print ('Array ctor: ' .. val)
+Array.__CallImpl = function(self, ...) -- number or varargs...
+	self = self or __New(Array)
+    local orig = {...}
+	-- print(to_string(self))
+	print('array with ' .. #orig .. ' args')
+	local idx = 0
+	for k,v in ipairs(orig) do
+		self[idx] = v
+		idx = idx + 1
+	end
+	return self
 end
 
 -- Boolean
