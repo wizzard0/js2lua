@@ -550,12 +550,16 @@ function EmitMember(ast: esprima.Syntax.MemberExpression, emit: (s: string) => v
         }, emit, alloc);
     } else if (ast.property.type == 'Identifier') {
         var id = <esprima.Syntax.Identifier>ast.property;
+        if (ast.object.type == 'Literal') { emit("(");}
         EmitExpression(ast.object, emit, alloc);
+        if (ast.object.type == 'Literal') {emit(")");}
         emit(reservedLuaKeys[id.name] ? "[\"" : ".");
         emit(id.name); // cannot EmitIdentifier because of escaping
         emit(reservedLuaKeys[id.name] ? "\"]" : "");
     } else {
+        if (ast.object.type == 'Literal') { emit("("); }
         EmitExpression(ast.object, emit, alloc);
+        if (ast.object.type == 'Literal') { emit(")"); }
         emit("[");
         EmitExpression(ast.property, emit, alloc);
         emit("]");
@@ -596,7 +600,14 @@ function EmitNew(ast: esprima.Syntax.CallExpression, emit: (s: string) => void, 
 }
 
 function EmitLiteral(ex: esprima.Syntax.Literal, emit: (s: string) => void, alloc: () => number) {
-    emit(JSON.stringify(ex.value)); // TODO
+    //console.log(util.inspect(ex, false, 999, true));
+    if (ex.value instanceof RegExp) {
+        //console.log("R");
+        emit(JSON.stringify((<any>ex).raw)); // TODO https://github.com/o080o/reLua!
+    } else {
+        //console.log(ex.raw);
+        emit(JSON.stringify(ex.value)); // TODO
+    }
 }
 
 export function convertFile(source: string, fn: string): string {

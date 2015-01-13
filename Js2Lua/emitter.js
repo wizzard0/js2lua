@@ -543,13 +543,25 @@ function EmitMember(ast, emit, alloc) {
     }
     else if (ast.property.type == 'Identifier') {
         var id = ast.property;
+        if (ast.object.type == 'Literal') {
+            emit("(");
+        }
         EmitExpression(ast.object, emit, alloc);
+        if (ast.object.type == 'Literal') {
+            emit(")");
+        }
         emit(reservedLuaKeys[id.name] ? "[\"" : ".");
         emit(id.name); // cannot EmitIdentifier because of escaping
         emit(reservedLuaKeys[id.name] ? "\"]" : "");
     }
     else {
+        if (ast.object.type == 'Literal') {
+            emit("(");
+        }
         EmitExpression(ast.object, emit, alloc);
+        if (ast.object.type == 'Literal') {
+            emit(")");
+        }
         emit("[");
         EmitExpression(ast.property, emit, alloc);
         emit("]");
@@ -588,7 +600,15 @@ function EmitNew(ast, emit, alloc) {
     emit(")");
 }
 function EmitLiteral(ex, emit, alloc) {
-    emit(JSON.stringify(ex.value)); // TODO
+    //console.log(util.inspect(ex, false, 999, true));
+    if (ex.value instanceof RegExp) {
+        //console.log("R");
+        emit(JSON.stringify(ex.raw)); // TODO https://github.com/o080o/reLua!
+    }
+    else {
+        //console.log(ex.raw);
+        emit(JSON.stringify(ex.value)); // TODO
+    }
 }
 function convertFile(source, fn) {
     var allocIndex = 0;
