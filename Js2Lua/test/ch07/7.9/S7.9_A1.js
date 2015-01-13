@@ -7,6 +7,7 @@
  * @path ch07/7.9/S7.9_A1.js
  * @description Try use continue \n Label construction
  */
+ // LUA_SKIP esprima bug
 
 //CHECK#1
 label1: for (var i = 0; i <= 0; i++) {

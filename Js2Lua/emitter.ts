@@ -118,6 +118,9 @@ function EmitForStatement(ast: esprima.Syntax.ForStatement, emit: (s: string) =>
     if (ast.body) {
         EmitStatement(ast.body, emit, alloc);
     }
+    if (pendingContinue) {
+        emit("::" + pendingContinue + "::\r\n"); pendingContinue = null;
+    }
     emit("\r\n-- BODY END\r\n");
     if (ast.update) {
         EmitExpression(ast.update, emit, alloc);
@@ -147,6 +150,9 @@ function EmitForInStatement(ast: esprima.Syntax.ForInStatement, emit: (s: string
     }, emit, alloc);
     emit(" do\r\n");
     EmitStatement(ast.body, emit, alloc);
+    if (pendingContinue) {
+        emit("::" + pendingContinue + "::\r\n"); pendingContinue = null;
+    }
     emit(" end --ForIn\r\n"); // any breaks?
 }
 
@@ -397,10 +403,19 @@ function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void
             break;
     }
 }
+// HACK
+
+var pendingContinue: string = null;
 
 function EmitContinue(ast: esprima.Syntax.ContinueStatement, emit: (s: string) => void, alloc: () => number) {
-    emit(" goto "); // TODO nonlabeled continue to end of loop
-    EmitExpression(ast.label, emit, alloc);
+    if (ast.label) {
+        emit(" goto ");
+        EmitExpression(ast.label, emit, alloc);
+    } else {
+        var pc = "__Continue" + alloc();
+        pendingContinue = pc;
+        emit(" goto " + pc); // TODO 2 nonlabeled continue in the same loop
+    }
 }
 
 function EmitLabeled(ast: esprima.Syntax.LabeledStatement, emit: (s: string) => void, alloc: () => number) {
@@ -416,6 +431,9 @@ function EmitLabeled(ast: esprima.Syntax.LabeledStatement, emit: (s: string) => 
 function EmitDoWhileStatement(ast: esprima.Syntax.DoWhileStatement, emit: (s: string) => void, alloc: () => number) {
     emit("repeat ");
     EmitStatement(ast.body, emit, alloc);
+    if (pendingContinue) {
+        emit("::" + pendingContinue + "::\r\n"); pendingContinue = null;
+    }
     emit(" until not __ToBoolean(");
     EmitExpression(ast.test, emit, alloc);
     emit(")");
@@ -552,9 +570,9 @@ function EmitMember(ast: esprima.Syntax.MemberExpression, emit: (s: string) => v
         }, emit, alloc);
     } else if (ast.property.type == 'Identifier') {
         var id = <esprima.Syntax.Identifier>ast.property;
-        if (ast.object.type == 'Literal') { emit("(");}
+        if (ast.object.type == 'Literal') { emit("("); }
         EmitExpression(ast.object, emit, alloc);
-        if (ast.object.type == 'Literal') {emit(")");}
+        if (ast.object.type == 'Literal') { emit(")"); }
         emit(reservedLuaKeys[id.name] ? "[\"" : ".");
         emit(id.name); // cannot EmitIdentifier because of escaping
         emit(reservedLuaKeys[id.name] ? "\"]" : "");

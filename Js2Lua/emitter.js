@@ -113,6 +113,10 @@ function EmitForStatement(ast, emit, alloc) {
     if (ast.body) {
         EmitStatement(ast.body, emit, alloc);
     }
+    if (pendingContinue) {
+        emit("::" + pendingContinue + "::\r\n");
+        pendingContinue = null;
+    }
     emit("\r\n-- BODY END\r\n");
     if (ast.update) {
         EmitExpression(ast.update, emit, alloc);
@@ -142,6 +146,10 @@ function EmitForInStatement(ast, emit, alloc) {
     }, emit, alloc);
     emit(" do\r\n");
     EmitStatement(ast.body, emit, alloc);
+    if (pendingContinue) {
+        emit("::" + pendingContinue + "::\r\n");
+        pendingContinue = null;
+    }
     emit(" end --ForIn\r\n"); // any breaks?
 }
 function EmitVariableDeclaratorOrExpression(ast, emit, alloc) {
@@ -402,9 +410,18 @@ function EmitStatement(stmt, emit, alloc) {
             break;
     }
 }
+// HACK
+var pendingContinue = null;
 function EmitContinue(ast, emit, alloc) {
-    emit(" goto "); // TODO nonlabeled continue to end of loop
-    EmitExpression(ast.label, emit, alloc);
+    if (ast.label) {
+        emit(" goto ");
+        EmitExpression(ast.label, emit, alloc);
+    }
+    else {
+        var pc = "__Continue" + alloc();
+        pendingContinue = pc;
+        emit(" goto " + pc); // TODO 2 nonlabeled continue in the same loop
+    }
 }
 function EmitLabeled(ast, emit, alloc) {
     emit("::");
@@ -418,6 +435,10 @@ function EmitLabeled(ast, emit, alloc) {
 function EmitDoWhileStatement(ast, emit, alloc) {
     emit("repeat ");
     EmitStatement(ast.body, emit, alloc);
+    if (pendingContinue) {
+        emit("::" + pendingContinue + "::\r\n");
+        pendingContinue = null;
+    }
     emit(" until not __ToBoolean(");
     EmitExpression(ast.test, emit, alloc);
     emit(")");
