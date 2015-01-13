@@ -224,7 +224,7 @@ function EmitIdentifier(ast, emit, alloc, rvalue, strictCheck) {
     if (ein == 'arguments') {
         ein = 'arg';
     }
-    if (reservedLuaKeys[ein]) {
+    if (Object.prototype.hasOwnProperty.call(reservedLuaKeys, ein)) {
         ein = '_R_' + ein;
     }
     if (ein.substr(0, 2) == '__' || ein == 'undefined' || BinaryOpRemapValues.indexOf(ein) != -1) {
@@ -368,7 +368,7 @@ function EmitUnary(ast, emit, alloc) {
     if (aop == 'typeof') {
         emit("__Typeof");
         emit("(");
-        EmitExpression(ast.argument, emit, alloc);
+        EmitExpression(ast.argument, emit, alloc, true, false);
         emit(")");
     }
     else if (aop == '~') {

@@ -269,9 +269,16 @@ __JsGlobalObjects.Function = Function
 -- Array
 local Array = __New(Function)
 __JsGlobalObjects.Array = Array
+Array.__CallImpl = function(self, val) 
+    -- print ('Array ctor: ' .. val)
+end
 
 -- Boolean
 local Boolean = __New(Function)
+Boolean.__CallImpl = function(self, val) 
+    -- print ('Boolean ctor: ' .. val)
+    self.__Value = __ToBoolean(val)
+end
 __JsGlobalObjects.Boolean = Boolean
 
 
@@ -303,7 +310,6 @@ String.__CallImpl = function(self, val)
     self.__ToStringValue = val
     self.__Unicode = uni
     self.__Length = #uni
-    self.prototype = {}
 end
 String.prototype.charCodeAt = function(self, idx)
     return self.__Unicode[idx] -- TODO unicode!
@@ -312,6 +318,10 @@ __JsGlobalObjects.String = String
 
 -- Date
 local Date = __New(Function)
+Date.__CallImpl = function(self, val) 
+    -- print ('date ctor: ' .. val)
+    self.__Value = val or 0
+end
 __JsGlobalObjects.Date = Date
 
 -- JSON
@@ -321,9 +331,17 @@ __JsGlobalObjects.JSON = JSON
 -- RegExp
 local RegExp = __New(Function)
 __JsGlobalObjects.RegExp = RegExp
+RegExp.__CallImpl = function(self, val) 
+    -- print ('RegExp ctor: ' .. val)
+    self.__Value = val
+end
 
 -- Error
 local Error = __New(Function)
+Error.__CallImpl = function(self, arg) 
+    -- print ('Error ctor: ' .. arg)
+    self.__Args = arg
+end
 __JsGlobalObjects.Error = Error
 local EvalError = __New(Function)
 local RangeError = __New(Function)

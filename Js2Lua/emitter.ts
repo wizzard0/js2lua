@@ -222,7 +222,7 @@ function EmitIdentifier(ast: esprima.Syntax.Identifier, emit: (s: string) => voi
     if (ein == 'arguments') { // HACK
         ein = 'arg';
     }
-    if (reservedLuaKeys[ein]) {
+    if (Object.prototype.hasOwnProperty.call(reservedLuaKeys, ein)) {
         ein = '_R_' + ein;
     }
     if (ein.substr(0, 2) == '__' || ein == 'undefined' || BinaryOpRemapValues.indexOf(ein) != -1) {
@@ -364,7 +364,7 @@ function EmitUnary(ast: esprima.Syntax.UnaryExpression, emit: (s: string) => voi
     if (aop == 'typeof') {
         emit("__Typeof");
         emit("(");
-        EmitExpression(ast.argument, emit, alloc);
+        EmitExpression(ast.argument, emit, alloc, true, false);
         emit(")");
     } else if (aop == '~') {
         emit("bit32.bnot");
