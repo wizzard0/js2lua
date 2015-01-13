@@ -405,6 +405,9 @@ function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void
         case "DoWhileStatement":
             EmitDoWhileStatement(<esprima.Syntax.DoWhileStatement>stmt, emit, alloc);
             break;
+        case "WhileStatement":
+            EmitWhileStatement(<esprima.Syntax.WhileStatement>stmt, emit, alloc);
+            break;
         case "BlockStatement":
             EmitBlock(<esprima.Syntax.BlockStatement>stmt, emit, alloc);
             break;
@@ -467,6 +470,17 @@ function EmitDoWhileStatement(ast: esprima.Syntax.DoWhileStatement, emit: (s: st
     emit(" until not __ToBoolean(");
     EmitExpression(ast.test, emit, alloc);
     emit(")");
+}
+
+function EmitWhileStatement(ast: esprima.Syntax.WhileStatement, emit: (s: string) => void, alloc: () => number) {
+    emit("while __ToBoolean(");
+    EmitExpression(ast.test, emit, alloc);
+    emit(") do ");
+    EmitStatement(ast.body, emit, alloc);
+    if (pendingContinue) {
+        emit("::" + pendingContinue + "::\r\n"); pendingContinue = null;
+    }
+    emit(" end ");
 }
 
 function EmitIf(ast: esprima.Syntax.IfStatement, emit: (s: string) => void, alloc: () => number) {

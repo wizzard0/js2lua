@@ -408,6 +408,9 @@ function EmitStatement(stmt, emit, alloc) {
         case "DoWhileStatement":
             EmitDoWhileStatement(stmt, emit, alloc);
             break;
+        case "WhileStatement":
+            EmitWhileStatement(stmt, emit, alloc);
+            break;
         case "BlockStatement":
             EmitBlock(stmt, emit, alloc);
             break;
@@ -474,6 +477,17 @@ function EmitDoWhileStatement(ast, emit, alloc) {
     emit(" until not __ToBoolean(");
     EmitExpression(ast.test, emit, alloc);
     emit(")");
+}
+function EmitWhileStatement(ast, emit, alloc) {
+    emit("while __ToBoolean(");
+    EmitExpression(ast.test, emit, alloc);
+    emit(") do ");
+    EmitStatement(ast.body, emit, alloc);
+    if (pendingContinue) {
+        emit("::" + pendingContinue + "::\r\n");
+        pendingContinue = null;
+    }
+    emit(" end ");
 }
 function EmitIf(ast, emit, alloc) {
     emit("if __ToBoolean(");
