@@ -64,17 +64,24 @@ local function __ToString(value)
     if value == nil then return 'undefined' end
 	return tostring(value)
 end
-
+-- print("Tb")
 local function __ToBoolean(value)
+	-- print(value, type(value))
 	if nil == value then return false end
 	if type(value) == 'boolean' then return value end
 	if type(value) == 'table' and __Singletons[value] then
 		return value.__BooleanValue
 	end
-	if type(value) == 'number' and (value == 0) or (value ~= value) then return false
-	else return true
+	if type(value) == 'number' then
+		if ((value == 0) or (value ~= value)) then return false
+		else return true
+		end
 	end
-	if type(value) == 'string' then return value ~= "" end
+	if type(value) == 'string' then
+		-- print("QQQ")
+		-- print (value ~="")
+		return value ~= ""
+	end
 	print("__ToBoolean: unsupported! got " .. __ToString(value))
 	return value
 end

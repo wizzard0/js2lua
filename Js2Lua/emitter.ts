@@ -376,9 +376,9 @@ function EmitUnary(ast: esprima.Syntax.UnaryExpression, emit: (s: string) => voi
     } else if (aop == 'void') {
         emit("nil");
     } else if (aop == '!') {
-        emit("(not ");
+        emit("(not __ToBoolean(");
         EmitExpression(ast.argument, emit, alloc);
-        emit(")");
+        emit("))");
     } else if (aop == '+' || aop == '-') {
         emit(aop == '-' ? "(-" : "("); // TODO ToNumber
         EmitExpression(ast.argument, emit, alloc);
