@@ -181,7 +181,7 @@ local Math = {
 __JsGlobalObjects.Math = Math
 
 -- Object
-local Object = {}
+local Object = { ["prototype"] = {} }
 Object.getOwnPropertyDescriptor = function(self, object, key)
 	-- print(tostring(self).."/"..tostring(object).."/"..tostring(key))
 	return {
@@ -191,8 +191,12 @@ Object.getOwnPropertyDescriptor = function(self, object, key)
 		["configurable"] = true
 	}
 end
+Object.prototype.hasOwnProperty = function(self, key)
+	return nil ~= rawget(self, key)
+end
 Object.__CallImpl = function(self) end
 setmetatable(Object, __ObjectMetatable)
+setmetatable(Object.prototype, __ObjectMetatable)
 __JsGlobalObjects.Object = Object
 
 -- Function
