@@ -320,7 +320,11 @@ __JsGlobalObjects.String = String
 local Date = __New(Function)
 Date.__CallImpl = function(self, val) 
     -- print ('date ctor: ' .. val)
-    self.__Value = val or 0
+    -- self.__Value = val or (os.time() * 1000)
+    self.__Value = val or (os.clock() * 1000) -- prefer benchmark version
+end
+Date.prototype.getTime = function(self)
+    return self.__Value
 end
 __JsGlobalObjects.Date = Date
 

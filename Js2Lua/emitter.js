@@ -252,6 +252,7 @@ function EmitFunctionExpr(ast, emit, alloc) {
 function EmitArray(ast, emit, alloc) {
     emit("{");
     for (var si = 0; si < ast.elements.length; si++) {
+        emit("[" + si + "]=");
         var arg = ast.elements[si];
         EmitExpression(arg, emit, alloc);
         if (si != ast.elements.length - 1) {
@@ -659,6 +660,9 @@ var reservedLuaKeys = {
     'goto': true,
 };
 function EmitMember(ast, emit, alloc, isRvalue) {
+    //if(ast.property.name=='Step') {
+    //    console.log(util.inspect(ast, false, 999, true));
+    //}
     if (ast.property.name == 'length' && isRvalue) {
         EmitCall({
             type: 'CallExpression',
@@ -666,7 +670,7 @@ function EmitMember(ast, emit, alloc, isRvalue) {
             arguments: [ast.object]
         }, emit, alloc);
     }
-    else if (ast.property.type == 'Identifier') {
+    else if (ast.property.type == 'Identifier' && !ast.computed) {
         var id = ast.property;
         if (ast.object.type == 'Literal') {
             emit("(");
