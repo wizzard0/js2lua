@@ -510,10 +510,16 @@ function EmitMember(ast, emit, alloc) {
             arguments: [ast.object]
         }, emit, alloc);
     }
-    else {
+    else if (ast.property.type == 'Identifier') {
         EmitExpression(ast.object, emit, alloc);
         emit(".");
         EmitExpression(ast.property, emit, alloc);
+    }
+    else {
+        EmitExpression(ast.object, emit, alloc);
+        emit("[");
+        EmitExpression(ast.property, emit, alloc);
+        emit("]");
     }
 }
 function EmitCall(ast, emit, alloc) {

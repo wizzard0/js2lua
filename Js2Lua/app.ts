@@ -42,14 +42,12 @@ function ComparePrograms(fn: string): any {
         return "skip";
     }
     if (ns) {
-        //console.log("NEG: ", ns[1]);
         expectErrors = true;
     }
     if (expectErrors) {
         try {
             var luasrc = emitter.convertFile(source, fn);
-            vm.runInNewContext(jsRT + source, { print: print}, fn);
-            //eval(jsRT + source);
+            vm.runInNewContext(jsRT + source, { print: print, console: { log: print } }, fn);
             var lua_stdout = RunProgram(luaRT + luasrc, flua);
             if (js_stdout.trim().length == 0 || lua_stdout.trim().length == 0) {
                 console.log(" NEG FAIL!\r\n===========================================");
@@ -69,7 +67,7 @@ function ComparePrograms(fn: string): any {
             console.log("PARTIAL: ", luasrc);
             return "nocode";
         }
-        vm.runInNewContext(jsRT + source, { print: print }, fn);
+        vm.runInNewContext(jsRT + source, { print: print, console: { log: print } }, fn);
         var lua_stdout = RunProgram(luaRT + luasrc, flua);
         if (js_stdout.trim().length != 0 || lua_stdout.trim().length != 0) {
             console.log(" POS FAIL!\r\n===========================================");

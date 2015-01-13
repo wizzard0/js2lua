@@ -516,10 +516,15 @@ function EmitMember(ast: esprima.Syntax.MemberExpression, emit: (s: string) => v
             callee: { 'type': 'Identifier', 'name': '__Length' },
             arguments: [ast.object]
         }, emit, alloc);
-    } else {
+    } else if (ast.property.type == 'Identifier') {
         EmitExpression(ast.object, emit, alloc);
         emit(".");
         EmitExpression(ast.property, emit, alloc);
+    } else {
+        EmitExpression(ast.object, emit, alloc);
+        emit("[");
+        EmitExpression(ast.property, emit, alloc);
+        emit("]");
     }
 }
 

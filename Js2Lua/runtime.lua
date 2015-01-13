@@ -1,10 +1,11 @@
 ﻿local __Singletons = {}
-local self = _G
+local __JsGlobalObjects = {}
+
 local function __Typeof(value)
     if type(value) == 'boolean' or type(value) == 'number' or type(value) == 'string' then
         return type(value)
     end
-	if type(value) == 'table' and __Singletons[value] then
+	if type(value) == 'table' and value.__TypeofValue then
 		return value.__TypeofValue
 	end
 	if value == nil then return 'undefined' end
@@ -87,12 +88,14 @@ local function __DefineFunction(definition)
 	-- TODO function proto
 	setmetatable(obj, __ObjectMetatable)
 	obj.__CallImpl = definition
+	obj.__TypeofValue = "function"
 	return obj
 end
 
 local function __New(ctor, ...)
 	local obj = {}
 	obj.__Prototype = ctor.prototype
+	obj.__TypeofValue = "object"
 	setmetatable(obj, __ObjectMetatable)
 	local rv2 = ctor.__CallImpl(obj, arg)
 	if rv2 then return rv2 else return obj end
@@ -116,6 +119,7 @@ end
 local null = {["__TypeofValue"] = "object", ["__ToStringValue"] = "null"} -- Singleton
 __Singletons[null] = true
 -- we use nil as undefined
+__JsGlobalObjects.null = null
 
 -- Number
 local Infinity = 1/0
@@ -125,11 +129,13 @@ local Number = {
 	["POSITIVE_INFINITY"] = Infinity, 
 	["NEGATIVE_INFINITY"] = -Infinity
 }
+__JsGlobalObjects.Number = Number
 
 -- Math
 local Math = {
 	["pow"] = math.pow
 }
+__JsGlobalObjects.Math = Math
 
 -- Object
 local Object = {}
@@ -142,30 +148,39 @@ Object.getOwnPropertyDescriptor = function(self, object, key)
 		["configurable"] = true
 	}
 end
+__JsGlobalObjects.Object = Object
 
 -- Array
 local Array = {}
+__JsGlobalObjects.Array = Array
 
 -- Boolean
 local Boolean = {}
+__JsGlobalObjects.Boolean = Boolean
 
 -- Function
 local Function = {}
+__JsGlobalObjects.Function = Function
 
 -- String
 local String = {}
+__JsGlobalObjects.String = String
 
 -- Date
 local Date = {}
+__JsGlobalObjects.Date = Date
 
 -- JSON
 local JSON = {}
+__JsGlobalObjects.JSON = JSON
 
 -- RegExp
 local RegExp = {}
+__JsGlobalObjects.RegExp = RegExp
 
 -- Error
 local Error = {}
+__JsGlobalObjects.Error = Error
 local EvalError = {}
 local RangeError = {}
 local ReferenceError = {}
@@ -173,7 +188,14 @@ local SyntaxError = {}
 local TypeError = {}
 local URIError = {}
 
+-- Global functions
+local escape = __DefineFunction(function(self, str) return str end) -- TODO actually escape :)
+__JsGlobalObjects.escape = escape
 
+local console = {
+	["log"] = function(self, ...) print(...) end
+}
+__JsGlobalObjects.console = console
 -- LIBRARY END
 
 local function _USD_ERROR(s)
@@ -192,8 +214,10 @@ local function runTestCase(testcase)
     end
 end
 
+local self = __JsGlobalObjects
+
 local function fnGlobalObject()
-     return _G
+     return __JsGlobalObjects
 end
 
 local function fnExists(...)
@@ -204,5 +228,44 @@ local function fnExists(...)
     }]]
     return true;
 end
+-- DEBUGGING
+function table_print (tt, indent, done)
+  done = done or {}
+  indent = indent or 0
+  if type(tt) == "table" then
+    local sb = {}
+    for key, value in pairs (tt) do
+      table.insert(sb, string.rep (" ", indent)) -- indent it
+      if type (value) == "table" and not done [value] then
+        done [value] = true
+        table.insert(sb, "{\n");
+        table.insert(sb, table_print (value, indent + 2, done))
+        table.insert(sb, string.rep (" ", indent)) -- indent it
+        table.insert(sb, "}\n");
+      elseif "number" == type(key) then
+        table.insert(sb, string.format("\"%s\"\n", tostring(value)))
+      else
+        table.insert(sb, string.format(
+            "%s = \"%s\"\n", tostring (key), tostring(value)))
+       end
+    end
+    return table.concat(sb)
+  else
+    return tt .. "\n"
+  end
+end
 
+function to_string( tbl )
+    if  "nil"       == type( tbl ) then
+        return tostring(nil)
+    elseif  "table" == type( tbl ) then
+        return table_print(tbl)
+    elseif  "string" == type( tbl ) then
+        return tbl
+    else
+        return tostring(tbl)
+    end
+end
+
+-- print(to_string(self))
 -- HARNESS END
