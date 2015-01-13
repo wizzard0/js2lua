@@ -237,6 +237,8 @@ function EmitBlock(ast, emit, alloc) {
     for (var si = 0; si < ast.body.length; si++) {
         var arg = ast.body[si];
         EmitStatement(arg, emit, alloc);
+        if (arg.type == 'ReturnStatement')
+            break; // in lua?...
         emit("\r\n");
     }
 }
