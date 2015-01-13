@@ -10,12 +10,12 @@
 
 var chars = "𐒠";  // Single Unicode character at codepoint \u{104A0}
 if(chars.length !== 2) {
-    $ERROR("A character outside the BMP (Unicode CodePoint > 0xFFFF) should consume two code units");
+    $ERROR("A character outside the BMP (Unicode CodePoint > 0xFFFF) should consume two code units, not " + chars.length);
 }
 if(chars.charCodeAt(0) !== 0xD801) {
-    $ERROR("First code unit of surrogate pair for 0x104A0 should be 0xD801");
+    $ERROR("First code unit of surrogate pair for 0x104A0 should be 0xD801, not " + chars.charCodeAt(1));
 }
 
 if(chars.charCodeAt(1) !== 0xDCA0) {
-    $ERROR("Second code unit of surrogate pair for 0x104A0 should be 0xDCA0");
+    $ERROR("Second code unit of surrogate pair for 0x104A0 should be 0xDCA0, not " + chars.charCodeAt(2));
 }

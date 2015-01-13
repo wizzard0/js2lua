@@ -8,6 +8,8 @@
  * @description Use real VERTICAL TAB
  */
 
+ // LUA_SKIP Unicode escapes
+
 //CHECK#1
 if ("string" !== "\u000Bstr\u000Bing\u000B") {
   $ERROR('#1: "string" === "\\u000Bstr\\u000Bing\\u000B"');
