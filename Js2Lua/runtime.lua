@@ -110,6 +110,9 @@ local function __CallMember(table, key, ...)
 		error("Tried to call member " .. tostring(key) .. " of undefined")
 	end
 	local unboundMethod = __Get(table, key)
+	if unboundMethod == nil then
+		error("Tried to call member " .. tostring(key) .. " of " .. tostring(table) .. " which is missing")
+	end
 	return unboundMethod(table, ...)
 end
 
