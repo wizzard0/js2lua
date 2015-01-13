@@ -110,6 +110,18 @@ local Date = {}
 -- JSON
 local JSON = {}
 
+-- RegExp
+local RegExp = {}
+
+-- Error
+local Error = {}
+local EvalError = {}
+local RangeError = {}
+local ReferenceError = {}
+local SyntaxError = {}
+local TypeError = {}
+local URIError = {}
+
 
 -- LIBRARY END
 
