@@ -90,22 +90,25 @@ function EmitExpression(ex, emit, alloc) {
 function EmitTryStatement(ast, emit, alloc) {
     //console.log(util.inspect(ast, false, 999, true));
     // TODO we're fucking optimistic, just emit try and finally, no catch!
+    // TODO finally blocks are skipped btw! they need to be called after in RETURNs
     EmitStatement(ast.block, emit, alloc);
-    emit("-- no catch, just finally\r\n");
+    //emit("-- no catch, just finally\r\n");
     // handlerS, not handler!
     if (ast.finalizer) {
+        emit("--[[FINALIZER]]");
         EmitStatement(ast.finalizer, emit, alloc);
     }
 }
+var NonSinkableExpressionTypes = ['VariableDeclaration', 'AssignmentExpression', 'CallExpression', 'UpdateExpression'];
 function EmitForStatement(ast, emit, alloc) {
     //console.log(util.inspect(ast, false, 999, true));
     if (ast.init) {
         var ait = ast.init.type;
-        if (['VariableDeclaration', 'AssignmentExpression', 'CallExpression'].indexOf(ait) == -1) {
+        if (NonSinkableExpressionTypes.indexOf(ait) == -1) {
             emit("__Sink(");
         }
         EmitVariableDeclaratorOrExpression(ast.init, emit, alloc);
-        if (['VariableDeclaration', 'AssignmentExpression', 'CallExpression'].indexOf(ait) == -1) {
+        if (NonSinkableExpressionTypes.indexOf(ait) == -1) {
             emit(")");
         }
     }
@@ -127,11 +130,11 @@ function EmitForStatement(ast, emit, alloc) {
     emit("\r\n-- BODY END\r\n");
     if (ast.update) {
         var aut = ast.update.type;
-        if (['VariableDeclaration', 'AssignmentExpression', 'CallExpression'].indexOf(aut) == -1) {
+        if (NonSinkableExpressionTypes.indexOf(aut) == -1) {
             emit("__Sink(");
         }
         EmitExpression(ast.update, emit, alloc);
-        if (['VariableDeclaration', 'AssignmentExpression', 'CallExpression'].indexOf(aut) == -1) {
+        if (NonSinkableExpressionTypes.indexOf(aut) == -1) {
             emit(")");
         }
     }
@@ -231,7 +234,13 @@ function EmitObject(ast, emit, alloc) {
     for (var si = 0; si < ast.properties.length; si++) {
         var arg = ast.properties[si];
         emit("[\"");
-        EmitExpression(arg.key, emit, alloc);
+        // always coerced to string, as per js spec
+        if (arg.key.type == 'Literal') {
+            emit(arg.key.value);
+        }
+        else {
+            EmitExpression(arg.key, emit, alloc);
+        }
         emit("\"]=");
         EmitExpression(arg.value, emit, alloc);
         if (si != ast.properties.length - 1) {

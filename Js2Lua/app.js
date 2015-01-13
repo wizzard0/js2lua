@@ -24,14 +24,14 @@ function ComparePrograms(fn) {
     var ns = /@negative|negative: (.*)/.exec(source);
     var hasEval = /eval\(/.exec(source);
     var hasWith = /with[ ]?\(/.exec(source);
-    //var hasTry = /try( {|{)/.exec(source);
+    var hasTry = /finally( {|{)/.exec(source);
     var hasOther = /LUA_SKIP/.exec(source);
     var onlyStrict = /\"use strict\"/.exec(source);
     var hasGlobalDeleteTest = /Compound Assignment Operator calls PutValue\(lref, v\)/.exec(source);
     var hasBrokenDate = /S15\.9\.3\.1_A5/.exec(source);
     var hasIntl = /testIntl|\bIntl\b/.exec(source);
     var expectErrors = false;
-    if (hasEval || hasWith || hasOther || hasBrokenDate || hasGlobalDeleteTest || hasIntl || onlyStrict) {
+    if (hasEval || hasWith || hasTry || hasOther || hasBrokenDate || hasGlobalDeleteTest || hasIntl || onlyStrict) {
         console.log(" [SKIP]");
         return "skip";
     }
@@ -67,7 +67,7 @@ function ComparePrograms(fn) {
         vm.runInNewContext(jsRT + source, { print: print, console: { log: print } }, fn);
         var lua_stdout = RunProgram(luaRT + luasrc, flua);
         if (js_stdout.trim().length != 0 || lua_stdout.trim().length != 0) {
-            if (/expected/.exec(lua_stdout) && !/table expected, got/.exec(lua_stdout)) {
+            if (/expected/.exec(lua_stdout) && !/table expected, got/.exec(lua_stdout) && !/number expected, got/.exec(lua_stdout)) {
                 console.log(" [SYNTAX] FAIL ===========================================");
                 console.log("JS:", js_stdout);
                 console.log("Lua:", lua_stdout);
@@ -100,7 +100,9 @@ filenames.forEach(function (fn) {
     }
     else if (pass == "nocode") {
         nocode++;
-        throw new Error("giving up");
+        if (nocode > 3) {
+            throw new Error("giving up");
+        }
     }
     else if (pass) {
         passed++;
