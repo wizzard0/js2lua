@@ -105,6 +105,17 @@ local function __Get(table, key)
 	return result
 end
 
+local function __InstanceOf(table, ctor)
+	if table == nil then return false end
+	local iter = table
+	repeat
+		local result = rawget(iter, 'constructor')
+		if result == ctor then return true end
+		iter = rawget(iter, "__Prototype")
+	until nil == iter
+	return false
+end
+
 local function __CallMember(table, key, ...)
 	if table == nil then
 		error("Tried to call member " .. tostring(key) .. " of undefined")
@@ -139,6 +150,7 @@ end
 local function __New(ctor, ...)
 	local obj = {}
 	obj.__Prototype = ctor.prototype
+	obj.constructor = ctor
 	obj.__TypeofValue = "object"
 	setmetatable(obj, __ObjectMetatable)
 	local rv2 = ctor.__CallImpl(obj, ...)
