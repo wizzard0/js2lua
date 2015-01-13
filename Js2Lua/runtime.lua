@@ -51,9 +51,45 @@ local function __PlusOp(left, right)
 	end
 end
 
+local function __Get(table, key)
+	local result
+	local iter = table
+	repeat
+		result = iter[key]
+		iter = rawget(table, "__Prototype")
+	until result or not iter
+	return result
+end
+
+local function __CallMember(table, key, ...)
+	local unboundMethod = __Get(table, key)
+	unboundMethod(table, unpack(arg))
+end
+
+local function __Call(table, ...)
+	local ci = table.__CallImpl
+	return ci(nil, unpack(arg))
+end
+
+local __ObjectMetatable = {
+	__index = __Get,
+	__call = __Call
+}
+
+local function __DefineFunction(definition)
+	local obj = {}
+	-- TODO function proto
+	setmetatable(obj, __ObjectMetatable)
+	obj.__CallImpl = definition
+	return obj
+end
+
 local function __New(ctor, ...)
-	-- TODO
-	return {}
+	local obj = {}
+	obj.__Prototype = ctor.prototype
+	setmetatable(obj, __ObjectMetatable)
+	local rv2 = ctor.__CallImpl(obj, arg)
+	if rv2 then return rv2 else return obj end
 end
 
 local function __Iterate(obj)

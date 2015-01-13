@@ -172,17 +172,15 @@ function EmitIdentifier(ast: esprima.Syntax.Identifier, emit: (s: string) => voi
 }
 
 function EmitFunctionExpr(ast: esprima.Syntax.FunctionExpression, emit: (s: string) => void, alloc: () => number) {
-    emit("function (");
+    emit("__DefineFunction(function (self");
     for (var si = 0; si < ast.params.length; si++) {
         var arg = ast.params[si];
+        emit(",");
         EmitExpression(arg, emit, alloc);
-        if (si != ast.params.length - 1) {
-            emit(",");
-        }
     }
     emit(")");
     EmitBlock(ast.body, emit, alloc);
-    emit(" end --FunctionExpr\r\n"); // any breaks?
+    emit(" end) --FunctionExpr\r\n"); // any breaks?
 }
 
 function EmitArray(ast: esprima.Syntax.ArrayExpression, emit: (s: string) => void, alloc: () => number) {
