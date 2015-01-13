@@ -160,9 +160,12 @@ function EmitVariableDeclaratorOrExpression(ast, emit, alloc) {
 }
 function EmitIdentifier(ast, emit, alloc) {
     var ein = ast.name;
-    ein = ein.replace("$", "_USD_");
+    ein = ein.replace(/\$/g, "_USD_");
     if (ein == 'arguments') {
         ein = 'arg';
+    }
+    if (reservedLuaKeys[ein]) {
+        ein = '_R_' + ein;
     }
     emit(ein);
 }
@@ -503,6 +506,33 @@ function EmitConditional(ast, emit, alloc) {
     EmitExpression(ast.alternate, emit, alloc);
     emit(")) and __TernaryRestore())");
 }
+var reservedLuaKeys = {
+    'true': true,
+    'false': true,
+    'null': true,
+    'in': true,
+    'try': true,
+    'class': true,
+    'break': true,
+    'do': true,
+    'while': true,
+    'until': true,
+    'for': true,
+    'and': true,
+    'else': true,
+    'elseif': true,
+    'end': true,
+    'function': true,
+    'if': true,
+    'local': true,
+    'nil': true,
+    'not': true,
+    'or': true,
+    'repeat': true,
+    'return': true,
+    'then': true,
+    'goto': true,
+};
 function EmitMember(ast, emit, alloc) {
     if (ast.property.name == 'length') {
         EmitCall({
@@ -512,9 +542,11 @@ function EmitMember(ast, emit, alloc) {
         }, emit, alloc);
     }
     else if (ast.property.type == 'Identifier') {
+        var id = ast.property;
         EmitExpression(ast.object, emit, alloc);
-        emit(".");
-        EmitExpression(ast.property, emit, alloc);
+        emit(reservedLuaKeys[id.name] ? "[\"" : ".");
+        emit(id.name); // cannot EmitIdentifier because of escaping
+        emit(reservedLuaKeys[id.name] ? "\"]" : "");
     }
     else {
         EmitExpression(ast.object, emit, alloc);

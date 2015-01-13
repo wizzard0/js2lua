@@ -164,9 +164,12 @@ function EmitVariableDeclaratorOrExpression(ast: esprima.Syntax.VariableDeclarat
 
 function EmitIdentifier(ast: esprima.Syntax.Identifier, emit: (s: string) => void, alloc: () => number) {
     var ein = (<esprima.Syntax.Identifier>ast).name;
-    ein = ein.replace("$", "_USD_");
+    ein = ein.replace(/\$/g, "_USD_");
     if (ein == 'arguments') { // HACK
         ein = 'arg';
+    }
+    if (reservedLuaKeys[ein]) {
+        ein = '_R_' + ein;
     }
     emit(ein);
 }
@@ -510,6 +513,34 @@ function EmitConditional(ast: esprima.Syntax.ConditionalExpression, emit: (s: st
     emit(")) and __TernaryRestore())");
 }
 
+var reservedLuaKeys = {
+    'true': true,
+    'false': true,
+    'null': true,
+    'in': true,
+    'try': true,
+    'class': true,
+    'break': true,
+    'do': true,
+    'while': true,
+    'until': true,
+    'for': true,
+    'and': true,
+    'else': true,
+    'elseif': true,
+    'end': true,
+    'function': true,
+    'if': true,
+    'local': true,
+    'nil': true,
+    'not': true,
+    'or': true,
+    'repeat': true,
+    'return': true,
+    'then': true,
+    'goto': true,
+}
+
 function EmitMember(ast: esprima.Syntax.MemberExpression, emit: (s: string) => void, alloc: () => number) {
     if (ast.property.name == 'length') {
         EmitCall({
@@ -518,9 +549,11 @@ function EmitMember(ast: esprima.Syntax.MemberExpression, emit: (s: string) => v
             arguments: [ast.object]
         }, emit, alloc);
     } else if (ast.property.type == 'Identifier') {
+        var id = <esprima.Syntax.Identifier>ast.property;
         EmitExpression(ast.object, emit, alloc);
-        emit(".");
-        EmitExpression(ast.property, emit, alloc);
+        emit(reservedLuaKeys[id.name] ? "[\"" : ".");
+        emit(id.name); // cannot EmitIdentifier because of escaping
+        emit(reservedLuaKeys[id.name] ? "\"]" : "");
     } else {
         EmitExpression(ast.object, emit, alloc);
         emit("[");
