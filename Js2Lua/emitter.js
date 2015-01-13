@@ -517,8 +517,18 @@ function EmitMember(ast, emit, alloc) {
     }
 }
 function EmitCall(ast, emit, alloc) {
-    EmitExpression(ast.callee, emit, alloc);
-    emit("(");
+    if (ast.callee.type == 'MemberExpression') {
+        var me = ast.callee;
+        emit("__CallMember(");
+        EmitExpression(me.object, emit, alloc);
+        emit(",\"");
+        EmitExpression(me.property, emit, alloc);
+        emit("\",");
+    }
+    else {
+        EmitExpression(ast.callee, emit, alloc);
+        emit("(");
+    }
     for (var si = 0; si < ast.arguments.length; si++) {
         var arg = ast.arguments[si];
         EmitExpression(arg, emit, alloc);

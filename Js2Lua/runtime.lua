@@ -52,6 +52,9 @@ local function __PlusOp(left, right)
 end
 
 local function __Get(table, key)
+	if table == nil then
+		error("Tried to access member " .. tostring(key) .. " of undefined")
+	end
 	local result
 	local iter = table
 	repeat
@@ -62,13 +65,16 @@ local function __Get(table, key)
 end
 
 local function __CallMember(table, key, ...)
+	if table == nil then
+		error("Tried to call member " .. tostring(key) .. " of undefined")
+	end
 	local unboundMethod = __Get(table, key)
-	unboundMethod(table, unpack(arg))
+	return unboundMethod(table, ...)
 end
 
 local function __Call(table, ...)
 	local ci = table.__CallImpl
-	return ci(nil, unpack(arg))
+	return ci(nil, ...)
 end
 
 local __ObjectMetatable = {
@@ -127,6 +133,15 @@ local Math = {
 
 -- Object
 local Object = {}
+Object.getOwnPropertyDescriptor = function(self, object, key)
+	-- print(tostring(self).."/"..tostring(object).."/"..tostring(key))
+	return {
+		["value"] = __Get(object, key),
+		["writable"] = true,
+		["enumerable"] = true,
+		["configurable"] = true
+	}
+end
 
 -- Array
 local Array = {}

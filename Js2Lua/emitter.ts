@@ -396,7 +396,7 @@ function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void
 
 function EmitContinue(ast: esprima.Syntax.ContinueStatement, emit: (s: string) => void, alloc: () => number) {
     emit(" goto "); // TODO nonlabeled continue to end of loop
-    EmitExpression(ast.label, emit, alloc);   
+    EmitExpression(ast.label, emit, alloc);
 }
 
 function EmitLabeled(ast: esprima.Syntax.LabeledStatement, emit: (s: string) => void, alloc: () => number) {
@@ -524,8 +524,17 @@ function EmitMember(ast: esprima.Syntax.MemberExpression, emit: (s: string) => v
 }
 
 function EmitCall(ast: esprima.Syntax.CallExpression, emit: (s: string) => void, alloc: () => number) {
-    EmitExpression(ast.callee, emit, alloc);
-    emit("(");
+    if (ast.callee.type == 'MemberExpression') {
+        var me = <esprima.Syntax.MemberExpression>ast.callee;
+        emit("__CallMember(");
+        EmitExpression(me.object, emit, alloc);
+        emit(",\"");
+        EmitExpression(me.property, emit, alloc);
+        emit("\",");
+    } else {
+        EmitExpression(ast.callee, emit, alloc);
+        emit("(");
+    }
     for (var si = 0; si < ast.arguments.length; si++) {
         var arg = ast.arguments[si];
         EmitExpression(arg, emit, alloc);
