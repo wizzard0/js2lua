@@ -126,6 +126,7 @@ local __ObjectMetatable = {
 	__call = __Call
 }
 
+-- wrap Lua function as js function
 local function __DefineFunction(definition)
 	local obj = {}
 	-- TODO function proto
@@ -145,7 +146,15 @@ local function __New(ctor, ...)
 end
 
 local function __Iterate(obj)
-	return ipairs(obj)
+	return pairs(obj)
+end
+
+local function __ContainsKey(key, obj)
+	if obj[key] ~= nil then return true end
+	for k,v in pairs(obj) do -- TODO PERF need some optimization here
+		if k == key then return true end
+	end
+	return false
 end
 
 local function __Sink()
@@ -248,6 +257,10 @@ local escape = __DefineFunction(function(self, str) return str end) -- TODO actu
 __JsGlobalObjects.escape = escape
 local unescape = __DefineFunction(function(self, str) return str end) -- TODO actually escape :)
 __JsGlobalObjects.unescape = unescape
+local parseInt = __DefineFunction(function(self, str) return tonumber(str) end) -- TODO int
+__JsGlobalObjects.parseInt = parseInt
+local parseFloat = __DefineFunction(function(self, str) return tonumber(str) end) -- TODO int
+__JsGlobalObjects.parseFloat = parseFloat
 
 local console = {
 	["log"] = function(self, ...) print(...) end

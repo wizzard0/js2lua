@@ -70,7 +70,7 @@ function ComparePrograms(fn: string): any {
         vm.runInNewContext(jsRT + source, { print: print, console: { log: print } }, fn);
         var lua_stdout = RunProgram(luaRT + luasrc, flua);
         if (js_stdout.trim().length != 0 || lua_stdout.trim().length != 0) {
-            if (/expected/.exec(lua_stdout)) {
+            if (/expected/.exec(lua_stdout) && !/table expected, got/.exec(lua_stdout)) {
                 console.log(" [SYNTAX] FAIL ===========================================");
                 console.log("JS:", js_stdout);
                 console.log("Lua:", lua_stdout);
@@ -100,7 +100,7 @@ filenames.forEach(function (fn) {
     if (pass == "skip") { skipped++ }
     else if (pass == "nocode") {
         nocode++;
-        //throw new Error("giving up");
+        throw new Error("giving up");
     }
     else if (pass) { passed++ } else { failed++ }
 });

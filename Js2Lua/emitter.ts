@@ -461,6 +461,7 @@ function EmitBinary(ast: esprima.Syntax.BinaryExpression, emit: (s: string) => v
         '^': 'bit32.bxor',
         '|': 'bit32.bor',
         '+': '__PlusOp',
+        'in': '__ContainsKey',
     };
     if (aop in remap) {
         EmitCall({

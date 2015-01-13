@@ -457,6 +457,7 @@ function EmitBinary(ast, emit, alloc) {
         '^': 'bit32.bxor',
         '|': 'bit32.bor',
         '+': '__PlusOp',
+        'in': '__ContainsKey',
     };
     if (aop in remap) {
         EmitCall({
