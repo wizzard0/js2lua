@@ -619,9 +619,15 @@ function EmitCall(ast, emit, alloc) {
         var me = ast.callee;
         emit("__CallMember(");
         EmitExpression(me.object, emit, alloc);
-        emit(",\"");
+        emit(",");
+        if (me.property.type == 'Identifier') {
+            emit("\"");
+        }
         EmitExpression(me.property, emit, alloc);
-        emit(ast.arguments.length ? "\"," : "\"");
+        if (me.property.type == 'Identifier') {
+            emit("\"");
+        }
+        emit(ast.arguments.length ? "," : "\"");
     }
     else {
         EmitExpression(ast.callee, emit, alloc);
