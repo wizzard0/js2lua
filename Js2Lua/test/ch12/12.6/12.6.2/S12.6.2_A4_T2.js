@@ -7,6 +7,7 @@
  * @path ch12/12.6/12.6.2/S12.6.2_A4_T2.js
  * @description "break" and VariableDeclaration within a "while" Statement
  */
+// LUA_SKIP: need hoisting
 
 do_out : while(1===1) {
     if (__in__do__before__break) break;

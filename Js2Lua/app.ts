@@ -38,7 +38,8 @@ function ComparePrograms(fn: string): any {
     var expectErrors = false;
 
     if (hasEval || hasWith
-        || hasTry || hasSwitch
+        //|| hasTry
+        || hasSwitch
         || hasOther || hasBrokenDate || hasGlobalDeleteTest || hasIntl || onlyStrict
         ) {
         console.log(" [SKIP]");

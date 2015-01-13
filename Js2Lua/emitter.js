@@ -183,13 +183,13 @@ function EmitForInStatement(ast, emit, alloc) {
     emit("for ");
     if (ast.left.type == 'VariableDeclaration') {
         var vd = ast.left;
-        EmitExpression(vd.declarations[0].id, emit, alloc);
+        EmitExpression(vd.declarations[0].id, emit, alloc, false);
     }
     else {
-        EmitExpression(ast.left, emit, alloc);
+        EmitExpression(ast.left, emit, alloc, false);
     }
     emit(",");
-    EmitExpression({ type: 'Identifier', name: '_tmp' + alloc() }, emit, alloc);
+    EmitExpression({ type: 'Identifier', name: '_tmp' + alloc() }, emit, alloc, false);
     emit(" in ");
     EmitCall({
         type: 'CallExpression',
@@ -227,7 +227,7 @@ function EmitIdentifier(ast, emit, alloc, rvalue, strictCheck) {
     if (reservedLuaKeys[ein]) {
         ein = '_R_' + ein;
     }
-    if (ein.substr(0, 2) == '__') {
+    if (ein.substr(0, 2) == '__' || ein == 'undefined') {
         strictCheck = false; // dont recheck builtins
     } // TODO pass locals here and check AOT
     if (strictCheck && rvalue) {
@@ -243,7 +243,7 @@ function EmitFunctionExpr(ast, emit, alloc) {
     for (var si = 0; si < ast.params.length; si++) {
         var arg = ast.params[si];
         emit(",");
-        EmitExpression(arg, emit, alloc);
+        EmitExpression(arg, emit, alloc, false, false);
     }
     emit(")");
     EmitBlock(ast.body, emit, alloc);
@@ -493,7 +493,7 @@ var pendingContinue = null;
 function EmitContinue(ast, emit, alloc) {
     if (ast.label) {
         emit(" goto ");
-        EmitExpression(ast.label, emit, alloc);
+        EmitExpression(ast.label, emit, alloc, false, false);
     }
     else {
         var pc = "__Continue" + alloc();
@@ -503,11 +503,11 @@ function EmitContinue(ast, emit, alloc) {
 }
 function EmitLabeled(ast, emit, alloc) {
     emit("::");
-    EmitExpression(ast.label, emit, alloc);
+    EmitExpression(ast.label, emit, alloc, false, false);
     emit(":: ");
     EmitStatement(ast.body, emit, alloc);
     emit("::");
-    EmitExpression(ast.label, emit, alloc);
+    EmitExpression(ast.label, emit, alloc, false, false);
     emit("__After:: ");
 }
 function EmitDoWhileStatement(ast, emit, alloc) {
@@ -555,7 +555,7 @@ function EmitThrow(ast, emit, alloc) {
 function EmitBreak(ast, emit, alloc) {
     if (ast.label) {
         emit(" goto ");
-        EmitExpression(ast.label, emit, alloc);
+        EmitExpression(ast.label, emit, alloc, false, false);
         emit("__After");
     }
     else {

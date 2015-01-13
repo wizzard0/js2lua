@@ -184,12 +184,12 @@ function EmitForInStatement(ast: esprima.Syntax.ForInStatement, emit: (s: string
     emit("for ");
     if (ast.left.type == 'VariableDeclaration') {
         var vd = <esprima.Syntax.VariableDeclaration><any>ast.left;
-        EmitExpression(vd.declarations[0].id, emit, alloc);
+        EmitExpression(vd.declarations[0].id, emit, alloc, false);
     } else {
-        EmitExpression(ast.left, emit, alloc);
+        EmitExpression(ast.left, emit, alloc, false);
     }
     emit(",");
-    EmitExpression({ type: 'Identifier', name: '_tmp' + alloc() }, emit, alloc);
+    EmitExpression({ type: 'Identifier', name: '_tmp' + alloc() }, emit, alloc, false);
     emit(" in ");
     EmitCall({
         type: 'CallExpression',
@@ -225,7 +225,7 @@ function EmitIdentifier(ast: esprima.Syntax.Identifier, emit: (s: string) => voi
     if (reservedLuaKeys[ein]) {
         ein = '_R_' + ein;
     }
-    if (ein.substr(0, 2) == '__') {
+    if (ein.substr(0, 2) == '__' || ein == 'undefined') {
         strictCheck = false; // dont recheck builtins
     } // TODO pass locals here and check AOT
     if (strictCheck && rvalue) { emit("__RefCheck("); }
@@ -238,7 +238,7 @@ function EmitFunctionExpr(ast: esprima.Syntax.FunctionExpression, emit: (s: stri
     for (var si = 0; si < ast.params.length; si++) {
         var arg = ast.params[si];
         emit(",");
-        EmitExpression(arg, emit, alloc);
+        EmitExpression(arg, emit, alloc, false, false);
     }
     emit(")");
     EmitBlock(ast.body, emit, alloc);
@@ -479,7 +479,7 @@ var pendingContinue: string = null;
 function EmitContinue(ast: esprima.Syntax.ContinueStatement, emit: (s: string) => void, alloc: () => number) {
     if (ast.label) {
         emit(" goto ");
-        EmitExpression(ast.label, emit, alloc);
+        EmitExpression(ast.label, emit, alloc, false, false);
     } else {
         var pc = "__Continue" + alloc();
         pendingContinue = pc;
@@ -489,11 +489,11 @@ function EmitContinue(ast: esprima.Syntax.ContinueStatement, emit: (s: string) =
 
 function EmitLabeled(ast: esprima.Syntax.LabeledStatement, emit: (s: string) => void, alloc: () => number) {
     emit("::");
-    EmitExpression(ast.label, emit, alloc);
+    EmitExpression(ast.label, emit, alloc, false, false);
     emit(":: ");
     EmitStatement(ast.body, emit, alloc);
     emit("::");
-    EmitExpression(ast.label, emit, alloc);
+    EmitExpression(ast.label, emit, alloc, false, false);
     emit("__After:: ");
 }
 
@@ -545,7 +545,7 @@ function EmitThrow(ast: esprima.Syntax.ThrowStatement, emit: (s: string) => void
 function EmitBreak(ast: esprima.Syntax.BreakStatement, emit: (s: string) => void, alloc: () => number) {
     if (ast.label) {
         emit(" goto ");
-        EmitExpression(ast.label, emit, alloc);
+        EmitExpression(ast.label, emit, alloc, false, false);
         emit("__After");
     } else {
         emit("break ");

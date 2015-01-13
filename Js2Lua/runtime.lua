@@ -64,6 +64,7 @@ local function __ToString(value)
 end
 
 local function __ToBoolean(value)
+	if nil == value then return false end
 	if type(value) == 'boolean' then return value end
 	if type(value) == 'table' and __Singletons[value] then
 		return value.__BooleanValue

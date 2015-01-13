@@ -33,7 +33,7 @@ function ComparePrograms(fn) {
     var hasBrokenDate = /S15\.9\.3\.1_A5/.exec(source);
     var hasIntl = /testIntl|\bIntl\b/.exec(source);
     var expectErrors = false;
-    if (hasEval || hasWith || hasTry || hasSwitch || hasOther || hasBrokenDate || hasGlobalDeleteTest || hasIntl || onlyStrict) {
+    if (hasEval || hasWith || hasSwitch || hasOther || hasBrokenDate || hasGlobalDeleteTest || hasIntl || onlyStrict) {
         console.log(" [SKIP]");
         return "skip";
     }
