@@ -72,7 +72,8 @@ function ComparePrograms(fn) {
             if (/expected/.exec(lua_stdout) && !/table expected, got/.exec(lua_stdout) && !/number expected, got/.exec(lua_stdout)) {
                 console.log(" [SYNTAX] FAIL ===========================================");
                 console.log("JS:", js_stdout);
-                console.log("Lua:", lua_stdout);
+                console.log("\r\nLua SRC:", luasrc);
+                console.log("\r\nLua:", lua_stdout);
                 return "nocode"; // generated invalid Lua code
             }
             else {

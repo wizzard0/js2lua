@@ -227,7 +227,7 @@ function EmitIdentifier(ast, emit, alloc, rvalue, strictCheck) {
     if (reservedLuaKeys[ein]) {
         ein = '_R_' + ein;
     }
-    if (ein.substr(0, 2) == '__' || ein == 'undefined') {
+    if (ein.substr(0, 2) == '__' || ein == 'undefined' || BinaryOpRemapValues.indexOf(ein) != -1) {
         strictCheck = false; // dont recheck builtins
     } // TODO pass locals here and check AOT
     if (strictCheck && rvalue) {
@@ -562,23 +562,27 @@ function EmitBreak(ast, emit, alloc) {
         emit("break ");
     }
 }
+var BinaryOpRemap = {
+    '<<': 'bit32.lshift',
+    '>>>': 'bit32.rshift',
+    '>>': 'bit32.arshift',
+    '&': 'bit32.band',
+    '^': 'bit32.bxor',
+    '|': 'bit32.bor',
+    '+': '__PlusOp',
+    'in': '__ContainsKey',
+    'instanceof': '__InstanceOf',
+};
+var BinaryOpRemapValues = [];
+for (var x in BinaryOpRemap) {
+    BinaryOpRemapValues.push(BinaryOpRemap[x]);
+}
 function EmitBinary(ast, emit, alloc) {
     var aop = ast.operator;
-    var remap = {
-        '<<': 'bit32.lshift',
-        '>>>': 'bit32.rshift',
-        '>>': 'bit32.arshift',
-        '&': 'bit32.band',
-        '^': 'bit32.bxor',
-        '|': 'bit32.bor',
-        '+': '__PlusOp',
-        'in': '__ContainsKey',
-        'instanceof': '__InstanceOf',
-    };
-    if (aop in remap) {
+    if (aop in BinaryOpRemap) {
         EmitCall({
             type: 'CallExpression',
-            callee: { 'type': 'Identifier', 'name': remap[aop] },
+            callee: { 'type': 'Identifier', 'name': BinaryOpRemap[aop] },
             arguments: [ast.left, ast.right]
         }, emit, alloc);
     }
