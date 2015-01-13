@@ -617,7 +617,7 @@ function EmitCall(ast: esprima.Syntax.CallExpression, emit: (s: string) => void,
         if (me.property.type == 'Identifier') {emit("\"");}
         EmitExpression(me.property, emit, alloc);
         if (me.property.type == 'Identifier') { emit("\""); }
-        emit(ast.arguments.length ? "," : "\"");
+        emit(ast.arguments.length ? "," : "");
     } else {
         EmitExpression(ast.callee, emit, alloc);
         emit("(");

@@ -627,7 +627,7 @@ function EmitCall(ast, emit, alloc) {
         if (me.property.type == 'Identifier') {
             emit("\"");
         }
-        emit(ast.arguments.length ? "," : "\"");
+        emit(ast.arguments.length ? "," : "");
     }
     else {
         EmitExpression(ast.callee, emit, alloc);
