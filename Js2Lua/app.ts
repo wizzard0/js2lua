@@ -18,6 +18,7 @@ function ComparePrograms(fn: string): any {
     var js_stdout = "";
     var print = function (s) {
         js_stdout += s + "\r\n";
+        console.log(s);
     };
     //var print = console.log;
     var flua = fn.replace(".js", ".lua");
@@ -28,6 +29,7 @@ function ComparePrograms(fn: string): any {
     var hasEval = /eval\(/.exec(source);
     var hasWith = /with[ ]?\(/.exec(source);
     var hasTry = /finally( {|{)/.exec(source);
+    var hasSwitch = /switch/.exec(source);
     var hasOther = /LUA_SKIP/.exec(source);
     var onlyStrict = /\"use strict\"/.exec(source);    
     var hasGlobalDeleteTest = /Compound Assignment Operator calls PutValue\(lref, v\)/.exec(source);
@@ -36,8 +38,9 @@ function ComparePrograms(fn: string): any {
     var expectErrors = false;
 
     if (hasEval || hasWith
-        || hasTry
-        || hasOther || hasBrokenDate || hasGlobalDeleteTest || hasIntl || onlyStrict) {
+        || hasTry || hasSwitch
+        || hasOther || hasBrokenDate || hasGlobalDeleteTest || hasIntl || onlyStrict
+        ) {
         console.log(" [SKIP]");
         return "skip";
     }
@@ -89,6 +92,10 @@ function ComparePrograms(fn: string): any {
 }
 
 var arg = process.argv[2];
+var maxSyntaxErrors = 999999;
+if (process.argv[3]) {
+    maxSyntaxErrors = parseInt(process.argv[3]);
+}
 var filenames = glob.sync(arg.replace("\\", "/"));
 var total = filenames.length;
 var passed = 0;
@@ -100,7 +107,7 @@ filenames.forEach(function (fn) {
     if (pass == "skip") { skipped++ }
     else if (pass == "nocode") {
         nocode++;
-        if (nocode > 3) { // skip 1
+        if (nocode > maxSyntaxErrors) { // skip 1
             throw new Error("giving up");
         }
     }

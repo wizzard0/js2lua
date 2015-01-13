@@ -147,6 +147,11 @@ local function __DefineFunction(definition)
 	return obj
 end
 
+local function __RefCheck(val)
+	if nil == val then error("ReferenceError") end
+	return val
+end
+
 local function __New(ctor, ...)
 	local obj = {}
 	obj.__Prototype = ctor.prototype

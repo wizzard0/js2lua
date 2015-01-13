@@ -29,7 +29,7 @@ function EmitVariableDeclarator(vd: esprima.Syntax.VariableDeclarator, emit: (s:
     emit(";\r\n");
 }
 
-function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void, alloc: () => number, isRvalue: boolean = true) {
+function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void, alloc: () => number, isRvalue: boolean = true, strictCheck: boolean = true) {
     if (!ex) {
         emit('nil');
         return;
@@ -76,7 +76,7 @@ function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void
             EmitFunctionExpr(<esprima.Syntax.FunctionExpression>ex, emit, alloc);
             break;
         case "Identifier":
-            EmitIdentifier(<esprima.Syntax.Identifier>ex, emit, alloc);
+            EmitIdentifier(<esprima.Syntax.Identifier>ex, emit, alloc, isRvalue, strictCheck);
             break;
         case "ThisExpression":
             emit("self");
@@ -95,13 +95,44 @@ function EmitTryStatement(ast: esprima.Syntax.TryStatement, emit: (s: string) =>
     //console.log(util.inspect(ast, false, 999, true));
     // TODO we're fucking optimistic, just emit try and finally, no catch!
     // TODO finally blocks are skipped btw! they need to be called after in RETURNs
+    var statusName = "__TryStatus" + alloc();
+    var returnValue = "__TryReturnValue" + alloc();
+    var catchReturnValue = "__CatchReturnValue" + alloc();
+    var finalizer = "__TryFinalizer" + alloc();
+    var handler = "__TryHandler" + alloc();
+    emit("--TryBody\r\nlocal " + statusName + "," + returnValue + " = pcall(function ()\r\n");
     EmitStatement(ast.block, emit, alloc);
-    //emit("-- no catch, just finally\r\n");
-    // handlerS, not handler!
+    emit(" end)\r\n");
+    //emit("print( " + statusName + "," + returnValue + ")\r\n");
     if (ast.finalizer) {
-        emit("--[[FINALIZER]]");
+        emit("--Finally\r\nlocal " + finalizer + "=(function() ");
         EmitStatement(ast.finalizer, emit, alloc);
+        emit(" end)");
     }
+    var ah = <esprima.Syntax.CatchClause[]>(<any>ast).handlers;
+    if (ah.length == 0) {
+    } else if (ah.length == 1) {
+        var h = ah[0];
+        var paramName = h.param.name;
+        emit("--Catch\r\nlocal " + handler + "=(function(" + paramName + ") ");
+        EmitStatement(h.body, emit, alloc);
+        emit(" end)");
+    } else {
+        emit("--[[MultipleCatchClauses]]");
+    }
+    var erf = (ast.finalizer) ? (finalizer + "();") : "";
+    // Early Return
+    emit("--EarlyReturn\r\n if " + statusName + " and nil~=" + returnValue + " then " + erf + " return " + returnValue + " end;\r\n");
+    // Catch
+    if (ah.length) {
+        emit("--CheckCatch\r\n if not " + statusName + " then " + catchReturnValue + "=" + handler + "(" + returnValue + ".data or " + returnValue + ") end;\r\n");
+        emit("--CheckCatchValue\r\n if true or nil~=" + catchReturnValue + " then return " + catchReturnValue + " end;");
+    }
+    // Just Finally
+    if (ast.finalizer) {
+        emit("--JustFinalizer\r\n;" + finalizer + "()");
+    }
+    // handlerS, not handler!
 }
 
 var NonSinkableExpressionTypes = ['VariableDeclaration', 'AssignmentExpression', 'CallExpression', 'UpdateExpression'];
@@ -185,7 +216,7 @@ function EmitVariableDeclaratorOrExpression(ast: esprima.Syntax.VariableDeclarat
     }
 }
 
-function EmitIdentifier(ast: esprima.Syntax.Identifier, emit: (s: string) => void, alloc: () => number) {
+function EmitIdentifier(ast: esprima.Syntax.Identifier, emit: (s: string) => void, alloc: () => number, rvalue: boolean, strictCheck: boolean) {
     var ein = (<esprima.Syntax.Identifier>ast).name;
     ein = ein.replace(/\$/g, "_USD_");
     if (ein == 'arguments') { // HACK
@@ -194,7 +225,12 @@ function EmitIdentifier(ast: esprima.Syntax.Identifier, emit: (s: string) => voi
     if (reservedLuaKeys[ein]) {
         ein = '_R_' + ein;
     }
+    if (ein.substr(0, 2) == '__') {
+        strictCheck = false; // dont recheck builtins
+    } // TODO pass locals here and check AOT
+    if (strictCheck && rvalue) { emit("__RefCheck("); }
     emit(ein);
+    if (strictCheck && rvalue) { emit(")"); }
 }
 
 function EmitFunctionExpr(ast: esprima.Syntax.FunctionExpression, emit: (s: string) => void, alloc: () => number) {
@@ -244,7 +280,7 @@ function EmitObject(ast: esprima.Syntax.ObjectExpression, emit: (s: string) => v
         if (arg.key.type == 'Literal') {
             emit(arg.key.value);
         } else { // identifiers already ok
-            EmitExpression(arg.key, emit, alloc);
+            EmitExpression(arg.key, emit, alloc, false);
         }
         emit("\"]=");
         EmitExpression(arg.value, emit, alloc);
@@ -257,9 +293,9 @@ function EmitObject(ast: esprima.Syntax.ObjectExpression, emit: (s: string) => v
 
 function EmitFunctionDeclaration(ast: esprima.Syntax.FunctionDeclaration, emit: (s: string) => void, alloc: () => number) {
     emit("local ");
-    EmitExpression(ast.id, emit, alloc);
+    EmitExpression(ast.id, emit, alloc, false);
     emit(";");
-    EmitExpression(ast.id, emit, alloc);
+    EmitExpression(ast.id, emit, alloc, false);
     emit(" = ");
     EmitFunctionExpr(ast, emit, alloc);
 }
@@ -501,9 +537,9 @@ function EmitReturn(ast: esprima.Syntax.ReturnStatement, emit: (s: string) => vo
 }
 
 function EmitThrow(ast: esprima.Syntax.ThrowStatement, emit: (s: string) => void, alloc: () => number) {
-    emit("error("); // TODO proper exceptions
+    emit("error({[\"data\"]="); // TODO proper exceptions
     EmitExpression(ast.argument, emit, alloc);
-    emit(")");
+    emit("})");
 }
 
 function EmitBreak(ast: esprima.Syntax.BreakStatement, emit: (s: string) => void, alloc: () => number) {
@@ -644,8 +680,8 @@ function EmitCall(ast: esprima.Syntax.CallExpression, emit: (s: string) => void,
         emit("__CallMember(");
         EmitExpression(me.object, emit, alloc);
         emit(",");
-        if (me.property.type == 'Identifier') {emit("\"");}
-        EmitExpression(me.property, emit, alloc);
+        if (me.property.type == 'Identifier') { emit("\""); }
+        EmitExpression(me.property, emit, alloc, true, false);
         if (me.property.type == 'Identifier') { emit("\""); }
         emit(ast.arguments.length ? "," : "");
     } else {
