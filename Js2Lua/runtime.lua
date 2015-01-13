@@ -41,6 +41,8 @@ end
 local __Singletons = {}
 local __JsGlobalObjects = {}
 
+local bit32 = require("bit")
+
 local function __Typeof(value)
     if type(value) == 'boolean' or type(value) == 'number' or type(value) == 'string' then
         return type(value)
@@ -69,8 +71,9 @@ local function __ToBoolean(value)
 	if type(value) == 'table' and __Singletons[value] then
 		return value.__BooleanValue
 	end
-	if type(value) == 'number' and value ~= value then return false end
-	if type(value) == 'number' then return value ~= 0 end
+	if type(value) == 'number' and (value == 0) or (value ~= value) then return false
+	else return true
+	end
 	if type(value) == 'string' then return value ~= "" end
 	print("__ToBoolean: unsupported! got " .. __ToString(value))
 	return value
