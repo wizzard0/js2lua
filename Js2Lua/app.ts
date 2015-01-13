@@ -70,10 +70,17 @@ function ComparePrograms(fn: string): any {
         vm.runInNewContext(jsRT + source, { print: print, console: { log: print } }, fn);
         var lua_stdout = RunProgram(luaRT + luasrc, flua);
         if (js_stdout.trim().length != 0 || lua_stdout.trim().length != 0) {
-            console.log(" POS FAIL! ===========================================");
-            console.log("JS:", js_stdout);
-            console.log("Lua:", lua_stdout);
-            return false;
+            if (/expected/.exec(lua_stdout)) {
+                console.log(" [SYNTAX] FAIL ===========================================");
+                console.log("JS:", js_stdout);
+                console.log("Lua:", lua_stdout);
+                return "nocode"; // generated invalid Lua code
+            } else {
+                console.log(" [RUNTIME] FAIL ===========================================");
+                console.log("JS:", js_stdout);
+                console.log("Lua:", lua_stdout);
+                return false;
+            }
         } else {
             console.log(" [OK+]");
             return true;
