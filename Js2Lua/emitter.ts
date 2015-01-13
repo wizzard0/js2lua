@@ -222,7 +222,7 @@ function EmitArray(ast: esprima.Syntax.ArrayExpression, emit: (s: string) => voi
 }
 
 function EmitSequence(ast: esprima.Syntax.SequenceExpression, emit: (s: string) => void, alloc: () => number) {
-    emit("{");
+    emit("({");
     for (var si = 0; si < ast.expressions.length; si++) {
         var arg = ast.expressions[si];
         EmitExpression(arg, emit, alloc);
@@ -230,7 +230,7 @@ function EmitSequence(ast: esprima.Syntax.SequenceExpression, emit: (s: string) 
             emit(", ");
         }
     }
-    emit("}["); // TODO this is awful, optimize this
+    emit("})["); // TODO this is awful, optimize this
     emit(ast.expressions.length.toString());
     emit("]");
 }
@@ -285,9 +285,17 @@ function EmitAssignment(ast: esprima.Syntax.AssignmentExpression, emit: (s: stri
     //    console.log(util.inspect(ast, false, 999, true));
     //    return;
     //}
+    if (ast.left.type == 'AssignmentExpression' || ast.left.type == 'UpdateExpression') {
+        console.log("Inline Assignment Codegen not implemented");
+        emit("--[[IAC]]")
+    }
     EmitExpression(ast.left, emit, alloc, false);
     if (aop == '=') {
         emit(aop);
+        if (ast.right.type == 'AssignmentExpression' || ast.right.type == 'UpdateExpression') {
+            console.log("Inline Assignment Codegen not implemented");
+            emit("--[[IAC]]")
+        }
         EmitExpression(ast.right, emit, alloc);
     } else {
         emit('=');
@@ -522,8 +530,16 @@ function EmitBinary(ast: esprima.Syntax.BinaryExpression, emit: (s: string) => v
             aop = '==';
         }
         emit("(");
+        if (ast.left.type == 'AssignmentExpression' || ast.left.type == 'UpdateExpression') {
+            console.log("Inline Assignment Codegen not implemented");
+            emit("--[[IAC]]")
+        }
         EmitExpression(ast.left, emit, alloc);
         emit(aop);
+        if (ast.right.type == 'AssignmentExpression' || ast.right.type == 'UpdateExpression') {
+            console.log("Inline Assignment Codegen not implemented");
+            emit("--[[IAC]]")
+        }
         EmitExpression(ast.right, emit, alloc);
         emit(")");
     }
