@@ -23,13 +23,13 @@ function EmitVariableDeclaration(ex: esprima.Syntax.VariableDeclaration, emit: (
 
 function EmitVariableDeclarator(vd: esprima.Syntax.VariableDeclarator, emit: (s: string) => void, alloc: () => number) {
     emit("local ");
-    EmitExpression(vd.id, emit, alloc); // identifier
+    EmitExpression(vd.id, emit, alloc, false); // identifier
     emit(" = ");
     EmitExpression(vd.init, emit, alloc);
     emit(";\r\n");
 }
 
-function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void, alloc: () => number) {
+function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void, alloc: () => number, isRvalue: boolean = true) {
     if (!ex) {
         emit('nil');
         return;
@@ -67,7 +67,7 @@ function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void
             EmitObject(<esprima.Syntax.ObjectExpression>ex, emit, alloc);
             break;
         case "MemberExpression":
-            EmitMember(<esprima.Syntax.MemberExpression>ex, emit, alloc);
+            EmitMember(<esprima.Syntax.MemberExpression>ex, emit, alloc, isRvalue);
             break;
         case "UnaryExpression":
             EmitUnary(<esprima.Syntax.UnaryExpression>ex, emit, alloc);
@@ -285,7 +285,7 @@ function EmitAssignment(ast: esprima.Syntax.AssignmentExpression, emit: (s: stri
     //    console.log(util.inspect(ast, false, 999, true));
     //    return;
     //}
-    EmitExpression(ast.left, emit, alloc);
+    EmitExpression(ast.left, emit, alloc, false);
     if (aop == '=') {
         emit(aop);
         EmitExpression(ast.right, emit, alloc);
@@ -583,8 +583,8 @@ var reservedLuaKeys = {
     'goto': true,
 }
 
-function EmitMember(ast: esprima.Syntax.MemberExpression, emit: (s: string) => void, alloc: () => number) {
-    if (ast.property.name == 'length') {
+function EmitMember(ast: esprima.Syntax.MemberExpression, emit: (s: string) => void, alloc: () => number, isRvalue) {
+    if (ast.property.name == 'length' && isRvalue) {
         EmitCall({
             type: 'CallExpression',
             callee: { 'type': 'Identifier', 'name': '__Length' },

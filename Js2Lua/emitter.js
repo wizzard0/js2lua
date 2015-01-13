@@ -20,12 +20,13 @@ function EmitVariableDeclaration(ex, emit, alloc) {
 }
 function EmitVariableDeclarator(vd, emit, alloc) {
     emit("local ");
-    EmitExpression(vd.id, emit, alloc); // identifier
+    EmitExpression(vd.id, emit, alloc, false); // identifier
     emit(" = ");
     EmitExpression(vd.init, emit, alloc);
     emit(";\r\n");
 }
-function EmitExpression(ex, emit, alloc) {
+function EmitExpression(ex, emit, alloc, isRvalue) {
+    if (isRvalue === void 0) { isRvalue = true; }
     if (!ex) {
         emit('nil');
         return;
@@ -62,7 +63,7 @@ function EmitExpression(ex, emit, alloc) {
             EmitObject(ex, emit, alloc);
             break;
         case "MemberExpression":
-            EmitMember(ex, emit, alloc);
+            EmitMember(ex, emit, alloc, isRvalue);
             break;
         case "UnaryExpression":
             EmitUnary(ex, emit, alloc);
@@ -280,7 +281,7 @@ function EmitAssignment(ast, emit, alloc) {
     //    console.log(util.inspect(ast, false, 999, true));
     //    return;
     //}
-    EmitExpression(ast.left, emit, alloc);
+    EmitExpression(ast.left, emit, alloc, false);
     if (aop == '=') {
         emit(aop);
         EmitExpression(ast.right, emit, alloc);
@@ -580,8 +581,8 @@ var reservedLuaKeys = {
     'then': true,
     'goto': true,
 };
-function EmitMember(ast, emit, alloc) {
-    if (ast.property.name == 'length') {
+function EmitMember(ast, emit, alloc, isRvalue) {
+    if (ast.property.name == 'length' && isRvalue) {
         EmitCall({
             type: 'CallExpression',
             callee: { 'type': 'Identifier', 'name': '__Length' },
