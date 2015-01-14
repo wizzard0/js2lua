@@ -92,8 +92,7 @@ function EmitExpression(ex, emit, alloc, isRvalue, strictCheck) {
 }
 function EmitTryStatement(ast, emit, alloc) {
     //console.log(util.inspect(ast, false, 999, true));
-    // TODO we're fucking optimistic, just emit try and finally, no catch!
-    // TODO finally blocks are skipped btw! they need to be called after in RETURNs
+    // TODO we're fucking optimistic
     var statusName = "__TryStatus" + alloc();
     var returnValue = "__TryReturnValue" + alloc();
     var catchReturnValue = "__CatchReturnValue" + alloc();

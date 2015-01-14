@@ -226,9 +226,7 @@ __JsGlobalObjects.null = null
 
 
 -- Math
-local Math = {
-    ["pow"] = math.pow
-}
+local Math = {}
 Math.PI = 3.141592653589793
 Math.E = 2.718281828459045
 Math.LN10 = 2.302585092994046
@@ -250,8 +248,11 @@ Math.floor = math.floor
 Math.log = math.log
 Math.max = math.max
 Math.min = math.min
-
+Math.pow = math.pow
+Math.random = math.random
+-- Math.round
 Math.sin = math.sin
+Math.sqrt = math.sqrt
 __JsGlobalObjects.Math = Math
 
 -- Object

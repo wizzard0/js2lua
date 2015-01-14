@@ -94,8 +94,7 @@ function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void
 
 function EmitTryStatement(ast: esprima.Syntax.TryStatement, emit: (s: string) => void, alloc: () => number) {
     //console.log(util.inspect(ast, false, 999, true));
-    // TODO we're fucking optimistic, just emit try and finally, no catch!
-    // TODO finally blocks are skipped btw! they need to be called after in RETURNs
+    // TODO we're fucking optimistic
     var statusName = "__TryStatus" + alloc();
     var returnValue = "__TryReturnValue" + alloc();
     var catchReturnValue = "__CatchReturnValue" + alloc();
