@@ -274,8 +274,7 @@ __JsGlobalObjects.Array = Array
 Array.__CallImpl = function(self, ...) -- number or varargs...
 	self = self or __New(Array)
     local orig = {...}
-	-- print(to_string(self))
-	print('array with ' .. #orig .. ' args')
+	-- print('array with ' .. #orig .. ' args')
 	local idx = 0
 	for k,v in ipairs(orig) do
 		self[idx] = v
@@ -283,7 +282,12 @@ Array.__CallImpl = function(self, ...) -- number or varargs...
 	end
 	return self
 end
-
+Array.prototype.forEach = function(self, cb, otherSelf)
+	local os = otherSelf or self -- NOPE, should inherit this
+	for k, v in ipairs(self) do
+		cb(os, v, k)
+	end
+end
 -- Boolean
 local Boolean = __New(Function)
 Boolean.__CallImpl = function(self, val) 
@@ -353,9 +357,9 @@ end
 
 -- Error
 local Error = __New(Function)
-Error.__CallImpl = function(self, arg) 
-    -- print ('Error ctor: ' .. arg)
-    self.__Args = arg
+Error.__CallImpl = function(self, ...) 
+    -- print ('Error ctor: ')
+    self.__Args = {...}
 end
 __JsGlobalObjects.Error = Error
 local EvalError = __New(Function)
@@ -406,7 +410,7 @@ end
 local function fnExists(...)
     error("not implemented")
     -- TODO
-    --[[for (var i = 0; i < __Length(arg); i++) {
+    --[[for (var i = 0; i < __Length({...}); i++) {
         if (typeof (arguments[i]) !== "function") return false;
     }]]
     return true;
