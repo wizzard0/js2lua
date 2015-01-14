@@ -251,7 +251,7 @@ function EmitFunctionExpr(ast, emit, alloc) {
     emit(" end) --FunctionExpr\r\n"); // any breaks?
 }
 function EmitArray(ast, emit, alloc) {
-    emit("{");
+    emit("__MakeArray({");
     for (var si = 0; si < ast.elements.length; si++) {
         emit("[" + si + "]=");
         var arg = ast.elements[si];
@@ -260,7 +260,7 @@ function EmitArray(ast, emit, alloc) {
             emit(", ");
         }
     }
-    emit("}");
+    emit("})");
 }
 function EmitSequence(ast, emit, alloc) {
     emit("({");

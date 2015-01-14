@@ -247,7 +247,7 @@ function EmitFunctionExpr(ast: esprima.Syntax.FunctionExpression, emit: (s: stri
 }
 
 function EmitArray(ast: esprima.Syntax.ArrayExpression, emit: (s: string) => void, alloc: () => number) {
-    emit("{");
+    emit("__MakeArray({");
     for (var si = 0; si < ast.elements.length; si++) {
         emit("[" + si + "]=");
         var arg = ast.elements[si];
@@ -256,7 +256,7 @@ function EmitArray(ast: esprima.Syntax.ArrayExpression, emit: (s: string) => voi
             emit(", ");
         }
     }
-    emit("}");
+    emit("})");
 }
 
 function EmitSequence(ast: esprima.Syntax.SequenceExpression, emit: (s: string) => void, alloc: () => number) {

@@ -288,6 +288,12 @@ Array.prototype.forEach = function(self, cb, otherSelf)
 		cb(os, v, k)
 	end
 end
+local __MakeArray = function(rawArray)
+	setmetatable(rawArray, __ObjectMetatable)
+	rawArray.__Prototype = Array.prototype
+	rawArray.ctor = Array
+	return rawArray
+end
 -- Boolean
 local Boolean = __New(Function)
 Boolean.__CallImpl = function(self, val) 
