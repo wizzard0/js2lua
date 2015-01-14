@@ -11,7 +11,8 @@ function RunProgram(src, ff) {
     return rc.stdout;
 }
 function ComparePrograms(fn) {
-    process.stdout.write(".");
+    console.log(" TRYING " + fn);
+    //process.stdout.write(".");
     var js_stdout = "";
     var print = function (s) {
         js_stdout += s + "\r\n";
@@ -100,6 +101,7 @@ var passed = 0;
 var failed = 0;
 var skipped = 0;
 var nocode = 0;
+var start = +new Date();
 filenames.forEach(function (fn) {
     var pass = ComparePrograms(fn);
     if (pass == "skip") {
@@ -118,5 +120,6 @@ filenames.forEach(function (fn) {
         failed++;
     }
 });
-console.log("Passed:", passed, "Failed:", failed, "Cannot Translate:", nocode, "Skipped:", skipped, "Total:", total);
+var end = +new Date();
+console.log("Passed:", passed, "Failed:", failed, "Cannot Translate:", nocode, "Skipped:", skipped, "Total:", total, "Time: ", (end - start) * 0.001);
 //# sourceMappingURL=app.js.map

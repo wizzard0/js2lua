@@ -1,6 +1,7 @@
 var esprima = require("esprima");
 var util = require("util");
 var esutils = require("esutils");
+var hoist = require("ast-hoist");
 function EmitProgram(ast, emit, alloc) {
     // hack
     emit("\r\n-- BEGIN\r\n");
@@ -219,6 +220,9 @@ function EmitVariableDeclaratorOrExpression(ast, emit, alloc) {
     }
 }
 function EmitIdentifier(ast, emit, alloc, rvalue, strictCheck) {
+    // DEBUG
+    strictCheck = false;
+    /// DEBUG
     var ein = ast.name;
     ein = ein.replace(/\$/g, "_USD_");
     if (ein == 'arguments') {
@@ -757,12 +761,13 @@ function convertFile(source, fn) {
         return allocIndex;
     };
     var ast = esprima.parse(source);
+    var a2 = hoist(ast, true);
     var luasrc = "";
     var emit = function (code) {
         luasrc += code;
         //process.stdout.write(code);
     };
-    EmitProgram(ast, emit, alloc);
+    EmitProgram(a2, emit, alloc);
     return luasrc;
 }
 exports.convertFile = convertFile;

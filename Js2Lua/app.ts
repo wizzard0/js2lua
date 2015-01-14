@@ -14,7 +14,8 @@ function RunProgram(src: string, ff: string) {
 }
 
 function ComparePrograms(fn: string): any {
-    process.stdout.write(".");
+    console.log(" TRYING " + fn);
+    //process.stdout.write(".");
     var js_stdout = "";
     var print = function (s) {
         js_stdout += s + "\r\n";
@@ -31,14 +32,14 @@ function ComparePrograms(fn: string): any {
     var hasTry = /finally( {|{)/.exec(source);
     var hasSwitch = /switch/.exec(source);
     var hasOther = /LUA_SKIP/.exec(source);
-    var onlyStrict = /\"use strict\"/.exec(source);    
+    var onlyStrict = /\"use strict\"/.exec(source);
     var hasGlobalDeleteTest = /Compound Assignment Operator calls PutValue\(lref, v\)/.exec(source);
     var hasBrokenDate = /S15\.9\.3\.1_A5/.exec(source);
     var hasIntl = /testIntl|\bIntl\b/.exec(source);
     var expectErrors = false;
 
     if (hasEval || hasWith
-        //|| hasTry
+    //|| hasTry
         || hasSwitch
         || hasOther || hasBrokenDate || hasGlobalDeleteTest || hasIntl || onlyStrict
         ) {
@@ -107,6 +108,7 @@ var passed = 0;
 var failed = 0;
 var skipped = 0;
 var nocode = 0;
+var start = +new Date();
 filenames.forEach(function (fn) {
     var pass = ComparePrograms(fn);
     if (pass == "skip") { skipped++ }
@@ -118,5 +120,5 @@ filenames.forEach(function (fn) {
     }
     else if (pass) { passed++ } else { failed++ }
 });
-
-console.log("Passed:", passed, "Failed:", failed, "Cannot Translate:", nocode, "Skipped:", skipped, "Total:", total);
+var end = +new Date();
+console.log("Passed:", passed, "Failed:", failed, "Cannot Translate:", nocode, "Skipped:", skipped, "Total:", total, "Time: ", (end - start) * 0.001);

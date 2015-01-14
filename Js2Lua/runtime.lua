@@ -229,6 +229,29 @@ __JsGlobalObjects.null = null
 local Math = {
     ["pow"] = math.pow
 }
+Math.PI = 3.141592653589793
+Math.E = 2.718281828459045
+Math.LN10 = 2.302585092994046
+Math.LN2 = 0.6931471805599453
+Math.LOG10E = 0.4342944819032518
+Math.LOG2E = 1.4426950408889634
+Math.SQRT1_2 = 0.7071067811865476
+Math.SQRT2 = 1.4142135623730951
+Math.abs = math.abs
+Math.acos = math.acos
+Math.asin = math.asin
+Math.atan = math.atan
+Math.atan2 = math.atan2
+Math.ceil = math.ceil
+Math.cos = math.cos
+Math.cosh = math.cosh
+Math.exp = math.exp
+Math.floor = math.floor
+Math.log = math.log
+Math.max = math.max
+Math.min = math.min
+
+Math.sin = math.sin
 __JsGlobalObjects.Math = Math
 
 -- Object
