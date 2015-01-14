@@ -173,11 +173,14 @@ local function __DefineFunction(definition)
     obj.__CallImpl = definition
     obj.__TypeofValue = "function"
 	obj.prototype = {}
+	obj.__Prototype = __JsGlobalObjects.Function.prototype
+	obj.constructor = __JsGlobalObjects.Function
     return obj
 end
 
 local function __RefCheck(val)
-    if nil == val then error("ReferenceError") end
+    -- if nil == val then error("ReferenceError") end
+	-- this is incorrect
     return val
 end
 
@@ -221,15 +224,6 @@ __Singletons[null] = true
 -- we use nil as undefined
 __JsGlobalObjects.null = null
 
--- Number
-local Infinity = 1/0
-local NaN = 0/0
-local Number = {
-    ["NaN"] = NaN, 
-    ["POSITIVE_INFINITY"] = Infinity, 
-    ["NEGATIVE_INFINITY"] = -Infinity
-}
-__JsGlobalObjects.Number = Number
 
 -- Math
 local Math = {
@@ -266,7 +260,26 @@ Function.__CallImpl = function(self, code)
     -- print(to_string(self))
     self.prototype = {}
 end
+Function.prototype = __New(Object)
+Function.prototype.call = function(self, ...)
+	return self.__CallImpl(...)
+end
 __JsGlobalObjects.Function = Function
+
+-- Number
+local Infinity = 1/0
+local NaN = 0/0
+local Number = __New(Function)
+Number.NaN = NaN
+Number.POSITIVE_INFINITY = Infinity
+Number.NEGATIVE_INFINITY = -Infinity
+Number.__CallImpl = function(self, val)
+	self.__Value = val
+end
+Number.prototype.toLocaleString = __DefineFunction(function(self)
+	return tostring(self.__Value)
+end)
+__JsGlobalObjects.Number = Number
 
 -- Array
 local Array = __New(Function)
@@ -285,6 +298,7 @@ end
 Array.prototype.forEach = function(self, cb, otherSelf)
 	local os = otherSelf or self -- NOPE, should inherit this
 	for k, v in ipairs(self) do
+		-- print(k, v)
 		cb(os, v, k)
 	end
 end
