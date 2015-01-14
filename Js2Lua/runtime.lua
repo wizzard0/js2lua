@@ -111,6 +111,7 @@ local function __PlusOp(left, right)
 end
 
 local function __ToObject(val)
+	if type(value) == 'function' then return __DefineFunction(value) end -- todo cache this?
     local jsType = __Typeof(val)
     if jsType == 'string' then return __Helpers.__New(__JsGlobalObjects.String, val) end
     error("__ToObject not implemented for " .. jsType .. "/" .. type(val) .. "/" .. tostring(val))
@@ -282,7 +283,7 @@ local Function = __New(Object)
 Function.__TypeofValue = "function"
 Function.__CallImpl = function(self, code) 
     -- print(to_string(self))
-    self.prototype = {}
+    self.prototype = __New(Object)
 end
 Function.prototype = __New(Object)
 Function.prototype.call = function(self, ...)
