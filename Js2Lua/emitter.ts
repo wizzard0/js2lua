@@ -109,7 +109,7 @@ function EmitTryStatement(ast: esprima.Syntax.TryStatement, emit: (s: string) =>
         EmitStatement(ast.finalizer, emit, alloc);
         emit(" end)");
     }
-    var ah = <esprima.Syntax.CatchClause[]>(<any>ast).handlers;
+    var ah = ast.handlers;
     if (ah.length == 0) {
     } else if (ah.length == 1) {
         var h = ah[0];

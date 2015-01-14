@@ -109,7 +109,7 @@ declare module esprima {
         }
         interface TryStatement extends Statement {
             block: BlockStatement
-            handler: CatchClause // | null
+            handlers: CatchClause[] // | null
             guardedHandlers: CatchClause[]
             finalizer: BlockStatement // | null
         }
