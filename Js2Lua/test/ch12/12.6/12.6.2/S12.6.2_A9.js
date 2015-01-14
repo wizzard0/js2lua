@@ -7,6 +7,7 @@
  * @path ch12/12.6/12.6.2/S12.6.2_A9.js
  * @description Throwing system exception inside "while" loop
  */
+// LUA_SKIP: hoisting and/or refcheck
 
 //////////////////////////////////////////////////////////////////////////////
 //CHECK#1

@@ -74,7 +74,7 @@ function ComparePrograms(fn: string): any {
         vm.runInNewContext(jsRT + source, { print: print, console: { log: print } }, fn);
         var lua_stdout = RunProgram(luaRT + luasrc, flua);
         if (js_stdout.trim().length != 0 || lua_stdout.trim().length != 0) {
-            if (/expected/.exec(lua_stdout)
+            if (/expected|outside a vararg/.exec(lua_stdout)
                 && !/table expected, got/.exec(lua_stdout)
                 && !/string expected, got/.exec(lua_stdout)
                 && !/number expected, got/.exec(lua_stdout)) {

@@ -17984,48 +17984,6 @@ Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/15.9.5.9/S15.9.5.9_A2_T1.lua:146:
 Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/15.9.5.9/S15.9.5.9_A3_T1.lua:116: __ToObject not implemented for undefined/nil/nil
 Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/15.9.5.9/S15.9.5.9_A3_T2.lua:91: attempt to index local 'location' (a nil value)
 Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/15.9.5.9/S15.9.5.9_A3_T3.lua:146: Tried to call member _R_propertyIsEnumerable of undefined
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A01_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x003ddc48 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A02_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x0037dbc8 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A03_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x003adc70 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A04_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x0037dc18 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A05_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x002fdc78 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A06_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x0037dbc8 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A07_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x0037dbc8 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A08_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x002fdc18 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A09_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x0039dc18 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A10_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x0038dc60 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A11_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x0037dc18 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A12_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x003adc10 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A13_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x0037dc18 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A14_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x0038dc10 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A15_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x002fdc68 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A16_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x003cdc10 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A17_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x0037dbc8 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A18_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x002fdc18 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A19_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x002fdc68 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A20_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x01bcdc60 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A21_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x003ddc70 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A22_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x003edc60 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A23_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x0037dc18 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A24_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x002fdc78 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A25_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x0037dbc8 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A26_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x0038dc68 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A27_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x002fdc18 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A28_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x0037dc18 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A29_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x0038dc18 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A30_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x0049dc68 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A31_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x0037dc18 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A32_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x003bdc60 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A33_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x0039dc78 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A34_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x0038dc10 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A35_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x0037dc18 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A36_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x0039dc18 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A37_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x0038dc60 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A38_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x0039dc18 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A39_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x0037dc18 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A40_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x0039dc68 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A41_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x002fdc78 which is missing
-Lua: C:/bin/zbs/bin/lua: test/ch15/15.9/15.9.5/S15.9.5_A42_T1.lua:153: Tried to call member _R_hasOwnProperty of table: 0x002fdc68 which is missing
 Lua: C:/bin/zbs/bin/lua: test/intl402/ch13/13.1/13.1.1_1.lua:153: Tried to call member forEach of table: 0x003812c0 which is missing
 Lua: C:/bin/zbs/bin/lua: test/intl402/ch13/13.1/13.1.1_2.lua:146: Tried to call member call of undefined
 Lua: C:/bin/zbs/bin/lua: test/intl402/ch13/13.1/13.1.1_3_1.lua:146: Tried to call member call of undefined
