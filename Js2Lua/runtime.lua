@@ -48,6 +48,9 @@ local function __Typeof(value)
     if type(value) == 'boolean' or type(value) == 'number' or type(value) == 'string' then
         return type(value)
     end
+    if type(value) == 'function' then
+        return 'function' -- maybe better to wrap?
+    end
     if type(value) == 'table' and value.__TypeofValue then
         return value.__TypeofValue
     end
