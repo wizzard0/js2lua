@@ -77,6 +77,7 @@ function ComparePrograms(fn: string): any {
         if (js_stdout.trim().length != 0 || lua_stdout.trim().length != 0) {
             if (/expected|outside a vararg/.exec(lua_stdout)
                 && !/table expected, got/.exec(lua_stdout)
+                && !/value expected/.exec(lua_stdout)
                 && !/string expected, got/.exec(lua_stdout)
                 && !/number expected, got/.exec(lua_stdout)) {
                 console.log(" [SYNTAX] FAIL == " + fn);

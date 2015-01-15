@@ -37,12 +37,13 @@ function to_string( tbl )
     end
 end
 -- JS RUNTIME
+local bit32 = require("bit")
 
 local __Singletons = {}
 local __JsGlobalObjects = {}
 local __Helpers = {}
 
-local bit32 = require("bit")
+local function __id() end
 
 local function __Typeof(value)
     if type(value) == 'boolean' or type(value) == 'number' or type(value) == 'string' then
@@ -96,6 +97,10 @@ local function __Delete(location, key)
 end
 
 local function __Length(value)
+	if not value then
+		if value == false then return nil end
+		error("TypeError: length of undefined")
+	end
     if type(value) ~= 'table' then
         value = __Helpers.__ToObject(value)
     end
@@ -114,7 +119,7 @@ local function __PlusOp(left, right)
 end
 
 local function __ToObject(val)
-	if type(value) == 'function' then return __DefineFunction(value) end -- todo cache this?
+	if type(val) == 'function' then return __Helpers.__DefineFunction(val) end -- todo cache this?
     local jsType = __Typeof(val)
     if jsType == 'string' then return __Helpers.__New(__JsGlobalObjects.String, val) end
     error("__ToObject not implemented for " .. jsType .. "/" .. type(val) .. "/" .. tostring(val))
@@ -152,11 +157,17 @@ local function __CallMember(table, key, ...)
     if type(table) ~= 'table' then
         table = __ToObject(table)
     end
-    local unboundMethod = __Get(table, key)
-    if unboundMethod == nil then
-        error("Tried to call member " .. tostring(key) .. " of " .. tostring(table) .. " which is missing")
-    end
-    return unboundMethod(table, ...)
+	if table.__Prototype then
+		local boundMethod = __Get(table, key)
+		if boundMethod == nil then
+			error("Tried to call member " .. tostring(key) .. " of " .. tostring(table) .. " which is missing")
+		end
+		return boundMethod(table, ...)
+	else
+		local unboundMethod = table[key]
+		-- print (key, to_string(table))
+		unboundMethod(...) -- no implicit self on Lua methods
+	end
 end
 
 local function __Call(table, ...)
@@ -176,11 +187,12 @@ local function __DefineFunction(definition)
     setmetatable(obj, __ObjectMetatable)
     obj.__CallImpl = definition
     obj.__TypeofValue = "function"
-	obj.prototype = {}
+	obj.prototype = __Helpers.__New(__JsGlobalObjects.Object)
 	obj.__Prototype = __JsGlobalObjects.Function.prototype
 	obj.constructor = __JsGlobalObjects.Function
     return obj
 end
+__Helpers.__DefineFunction = __DefineFunction
 
 local function __RefCheck(val)
     -- if nil == val then error("ReferenceError") end
@@ -230,34 +242,35 @@ __JsGlobalObjects.null = null
 
 
 -- Math
-local Math = {}
-Math.PI = 3.141592653589793
-Math.E = 2.718281828459045
-Math.LN10 = 2.302585092994046
-Math.LN2 = 0.6931471805599453
-Math.LOG10E = 0.4342944819032518
-Math.LOG2E = 1.4426950408889634
-Math.SQRT1_2 = 0.7071067811865476
-Math.SQRT2 = 1.4142135623730951
-Math.abs = math.abs
-Math.acos = math.acos
-Math.asin = math.asin
-Math.atan = math.atan
-Math.atan2 = math.atan2
-Math.ceil = math.ceil
-Math.cos = math.cos
-Math.cosh = math.cosh
-Math.exp = math.exp
-Math.floor = math.floor
-Math.log = math.log
-Math.max = math.max
-Math.min = math.min
-Math.pow = math.pow
-Math.random = math.random
--- Math.round
-Math.sin = math.sin
-Math.sqrt = math.sqrt
-__JsGlobalObjects.Math = Math
+local __MathProto = {}
+__MathProto.PI = 3.141592653589793
+__MathProto.E = 2.718281828459045
+__MathProto.LN10 = 2.302585092994046
+__MathProto.LN2 = 0.6931471805599453
+__MathProto.LOG10E = 0.4342944819032518
+__MathProto.LOG2E = 1.4426950408889634
+__MathProto.SQRT1_2 = 0.7071067811865476
+__MathProto.SQRT2 = 1.4142135623730951
+__MathProto.abs  = math.abs
+__MathProto.acos  = math.acos
+__MathProto.asin  = math.asin
+__MathProto.atan  = math.atan
+__MathProto.atan2  = math.atan2
+__MathProto.ceil  = math.ceil
+__MathProto.cos  = math.cos
+__MathProto.cosh  = math.cosh
+__MathProto.exp  = math.exp
+__MathProto.floor  = math.floor
+__MathProto.log  = math.log
+__MathProto.max  = math.max
+__MathProto.min  = math.min
+__MathProto.pow  = math.pow
+__MathProto.random  = math.random
+-- __MathProto.round
+__MathProto.sin  = math.sin
+__MathProto.sqrt  = math.sqrt
+__JsGlobalObjects.Math = __MathProto
+local Math = __MathProto
 
 -- Object
 local Object = { ["prototype"] = {} }
@@ -270,11 +283,16 @@ Object.getOwnPropertyDescriptor = function(self, object, key)
         ["configurable"] = true
     }
 end
+Object.getPrototypeOf = function(obj) return obj.__Prototype end
+Object.isExtensible = function(obj) return true end
 Object.getOwnPropertyNames = function(obj)
     return pairs(obj)
 end
 Object.prototype.hasOwnProperty = function(self, key)
     return nil ~= rawget(self, key)
+end
+Object.prototype.toString = function(self)
+    return __ToString(self)
 end
 Object.prototype.defineProperty = function(self, key, descriptor)
 	if descriptor.get or descriptor.set then error("getters/setters NYI") end
@@ -405,6 +423,7 @@ end
 Date.prototype.getTime = function(self)
     return self.__Value
 end
+Date.prototype.toLocaleTimeString = __DefineFunction(__id)
 __JsGlobalObjects.Date = Date
 
 -- JSON
@@ -480,3 +499,91 @@ local function fnExists(...)
     return true;
 end
 -- HARNESS END
+-- TRANSLATED runtime.js begin
+local testBuiltInObject;testBuiltInObject = __DefineFunction(function (self,obj,isFunction,isConstructor,properties,length)
+local objString = nil;
+local desc = nil;
+local exception = nil;
+local instance = nil;
+
+if __ToBoolean(rawequal(obj, undefined)) then
+_USD_ERROR("Object being tested is undefined.")
+ end
+objString=__CallMember(Object.prototype["toString"],"call",obj)
+if __ToBoolean(isFunction) then
+if __ToBoolean((not rawequal(objString, "[object Function]"))) then
+_USD_ERROR(__PlusOp(__PlusOp("The [[Class]] internal property of a built-in function must be ", "\"Function\", but toString() returns "), objString))
+ end
+ else
+if __ToBoolean((not rawequal(objString, "[object Object]"))) then
+_USD_ERROR(__PlusOp(__PlusOp("The [[Class]] internal property of a built-in non-function object must be ", "\"Object\", but toString() returns "), objString))
+ end
+ end
+if __ToBoolean((not __ToBoolean(__CallMember(Object,"isExtensible",obj)))) then
+_USD_ERROR("Built-in objects must be extensible.")
+ end
+if __ToBoolean((isFunction and (not rawequal(__CallMember(Object,"getPrototypeOf",obj), Function.prototype)))) then
+_USD_ERROR("Built-in functions must have Function.prototype as their prototype.")
+ end
+if __ToBoolean((isConstructor and (not rawequal(__CallMember(Object,"getPrototypeOf",obj.prototype), Object.prototype)))) then
+_USD_ERROR("Built-in prototype objects must have Object.prototype as their prototype.")
+ end
+if __ToBoolean(isFunction) then
+if __ToBoolean(((not rawequal(__Typeof(__Length(obj)), "number")) or (not rawequal(__Length(obj), __CallMember(Math,"floor",__Length(obj)))))) then
+_USD_ERROR("Built-in functions must have a length property with an integer value.")
+ end
+if __ToBoolean((not rawequal(__Length(obj), length))) then
+_USD_ERROR(__PlusOp(__PlusOp(__PlusOp(__PlusOp("Function's length property doesn't have specified value; expected ", length), ", got "), __Length(obj)), "."))
+ end
+desc=__CallMember(Object,"getOwnPropertyDescriptor",obj, "length")
+if __ToBoolean(desc.writable) then
+_USD_ERROR("The length property of a built-in function must not be writable.")
+ end
+if __ToBoolean(desc.enumerable) then
+_USD_ERROR("The length property of a built-in function must not be enumerable.")
+ end
+if __ToBoolean(desc.configurable) then
+_USD_ERROR("The length property of a built-in function must not be configurable.")
+ end
+ end
+__CallMember(properties,"forEach",__DefineFunction(function (self,prop)
+local desc = nil;
+
+desc=__CallMember(Object,"getOwnPropertyDescriptor",obj, prop)
+if __ToBoolean(rawequal(desc, undefined)) then
+_USD_ERROR(__PlusOp(__PlusOp("Missing property ", prop), "."))
+ end
+if __ToBoolean((__CallMember(desc,"hasOwnProperty","writable") and (not __ToBoolean(desc.writable)))) then
+_USD_ERROR(__PlusOp(__PlusOp("The ", prop), " property of this built-in function must be writable."))
+ end
+if __ToBoolean(desc.enumerable) then
+_USD_ERROR(__PlusOp(__PlusOp("The ", prop), " property of this built-in function must not be enumerable."))
+ end
+if __ToBoolean((not __ToBoolean(desc.configurable))) then
+_USD_ERROR(__PlusOp(__PlusOp("The ", prop), " property of this built-in function must be configurable."))
+ end
+ end) --FunctionExpr
+)
+ __Sink(({})[0])
+if __ToBoolean((isFunction and (not __ToBoolean(isConstructor)))) then
+--TryBody
+local __TryStatus23,__TryReturnValue24 = pcall(function ()
+instance=__New(obj)
+ end)
+--Catch
+local __TryHandler27=(function(e) exception=e
+ end)--EarlyReturn
+ if __TryStatus23 and nil~=__TryReturnValue24 then  return __TryReturnValue24 end;
+--CheckCatch
+ if not __TryStatus23 then __CatchReturnValue25=__TryHandler27(__TryReturnValue24.data or __TryReturnValue24) end;
+--CheckCatchValue
+ if true or nil~=__CatchReturnValue25 then return __CatchReturnValue25 end;
+if __ToBoolean((rawequal(exception, undefined) or (not rawequal(exception.name, "TypeError")))) then
+_USD_ERROR(__PlusOp("Built-in functions that aren't constructors must throw TypeError when ", "used in a \"new\" statement."))
+ end
+ end
+if __ToBoolean(((isFunction and (not __ToBoolean(isConstructor))) and __CallMember(obj,"hasOwnProperty","prototype"))) then
+_USD_ERROR("Built-in functions that aren't constructors must not have a prototype property.")
+ end
+return true end) --FunctionExpr testBuiltInObject
+-- TRANSLATED runtime.js end
