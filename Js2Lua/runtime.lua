@@ -122,7 +122,8 @@ end
 __Helpers.__ToObject = __ToObject
 
 local function __ToNumber(val)
-    if val == nil or val == __JsGlobalObjects.null then return 0 end
+    if val == nil or val == false or val == __JsGlobalObjects.null then return 0 end
+    if val == true then return 1 end
     if type(val) == 'number' then return val end
     if type(val) == 'function' then error("TypeError: valueof function") end
     if type(val) == 'string' then return tonumber(val) end
