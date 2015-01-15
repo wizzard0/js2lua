@@ -52,20 +52,19 @@ local function __Typeof(value)
     if type(value) == 'function' then
         return 'function' -- maybe better to wrap?
     end
-    if type(value) == 'table' and value.__TypeofValue then
-        return value.__TypeofValue
-    end
+    if type(value) == 'table' and value.__Prototype then return 'object' end
+    if type(value) == 'table' and value.__TypeofValue then return value.__TypeofValue end
     if value == nil then return 'undefined' end
 
-    print("__Typeof: unsupported! got " .. type(value))
+    print("__Typeof: unsupported! got " .. type(value) ..'='.. to_string(value))
     return '_unknown';
 end
 
 local function __ToString(value)
     if type(value) == 'string' then return value end
     if type(value) == 'table' then
-        if value.__Prototype then return __CallMember(value, 'toString') end
         if value.__ToStringValue then return value.__ToStringValue end
+        if value.__Prototype then return __Helpers.__CallMember(value, 'toString') end
         return '[native '..to_string(value)..']'
     end
     if value == nil then return 'undefined' end
@@ -153,26 +152,21 @@ local function __InstanceOf(table, ctor)
 end
 
 local function __CallMember(table, key, ...)
+    -- print("calling " .. __ToString(key))
     if table == nil then
         error("Tried to call member " .. __ToString(key) .. " of undefined")
     end
     if type(table) ~= 'table' then
         table = __ToObject(table)
     end
+    local unboundMethod = rawget(table, key)
+    if unboundMethod ~= nil then return unboundMethod(...) end
     if table.__Prototype then
-        local boundMethod = __Get(table, key)
-        if boundMethod == nil then
-            error("Tried to call method " .. __ToString(key) .. " of " .. __ToString(table) .. " which is missing")
-        end
-        return boundMethod(table, ...)
-    else
-        local unboundMethod = table[key]
-        if unboundMethod == nil then
-            error("Tried to call member " .. __ToString(key) .. " of Native " .. __ToString(table) .. " which is missing")
-        end
-        -- print (key, to_string(table))
-        return unboundMethod(...) -- no implicit self on Lua methods
+        local boundMethod = __Get(table.__Prototype, key)
+        -- print('got boundmethod '..tostring(table)..'.'..tostring(key)..'='..tostring(boundMethod)..'='..tostring(boundMethod ~= nil))
+        if boundMethod ~= nil then return boundMethod(table, ...) end
     end
+    error("Tried to call method " .. __ToString(key) .. " of " .. __ToString(table) .. " which is missing")
 end
 __Helpers.__CallMember = __CallMember
 
@@ -298,7 +292,7 @@ Object.isExtensible = function(obj) return true end
 Object.getOwnPropertyNames = function(obj)
     return pairs(obj)
 end
-Object.hasOwnProperty = function(self, key)
+Object.prototype.hasOwnProperty = function(self, key)
     return nil ~= rawget(self, key)
 end
 Object.prototype.toString = function(self)
@@ -311,9 +305,17 @@ Object.defineProperty = function(self, key, descriptor)
     if not descriptor.writable or not descriptor.enumerable or not descriptor.configurable then error("Error: readonly/hidden/unconf props NYI") end
     rawset(self, key, descriptor.value)
 end
-Object.__CallImpl = function(self) end
+Object.create = (function(proto, ...) 
+    if __Typeof(proto) == 'function' then
+        return __New(proto, ...)
+    else
+        return __New(Object)
+    end
+end)
+Object.__CallImpl = function(self) end -- function Empty() {}, aka Object.__Prototype
 setmetatable(Object, __ObjectMetatable)
 setmetatable(Object.prototype, __ObjectMetatable)
+Object.__ToStringValue = 'function Object() { [builtin] }'
 __JsGlobalObjects.Object = Object
 
 -- Function
@@ -330,8 +332,8 @@ end
 Function.prototype.call = function(self, ...)
     return self.__CallImpl(...)
 end
-Object.__Prototype = Function
-Function.__Prototype = Function
+Object.__Prototype = Function.prototype -- maybe wrong
+Function.__Prototype = Function.prototype
 __JsGlobalObjects.Function = Function
 
 -- Number
