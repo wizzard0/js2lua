@@ -37,7 +37,9 @@
     <TypeScriptCompile Include="app.ts" />
     <Content Include="package.json" />
     <Content Include="README.md" />
+    <TypeScriptCompile Include="ast-hoist.ts" />
     <TypeScriptCompile Include="emitter.ts" />
+    <TypeScriptCompile Include="lua-ast.ts" />
     <TypeScriptCompile Include="Scripts\typings\esprima\esprima.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\node\node.d.ts" />
   </ItemGroup>

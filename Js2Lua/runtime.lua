@@ -97,10 +97,10 @@ local function __Delete(location, key)
 end
 
 local function __Length(value)
-	if not value then
-		if value == false then return nil end
-		error("TypeError: length of undefined")
-	end
+    if not value then
+        if value == false then return nil end
+        error("TypeError: length of undefined")
+    end
     if type(value) ~= 'table' then
         value = __Helpers.__ToObject(value)
     end
@@ -119,16 +119,16 @@ local function __PlusOp(left, right)
 end
 
 local function __ToObject(val)
-	if type(val) == 'function' then return __Helpers.__DefineFunction(val) end -- todo cache this?
+    if type(val) == 'function' then return __Helpers.__DefineFunction(val) end -- todo cache this?
+    if type(val) == 'string' then return __Helpers.__New(__JsGlobalObjects.String, val) end
     local jsType = __Typeof(val)
-    if jsType == 'string' then return __Helpers.__New(__JsGlobalObjects.String, val) end
     error("__ToObject not implemented for " .. jsType .. "/" .. type(val) .. "/" .. tostring(val))
 end
 __Helpers.__ToObject = __ToObject
 
 local function __Get(table, key)
-    if table == nil then
-        error("Tried to access member " .. tostring(key) .. " of undefined")
+    if type(table) ~= 'table' then
+        error("Tried to access member " .. tostring(key) .. " of non-table: " .. to_string(table))
     end
     local result
     local iter = table
@@ -157,17 +157,17 @@ local function __CallMember(table, key, ...)
     if type(table) ~= 'table' then
         table = __ToObject(table)
     end
-	if table.__Prototype then
-		local boundMethod = __Get(table, key)
-		if boundMethod == nil then
-			error("Tried to call member " .. tostring(key) .. " of " .. tostring(table) .. " which is missing")
-		end
-		return boundMethod(table, ...)
-	else
-		local unboundMethod = table[key]
-		-- print (key, to_string(table))
-		unboundMethod(...) -- no implicit self on Lua methods
-	end
+    if table.__Prototype then
+        local boundMethod = __Get(table, key)
+        if boundMethod == nil then
+            error("Tried to call member " .. tostring(key) .. " of " .. tostring(table) .. " which is missing")
+        end
+        return boundMethod(table, ...)
+    else
+        local unboundMethod = table[key]
+        -- print (key, to_string(table))
+        return unboundMethod(...) -- no implicit self on Lua methods
+    end
 end
 
 local function __Call(table, ...)
@@ -187,16 +187,16 @@ local function __DefineFunction(definition)
     setmetatable(obj, __ObjectMetatable)
     obj.__CallImpl = definition
     obj.__TypeofValue = "function"
-	obj.prototype = __Helpers.__New(__JsGlobalObjects.Object)
-	obj.__Prototype = __JsGlobalObjects.Function.prototype
-	obj.constructor = __JsGlobalObjects.Function
+    obj.prototype = __Helpers.__New(__JsGlobalObjects.Object)
+    obj.__Prototype = __JsGlobalObjects.Function.prototype
+    obj.constructor = __JsGlobalObjects.Function
     return obj
 end
 __Helpers.__DefineFunction = __DefineFunction
 
 local function __RefCheck(val)
     -- if nil == val then error("ReferenceError") end
-	-- this is incorrect
+    -- this is incorrect
     return val
 end
 
@@ -206,7 +206,7 @@ local function __New(ctor, ...)
     obj.constructor = ctor
     obj.__TypeofValue = "object"
     setmetatable(obj, __ObjectMetatable)
-	-- print('new:[' .. to_string{...} .. ']')
+    -- print('new:[' .. to_string{...} .. ']')
     local rv2 = ctor.__CallImpl(obj, ...)
     if rv2 then return rv2 else return obj end
 end
@@ -274,13 +274,16 @@ local Math = __MathProto
 
 -- Object
 local Object = { ["prototype"] = {} }
-Object.getOwnPropertyDescriptor = function(self, object, key)
+Object.getOwnPropertyDescriptor = function(object, key)
     -- print(tostring(self).."/"..tostring(object).."/"..tostring(key))
+    local length_hack = (key ~= "length")
+    local val = 0
+    if not length_hack then val = __Get(object, key) end
     return {
-        ["value"] = __Get(object, key),
-        ["writable"] = true,
-        ["enumerable"] = true,
-        ["configurable"] = true
+        ["value"] = val,
+        ["writable"] = length_hack,
+        ["enumerable"] = length_hack,
+        ["configurable"] = length_hack
     }
 end
 Object.getPrototypeOf = function(obj) return obj.__Prototype end
@@ -292,12 +295,14 @@ Object.prototype.hasOwnProperty = function(self, key)
     return nil ~= rawget(self, key)
 end
 Object.prototype.toString = function(self)
-    return __ToString(self)
+    local t = __Typeof(self)
+    return "[object " .. string.upper(string.sub(t, 1, 1)) .. string.sub(t, 2) .. "]"
+    -- return __ToString(self)
 end
 Object.prototype.defineProperty = function(self, key, descriptor)
-	if descriptor.get or descriptor.set then error("getters/setters NYI") end
-	if not descriptor.writable or not descriptor.enumerable or not descriptor.configurable then error("readonly/hidden/unconf props NYI") end
-	rawset(self, key, descriptor.value)
+    if descriptor.get or descriptor.set then error("getters/setters NYI") end
+    if not descriptor.writable or not descriptor.enumerable or not descriptor.configurable then error("readonly/hidden/unconf props NYI") end
+    rawset(self, key, descriptor.value)
 end
 Object.__CallImpl = function(self) end
 setmetatable(Object, __ObjectMetatable)
@@ -311,9 +316,12 @@ Function.__CallImpl = function(self, code)
     -- print(to_string(self))
     self.prototype = __New(Object)
 end
-Function.prototype = __New(Object)
+Function.prototype = __New(Object) -- obj and func are special
+Function.prototype.toString = function(self)
+    return "function() { [unknown code] }"
+end
 Function.prototype.call = function(self, ...)
-	return self.__CallImpl(...)
+    return self.__CallImpl(...)
 end
 __JsGlobalObjects.Function = Function
 
@@ -325,10 +333,10 @@ Number.NaN = NaN
 Number.POSITIVE_INFINITY = Infinity
 Number.NEGATIVE_INFINITY = -Infinity
 Number.__CallImpl = function(self, val)
-	self.__Value = val
+    self.__Value = val
 end
 Number.prototype.toLocaleString = __DefineFunction(function(self)
-	return tostring(self.__Value)
+    return tostring(self.__Value)
 end)
 __JsGlobalObjects.Number = Number
 
@@ -336,39 +344,39 @@ __JsGlobalObjects.Number = Number
 local Array = __New(Function)
 __JsGlobalObjects.Array = Array
 Array.__CallImpl = function(self, ...) -- number or varargs...
-	self = self or __New(Array)
+    self = self or __New(Array)
     local orig = {...}
-	-- print('array with ' .. #orig .. ' args')
-	local idx = 0
-	for k,v in ipairs(orig) do
-		self[idx] = v
-		idx = idx + 1
-	end
-	self.__Length = idx
-	return self
+    -- print('array with ' .. #orig .. ' args')
+    local idx = 0
+    for k,v in ipairs(orig) do
+        self[idx] = v
+        idx = idx + 1
+    end
+    self.__Length = idx
+    return self
 end
 Array.prototype.forEach = function(self, cb, otherSelf)
-	local os = otherSelf or self -- NOPE, should inherit this
-	for k, v in ipairs(self) do
-		-- print(k, v)
-		cb(os, v, k)
-	end
+    local os = otherSelf or self -- NOPE, should inherit this
+    for k, v in ipairs(self) do
+        -- print(k, v)
+        cb(os, v, k)
+    end
 end
 Array.prototype.push = function(self, element)
-	if not self.__Length then error("Malformed array without __Length") end
-	self[self.__Length] = element
-	self.__Length = self.__Length + 1
+    if not self.__Length then error("Malformed array without __Length") end
+    self[self.__Length] = element
+    self.__Length = self.__Length + 1
 end
 local __MakeArray = function(rawArray)
-	setmetatable(rawArray, __ObjectMetatable)
-	rawArray.__Prototype = Array.prototype
-	rawArray.ctor = Array
-	local idx = 0 -- fixup length
-	for k,v in ipairs(rawArray) do
-		idx = idx + 1
-	end
-	rawArray.__Length = idx
-	return rawArray
+    setmetatable(rawArray, __ObjectMetatable)
+    rawArray.__Prototype = Array.prototype
+    rawArray.ctor = Array
+    local idx = 0 -- fixup length
+    for k,v in ipairs(rawArray) do
+        idx = idx + 1
+    end
+    rawArray.__Length = idx
+    return rawArray
 end
 -- Boolean
 local Boolean = __New(Function)
