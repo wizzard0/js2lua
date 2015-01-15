@@ -321,6 +321,7 @@ Array.__CallImpl = function(self, ...) -- number or varargs...
 		self[idx] = v
 		idx = idx + 1
 	end
+	self.__Length = idx
 	return self
 end
 Array.prototype.forEach = function(self, cb, otherSelf)
@@ -330,10 +331,20 @@ Array.prototype.forEach = function(self, cb, otherSelf)
 		cb(os, v, k)
 	end
 end
+Array.prototype.push = function(self, element)
+	if not self.__Length then error("Malformed array without __Length") end
+	self[self.__Length] = element
+	self.__Length = self.__Length + 1
+end
 local __MakeArray = function(rawArray)
 	setmetatable(rawArray, __ObjectMetatable)
 	rawArray.__Prototype = Array.prototype
 	rawArray.ctor = Array
+	local idx = 0 -- fixup length
+	for k,v in ipairs(rawArray) do
+		idx = idx + 1
+	end
+	rawArray.__Length = idx
 	return rawArray
 end
 -- Boolean

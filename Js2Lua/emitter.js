@@ -1,7 +1,7 @@
 var esprima = require("esprima");
 var util = require("util");
 var esutils = require("esutils");
-var hoist = require("ast-hoist");
+var hoist = require("./ast-hoist");
 function EmitProgram(ast, emit, alloc) {
     // hack
     emit("\r\n-- BEGIN\r\n");
@@ -177,6 +177,7 @@ function EmitForStatement(ast, emit, alloc) {
 }
 function EmitForInStatement(ast, emit, alloc) {
     //console.log(util.inspect(ast, false, 999, true));
+    //console.log(escodegen.generate(ast));
     if (ast.left.type == 'VariableDeclaration') {
         EmitVariableDeclaration(ast.left, emit, alloc);
     }
@@ -571,6 +572,8 @@ var BinaryOpRemap = {
     '<<': 'bit32.lshift',
     '>>>': 'bit32.rshift',
     '>>': 'bit32.arshift',
+    '===': 'rawequal',
+    '!==': 'rawequal',
     '&': 'bit32.band',
     '^': 'bit32.bxor',
     '|': 'bit32.bor',
@@ -585,18 +588,21 @@ for (var x in BinaryOpRemap) {
 function EmitBinary(ast, emit, alloc) {
     var aop = ast.operator;
     if (aop in BinaryOpRemap) {
+        if (aop == '!==') {
+            emit("(not ");
+        }
         EmitCall({
             type: 'CallExpression',
             callee: { 'type': 'Identifier', 'name': BinaryOpRemap[aop] },
             arguments: [ast.left, ast.right]
         }, emit, alloc);
+        if (aop == '!==') {
+            emit(")");
+        }
     }
     else {
-        if (aop == '!==' || aop == '!=') {
+        if (aop == '!=') {
             aop = '~=';
-        }
-        if (aop == '===') {
-            aop = '==';
         }
         emit("(");
         if (ast.left.type == 'AssignmentExpression' || ast.left.type == 'UpdateExpression') {
