@@ -5,7 +5,7 @@
 var $PRINT = function (s) {
     print("INFO: " + s);
 }
-
+var testFailed = $ERROR;
 function $FAIL(message) {
     testFailed(message);
 }
@@ -38,14 +38,6 @@ function Test262Error(message) {
 Test262Error.prototype.toString = function () {
     return "Test262 Error: " + this.message;
 };
-
-function $FAIL(message) {
-    testFailed(message);
-}
-
-function testFailed(message) {
-    throw new Test262Error(message);
-}
 
 function compareArray(aExpected, aActual) {
     if (aActual.length != aExpected.length) {

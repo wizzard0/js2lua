@@ -183,6 +183,7 @@ __Helpers.__CallMember = __CallMember
 
 local function __Call(table, ...)
     local ci = table.__CallImpl
+    if not ci then error("TypeError: Tried to call "..__ToString(table).." which is not callable") end
     return ci(nil, ...)
 end
 
@@ -510,7 +511,7 @@ RegExp.__CallImpl = function(self, val)
     -- print ('RegExp ctor: ' .. val)
     self.__Value = val
 end
-RegExp.prototype.exec = __DefineFunction(__id)
+RegExp.prototype.exec = __DefineFunction(function(self)return null end)
 
 -- Error
 local Error = __New(Function)
@@ -549,7 +550,7 @@ end
 local function _USD_PRINT(s)
     print("INFO: ", s)
 end
-
+local testFailed = _USD_ERROR
 local function _USD_FAIL(message)
     testFailed(message)
 end

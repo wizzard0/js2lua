@@ -72,7 +72,7 @@ function ComparePrograms(fn) {
         var t1 = js_stdout.trim().replace(/\r\n/g, '\n');
         var t2 = lua_stdout.trim().replace(/\r\n/g, '\n');
         if ((t1 || t2) && ((t1 != t2) || (/ERROR/.exec(t2)))) {
-            if (/expected|outside a vararg/.exec(lua_stdout) && !/table expected, got/.exec(lua_stdout) && !/value expected/.exec(lua_stdout) && !/string expected, got/.exec(lua_stdout) && !/number expected, got/.exec(lua_stdout)) {
+            if (/expected|outside a vararg|undefined label/.exec(lua_stdout) && !/table expected, got/.exec(lua_stdout) && !/value expected/.exec(lua_stdout) && !/string expected, got/.exec(lua_stdout) && !/number expected, got/.exec(lua_stdout)) {
                 console.log(" [SYNTAX] FAIL == " + fn);
                 console.log("JS:", js_stdout);
                 console.log("\r\nLua SRC:", luasrc);
