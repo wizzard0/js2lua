@@ -32,6 +32,7 @@ function ComparePrograms(fn) {
     var onlyStrict = /\"use strict\"/.exec(source);
     var hasGlobalDeleteTest = /Compound Assignment Operator calls PutValue\(lref, v\)/.exec(source);
     var hasBrokenDate = /S15\.9\.3\.1_A5/.exec(source);
+    var hasAnythingToDoWithDate = /Date(\.|\()/.exec(source);
     var hasIntl = /testIntl|\bIntl\b/.exec(source);
     var expectErrors = false;
     if (hasEval || hasWith || hasSwitch || hasOther || hasBrokenDate || hasGlobalDeleteTest || hasIntl || onlyStrict) {

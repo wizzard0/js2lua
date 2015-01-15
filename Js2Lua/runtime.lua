@@ -111,14 +111,6 @@ local function __Length(value)
     return #value
 end
 
-local function __PlusOp(left, right)
-    if type(left) == 'string' or type(right) == 'string' then
-        return __ToString(left) .. __ToString(right)
-    else
-        return left + right
-    end
-end
-
 local function __ToObject(val)
     -- print("ToObject"..tostring(val))
     if type(val) == 'function' then return __Helpers.__DefineFunction(val) end -- todo cache this?
@@ -128,6 +120,27 @@ local function __ToObject(val)
     error("__ToObject not implemented for " .. jsType .. "/" .. type(val) .. "/" .. tostring(val))
 end
 __Helpers.__ToObject = __ToObject
+
+local function __ToNumber(val)
+    if val == nil or val == __JsGlobalObjects.null then return 0 end
+    if type(val) == 'number' then return val end
+    if type(val) == 'function' then error("TypeError: valueof function") end
+    if type(val) == 'string' then return tonumber(val) end
+    if type(val) == 'table' and val.__Value then return val.__Value end
+    if type(val) == 'table' and val.__Prototype then return __CallMember(val, 'valueOf') end
+    local jsType = __Typeof(val)
+    return 0/0
+    -- error("__ToNumber not implemented for " .. jsType .. "/" .. type(val) .. "/" .. tostring(val))
+end
+__Helpers.__ToObject = __ToObject
+
+local function __PlusOp(left, right)
+    if type(left) == 'string' or type(right) == 'string' then
+        return __ToString(left) .. __ToString(right)
+    else
+        return __ToNumber(left) + __ToNumber(right)
+    end
+end
 
 local function __Get(table, key)
     if type(table) ~= 'table' then
@@ -509,7 +522,7 @@ local RegExp = __New(Function)
 __JsGlobalObjects.RegExp = RegExp
 RegExp.__CallImpl = function(self, val) 
     -- print ('RegExp ctor: ' .. val)
-    self.__Value = val
+    self.__RegexValue = val
 end
 RegExp.prototype.exec = __DefineFunction(function(self)return null end)
 
