@@ -276,6 +276,11 @@ end
 Object.prototype.hasOwnProperty = function(self, key)
     return nil ~= rawget(self, key)
 end
+Object.prototype.defineProperty = function(self, key, descriptor)
+	if descriptor.get or descriptor.set then error("getters/setters NYI") end
+	if not descriptor.writable or not descriptor.enumerable or not descriptor.configurable then error("readonly/hidden/unconf props NYI") end
+	rawset(self, key, descriptor.value)
+end
 Object.__CallImpl = function(self) end
 setmetatable(Object, __ObjectMetatable)
 setmetatable(Object.prototype, __ObjectMetatable)
