@@ -66,6 +66,7 @@ local function __ToString(value)
     if type(value) == 'table' then
         if value.__Prototype then return __CallMember(value, 'toString') end
         if value.__ToStringValue then return value.__ToStringValue end
+        return '[native '..to_string(value)..']'
     end
     if value == nil then return 'undefined' end
     return tostring(value)
@@ -129,7 +130,7 @@ __Helpers.__ToObject = __ToObject
 
 local function __Get(table, key)
     if type(table) ~= 'table' then
-        error("Tried to access member " .. tostring(key) .. " of non-table: " .. to_string(table))
+        error("Tried to access member " .. __ToString(key) .. " of non-table: " .. to_string(table))
     end
     local result
     local iter = table
@@ -153,7 +154,7 @@ end
 
 local function __CallMember(table, key, ...)
     if table == nil then
-        error("Tried to call member " .. tostring(key) .. " of undefined")
+        error("Tried to call member " .. __ToString(key) .. " of undefined")
     end
     if type(table) ~= 'table' then
         table = __ToObject(table)
@@ -161,13 +162,13 @@ local function __CallMember(table, key, ...)
     if table.__Prototype then
         local boundMethod = __Get(table, key)
         if boundMethod == nil then
-            error("Tried to call method " .. tostring(key) .. " of " .. tostring(table) .. " which is missing")
+            error("Tried to call method " .. __ToString(key) .. " of " .. __ToString(table) .. " which is missing")
         end
         return boundMethod(table, ...)
     else
         local unboundMethod = table[key]
         if unboundMethod == nil then
-            error("Tried to call member " .. tostring(key) .. " of Native " .. tostring(table) .. " which is missing")
+            error("Tried to call member " .. __ToString(key) .. " of Native " .. __ToString(table) .. " which is missing")
         end
         -- print (key, to_string(table))
         return unboundMethod(...) -- no implicit self on Lua methods
@@ -183,7 +184,7 @@ end
 local __ObjectMetatable = {
     __index = __Get,
     __call = __Call,
-    __tostring = __ToString,
+    -- __tostring = __ToString, - VERY dangerous
 }
 
 -- wrap Lua function as js function
@@ -297,7 +298,7 @@ Object.isExtensible = function(obj) return true end
 Object.getOwnPropertyNames = function(obj)
     return pairs(obj)
 end
-Object.prototype.hasOwnProperty = function(self, key)
+Object.hasOwnProperty = function(self, key)
     return nil ~= rawget(self, key)
 end
 Object.prototype.toString = function(self)
@@ -329,6 +330,8 @@ end
 Function.prototype.call = function(self, ...)
     return self.__CallImpl(...)
 end
+Object.__Prototype = Function
+Function.__Prototype = Function
 __JsGlobalObjects.Function = Function
 
 -- Number
