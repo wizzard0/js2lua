@@ -1,9 +1,9 @@
 ﻿var $ERROR = function (s) {
-    print("ERROR: ", s);
+    print("ERROR: " + s);
 }
 
 var $PRINT = function (s) {
-    print("INFO: ", s);
+    print("INFO: " + s);
 }
 
 function $INCLUDE(message) { }

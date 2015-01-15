@@ -186,9 +186,15 @@ local function __Call(table, ...)
     return ci(nil, ...)
 end
 
+local function __Put(table, k, v)
+    rawset(table, k, v)
+    rawset(table, '__propEnumerable_'..k, true)
+end
+
 local __ObjectMetatable = {
     __index = __Get,
     __call = __Call,
+    __newindex = __Put,
     -- __tostring = __ToString, - VERY dangerous
 }
 
@@ -214,10 +220,10 @@ end
 
 local function __New(ctor, ...)
     local obj = {}
-    obj.__Prototype = ctor.prototype
-    obj.constructor = ctor
-    obj.__TypeofValue = "object"
     setmetatable(obj, __ObjectMetatable)
+    obj.__Prototype = ctor.prototype
+    __JsGlobalObjects.Object.defineProperty(obj,'constructor',{["value"]=ctor,["writable"]=true,["configurable"]=true})
+    obj.__TypeofValue = "object"
     -- print('new:[' .. to_string{...} .. ']')
     local rv2 = ctor.__CallImpl(obj, ...)
     if rv2 then return rv2 else return obj end
@@ -225,7 +231,15 @@ end
 __Helpers.__New = __New
 
 local function __Iterate(obj)
-    return pairs(obj)
+    local results = {}
+    for k, v in pairs(obj) do        
+        if type(k)=='string' and string.sub(k,1,2)~='__' then
+            if obj['__propEnumerable_'..k] then
+                results[k]=v
+            end
+        end
+    end
+    return pairs(results)
 end
 
 local function __ContainsKey(key, obj)
@@ -306,6 +320,9 @@ end
 Object.prototype.hasOwnProperty = function(self, key)
     return nil ~= rawget(self, key)
 end
+Object.prototype.propertyIsEnumerable = function(self, key)
+    return true == rawget(self, '__propEnumerable_'..key)
+end
 Object.prototype.toString = function(self)
     local t = __Typeof(self)
     return "[object " .. string.upper(string.sub(t, 1, 1)) .. string.sub(t, 2) .. "]"
@@ -313,8 +330,9 @@ Object.prototype.toString = function(self)
 end
 Object.defineProperty = function(self, key, descriptor)
     if descriptor.get or descriptor.set then error("getters/setters NYI") end
-    if not descriptor.writable or not descriptor.enumerable or not descriptor.configurable then error("Error: readonly/hidden/unconf props NYI") end
+    if not descriptor.writable or not descriptor.configurable then error("Error: readonly/unconf props NYI") end
     rawset(self, key, descriptor.value)
+    if descriptor.enumerable then rawset(self, '__propEnumerable_'..key, value) end
 end
 Object.create = (function(proto, ...) 
     if __Typeof(proto) == 'function' then
@@ -405,7 +423,7 @@ end)
 local __MakeArray = function(rawArray)
     setmetatable(rawArray, __ObjectMetatable)
     rawArray.__Prototype = Array.prototype
-    rawArray.constructor = Array
+    Object.defineProperty(rawArray, 'constructor',{["value"]=Array,["writable"]=true,["configurable"]=true})
     local idx = 0 -- fixup length
     for k,v in ipairs(rawArray) do
         idx = idx + 1
@@ -416,7 +434,10 @@ end
 local __MakeObject = function(raw)
     setmetatable(raw, __ObjectMetatable)
     raw.__Prototype = Object.prototype
-    raw.constructor = Object
+    for k,v in pairs(raw) do
+        rawset(raw, '__propEnumerable_'..k, true)
+    end
+    Object.defineProperty(raw, 'constructor',{["value"]=Object,["writable"]=true,["configurable"]=true})
     return raw
 end
 -- Boolean
