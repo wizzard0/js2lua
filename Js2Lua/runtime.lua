@@ -142,6 +142,9 @@ end
 
 local function __InstanceOf(table, ctor)
     if table == nil then return false end
+    if type(table) ~= 'table' then
+        table = __ToObject(table)
+    end
     local iter = table
     repeat
         local result = rawget(iter, 'constructor')
