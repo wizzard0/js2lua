@@ -61,13 +61,13 @@ local function __Typeof(value)
 end
 
 local function __ToString(value)
+    if value == nil then return 'undefined' end
     if type(value) == 'string' then return value end
     if type(value) == 'table' then
         if value.__ToStringValue then return value.__ToStringValue end
         if value.__Prototype then return __Helpers.__CallMember(value, 'toString') end
         return '[native '..to_string(value)..']'
     end
-    if value == nil then return 'undefined' end
     return tostring(value)
 end
 -- print("Tb")
@@ -376,6 +376,9 @@ end
 Function.prototype.call = function(self, ...)
     return self.__CallImpl(...)
 end
+Function.prototype.apply = function(self, self2, argArray)
+    return self.__CallImpl(self, unpack(argArray))
+end
 Object.__Prototype = Function.prototype -- maybe wrong
 Function.__Prototype = Function.prototype
 __JsGlobalObjects.Function = Function
@@ -439,11 +442,13 @@ local __MakeArray = function(rawArray)
     setmetatable(rawArray, __ObjectMetatable)
     rawArray.__Prototype = Array.prototype
     Object.defineProperty(rawArray, 'constructor',{["value"]=Array,["writable"]=true,["configurable"]=true})
-    local idx = 0 -- fixup length
-    for k,v in ipairs(rawArray) do
-        idx = idx + 1
+    if not rawArray.__Length then
+        local idx = 0 -- fixup length
+        for k,v in ipairs(rawArray) do
+            idx = idx + 1
+        end
+        rawArray.__Length = idx
     end
-    rawArray.__Length = idx
     return rawArray
 end
 local __MakeObject = function(raw)
@@ -486,6 +491,29 @@ local function Utf8to32(utf8str) -- utterly useless, need to utf16
     -- table.insert(res, 0)
     return res
 end
+
+local function __split(str, pat)
+   local t = {}  -- NOTE: use {n = 0} in Lua-5.0
+   local fpat = "(.-)" .. pat
+   local last_end = 1
+   local s, e, cap = str:find(fpat, 1)
+   local idx = 0
+   while s do
+      if s ~= 1 or cap ~= "" then
+	 t[idx]=cap
+     idx=idx+1
+      end
+      last_end = e+1
+      s, e, cap = str:find(fpat, last_end)
+   end
+   if last_end <= #str then
+      cap = str:sub(last_end)
+      t[idx]=cap
+     idx=idx+1
+   end
+   t.__Length = idx
+   return t
+end
 String.__CallImpl = function(self, val) 
     -- print ('string ctor: ' .. val)
     local uni = Utf8to32(val)
@@ -498,6 +526,9 @@ String.prototype.charCodeAt = function(self, idx)
 end
 String.prototype.toString = __DefineFunction(function(self)
     return self.__ToStringValue
+end)
+String.prototype.split = __DefineFunction(function(self, pat)
+    return __MakeArray(__split(self.__ToStringValue, pat))
 end)
 __JsGlobalObjects.String = String
 
@@ -552,7 +583,7 @@ local parseFloat = __DefineFunction(function(self, str) return tonumber(str) end
 __JsGlobalObjects.parseFloat = parseFloat
 
 local console = {
-    ["log"] = function(...) print(__CallMember(...,'toString')) end
+    ["log"] = function(...) print(__ToString(...)) end
 }
 __JsGlobalObjects.console = console
 -- LIBRARY END

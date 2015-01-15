@@ -875,6 +875,10 @@ function renderScene(){
     var imageWidth = 100; // $F('imageWidth');
     var imageHeight = 100; // $F('imageHeight');
     var pixelSize = "5,5".split(','); //  $F('pixelSize').split(',');
+    console.log(pixelSize.length)
+    console.log(pixelSize)
+    console.log(pixelSize[0])
+    console.log(pixelSize[1])
     var renderDiffuse = true; // $F('renderDiffuse');
     var renderShadows = true; // $F('renderShadows');
     var renderHighlights = true; // $F('renderHighlights');
