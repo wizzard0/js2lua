@@ -5,6 +5,7 @@ import emitter = require("./emitter");
 import glob = require("glob");
 var vm = require("vm");
 
+
 function RunProgram(src: string, ff: string) {
     fs.writeFileSync(ff, src);
     var rc = sh.exec("C:/bin/zbs/bin/lua " + ff);
@@ -19,7 +20,7 @@ function ComparePrograms(fn: string): any {
     var js_stdout = "";
     var print = function (s) {
         js_stdout += s + "\r\n";
-        console.log(s);
+       // console.log(s);
     };
     //var print = console.log;
     var flua = fn.replace(".js", ".lua");
@@ -74,7 +75,10 @@ function ComparePrograms(fn: string): any {
         }
         vm.runInNewContext(jsRT + source, { print: print, console: { log: print } }, fn);
         var lua_stdout = RunProgram(luaRT + luasrc, flua);
-        if (js_stdout.trim().length != 0 || lua_stdout.trim().length != 0) {
+        var t1 = js_stdout.trim().replace(/\r\n/g, '\n');
+        var t2 = lua_stdout.trim().replace(/\r\n/g, '\n');
+
+    if ((t1 || t2) && ((t1 != t2) || (/ERROR/.exec(t2)))) {
             if (/expected|outside a vararg/.exec(lua_stdout)
                 && !/table expected, got/.exec(lua_stdout)
                 && !/value expected/.exec(lua_stdout)

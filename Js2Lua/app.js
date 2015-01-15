@@ -16,7 +16,7 @@ function ComparePrograms(fn) {
     var js_stdout = "";
     var print = function (s) {
         js_stdout += s + "\r\n";
-        console.log(s);
+        // console.log(s);
     };
     //var print = console.log;
     var flua = fn.replace(".js", ".lua");
@@ -69,7 +69,9 @@ function ComparePrograms(fn) {
         }
         vm.runInNewContext(jsRT + source, { print: print, console: { log: print } }, fn);
         var lua_stdout = RunProgram(luaRT + luasrc, flua);
-        if (js_stdout.trim().length != 0 || lua_stdout.trim().length != 0) {
+        var t1 = js_stdout.trim().replace(/\r\n/g, '\n');
+        var t2 = lua_stdout.trim().replace(/\r\n/g, '\n');
+        if ((t1 || t2) && ((t1 != t2) || (/ERROR/.exec(t2)))) {
             if (/expected|outside a vararg/.exec(lua_stdout) && !/table expected, got/.exec(lua_stdout) && !/value expected/.exec(lua_stdout) && !/string expected, got/.exec(lua_stdout) && !/number expected, got/.exec(lua_stdout)) {
                 console.log(" [SYNTAX] FAIL == " + fn);
                 console.log("JS:", js_stdout);

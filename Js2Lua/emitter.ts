@@ -2,6 +2,7 @@
 import util = require("util");
 import esutils = require("esutils");
 import hoist = require("./ast-hoist");
+import argfinder = require("./argfinder");
 import escodegen = require("escodegen"); // debug
 
 function EmitProgram(ast: esprima.Syntax.Program, emit: (s: string) => void, alloc: () => number) {
@@ -240,13 +241,23 @@ function EmitIdentifier(ast: esprima.Syntax.Identifier, emit: (s: string) => voi
 }
 
 function EmitFunctionExpr(ast: esprima.Syntax.FunctionExpression, emit: (s: string) => void, alloc: () => number) {
+    //console.log(util.inspect(ast, false, 999, true));
+    var identList = argfinder(ast.body);
+    var hasArguments = identList.indexOf('arguments') != -1;
     emit("__DefineFunction(function (self");
+    if (hasArguments) {
+        emit(", ...)\r\n local __tmp");
+    }
     for (var si = 0; si < ast.params.length; si++) {
-        var arg = ast.params[si];
         emit(",");
+        var arg = ast.params[si];        
         EmitExpression(arg, emit, alloc, false, false);
     }
-    emit(")\r\n");
+    if (hasArguments) {
+        emit("=1,...\r\n");
+    } else {
+        emit(")\r\n"); // arglist close
+    }
     EmitBlock(ast.body, emit, alloc);
     emit(" end) --FunctionExpr\r\n"); // any breaks?
 }
@@ -423,6 +434,9 @@ function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void
     switch (stmt.type) {
         case "ReturnStatement":
             EmitReturn(<esprima.Syntax.ReturnStatement>stmt, emit, alloc);
+            break;
+        case "AssignmentExpression":
+            EmitAssignment(<esprima.Syntax.AssignmentExpression>stmt, emit, alloc);
             break;
         case "ThrowStatement":
             EmitThrow(<esprima.Syntax.ThrowStatement>stmt, emit, alloc);

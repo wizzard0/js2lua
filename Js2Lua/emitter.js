@@ -2,6 +2,7 @@ var esprima = require("esprima");
 var util = require("util");
 var esutils = require("esutils");
 var hoist = require("./ast-hoist");
+var argfinder = require("./argfinder");
 function EmitProgram(ast, emit, alloc) {
     // hack
     emit("\r\n-- BEGIN\r\n");
@@ -244,13 +245,24 @@ function EmitIdentifier(ast, emit, alloc, rvalue, strictCheck) {
     }
 }
 function EmitFunctionExpr(ast, emit, alloc) {
+    //console.log(util.inspect(ast, false, 999, true));
+    var identList = argfinder(ast.body);
+    var hasArguments = identList.indexOf('arguments') != -1;
     emit("__DefineFunction(function (self");
+    if (hasArguments) {
+        emit(", ...)\r\n local __tmp");
+    }
     for (var si = 0; si < ast.params.length; si++) {
-        var arg = ast.params[si];
         emit(",");
+        var arg = ast.params[si];
         EmitExpression(arg, emit, alloc, false, false);
     }
-    emit(")\r\n");
+    if (hasArguments) {
+        emit("=1,...\r\n");
+    }
+    else {
+        emit(")\r\n"); // arglist close
+    }
     EmitBlock(ast.body, emit, alloc);
     emit(" end) --FunctionExpr\r\n"); // any breaks?
 }
@@ -432,6 +444,9 @@ function EmitStatement(stmt, emit, alloc) {
     switch (stmt.type) {
         case "ReturnStatement":
             EmitReturn(stmt, emit, alloc);
+            break;
+        case "AssignmentExpression":
+            EmitAssignment(stmt, emit, alloc);
             break;
         case "ThrowStatement":
             EmitThrow(stmt, emit, alloc);

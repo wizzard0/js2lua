@@ -120,8 +120,10 @@ local function __PlusOp(left, right)
 end
 
 local function __ToObject(val)
+    -- print("ToObject"..tostring(val))
     if type(val) == 'function' then return __Helpers.__DefineFunction(val) end -- todo cache this?
     if type(val) == 'string' then return __Helpers.__New(__JsGlobalObjects.String, val) end
+    if type(val) == 'number' then return __Helpers.__New(__JsGlobalObjects.Number, val) end
     local jsType = __Typeof(val)
     error("__ToObject not implemented for " .. jsType .. "/" .. type(val) .. "/" .. tostring(val))
 end
@@ -167,7 +169,13 @@ local function __CallMember(table, key, ...)
     if table.__Prototype then
         local boundMethod = __Get(table.__Prototype, key)
         -- print('got boundmethod '..tostring(table)..'.'..tostring(key)..'='..tostring(boundMethod)..'='..tostring(boundMethod ~= nil))
-        if boundMethod ~= nil then return boundMethod(table, ...) end
+        if boundMethod ~= nil then
+            if type(boundMethod) ~= 'function' and boundMethod.__CallImpl then
+                return boundMethod.__CallImpl(table, ...) -- wrapped
+            else 
+                return boundMethod(table, ...) -- builtin
+            end
+        end
     end
     error("Tried to call method " .. __ToString(key) .. " of " .. __ToString(table) .. " which is missing")
 end
@@ -347,11 +355,15 @@ Number.NaN = NaN
 Number.POSITIVE_INFINITY = Infinity
 Number.NEGATIVE_INFINITY = -Infinity
 Number.__CallImpl = function(self, val)
+    -- print('new number' .. val)
     self.__Value = val
 end
-Number.prototype.toLocaleString = __DefineFunction(function(self)
+Number.prototype.toString = __DefineFunction(function(self)
+    -- print('returning '..tostring(self.__Value))
     return tostring(self.__Value)
 end)
+Number.prototype.toLocaleString = Number.prototype.toString
+
 local isNaN = function(v) return v ~= v end
 __JsGlobalObjects.Number = Number
 __JsGlobalObjects.isNaN = isNaN
@@ -383,6 +395,13 @@ Array.prototype.push = function(self, element)
     self[self.__Length] = element
     self.__Length = self.__Length + 1
 end
+Array.prototype.toString = __DefineFunction(function(self)
+    -- print('returning '..tostring(self.__Value))
+    -- return 'Array['..self.__Length..']'
+    if self.__Length == 0 then return '' end
+    if self.__Length == 1 then return __ToString(self[0]) end
+    return __ToString(self[0])..','..table.concat(self, ',')
+end)
 local __MakeArray = function(rawArray)
     setmetatable(rawArray, __ObjectMetatable)
     rawArray.__Prototype = Array.prototype
@@ -441,6 +460,9 @@ end
 String.prototype.charCodeAt = function(self, idx)
     return self.__Unicode[idx] -- TODO unicode!
 end
+String.prototype.toString = __DefineFunction(function(self)
+    return self.__ToStringValue
+end)
 __JsGlobalObjects.String = String
 
 -- Date
@@ -493,7 +515,7 @@ local parseFloat = __DefineFunction(function(self, str) return tonumber(str) end
 __JsGlobalObjects.parseFloat = parseFloat
 
 local console = {
-    ["log"] = function(self, ...) print(...) end
+    ["log"] = function(...) print(__CallMember(...,'toString')) end
 }
 __JsGlobalObjects.console = console
 -- LIBRARY END
