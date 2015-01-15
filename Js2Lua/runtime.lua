@@ -505,6 +505,11 @@ local function __split(str, pat)
       end
       last_end = e+1
       s, e, cap = str:find(fpat, last_end)
+      if s == last_end then
+        s = s+1
+        e = e+1
+        cap = string.sub(str, s, e)
+      end
    end
    if last_end <= #str then
       cap = str:sub(last_end)
@@ -516,6 +521,7 @@ local function __split(str, pat)
 end
 String.__CallImpl = function(self, val) 
     -- print ('string ctor: ' .. val)
+    val = __ToString(val)
     local uni = Utf8to32(val)
     self.__ToStringValue = val
     self.__Unicode = uni
@@ -527,9 +533,11 @@ end
 String.prototype.toString = __DefineFunction(function(self)
     return self.__ToStringValue
 end)
+String.prototype.valueOf = String.prototype.toString
 String.prototype.split = __DefineFunction(function(self, pat)
     return __MakeArray(__split(self.__ToStringValue, pat))
 end)
+String.prototype.constructor = String
 __JsGlobalObjects.String = String
 
 -- Date

@@ -160,16 +160,17 @@ for ( var n = 3; n <= 24; n *= 2 ) {
         var bodies = new NBodySystem( Array(
            Sun(),Jupiter(),Saturn(),Uranus(),Neptune()
         ));
-        var max = n * 100;
+        var max = n * 100000;
         
         ret = bodies.energy();
         for (var i=0; i<max; i++){
             bodies.advance(0.01);
         }
         ret = bodies.energy();
+        console.log(ret);
     })();
 }
-
+console.log('RET:', ret);
 var end = new Date();
 
 console.log(end.getTime() - start.getTime());
