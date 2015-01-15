@@ -278,18 +278,24 @@ function EmitArray(ast, emit, alloc) {
     }
     emit("})");
 }
-function EmitSequence(ast, emit, alloc) {
-    emit("({");
-    for (var si = 0; si < ast.expressions.length; si++) {
-        var arg = ast.expressions[si];
+function EmitSequence(ast, emit, alloc, fromSink) {
+    emit("(function() ");
+    var ae = ast.expressions;
+    for (var si = 0; si < ae.length; si++) {
+        var arg = ae[si];
         EmitExpression(arg, emit, alloc);
-        if (si != ast.expressions.length - 1) {
-            emit(", ");
+        if (si != ae.length - 1) {
+            emit("; ");
         }
     }
-    emit("})["); // TODO this is awful, optimize this
-    emit(ast.expressions.length.toString());
-    emit("]");
+    if (ae.length > 0 && ae[ae.length - 1].type == 'AssignmentExpression') {
+        var aec = ae[ae.length - 1];
+        emit(" return ");
+        EmitExpression(aec.left, emit, alloc);
+    }
+    emit(" end)()"); // TODO this is awful, optimize this
+    //emit(ast.expressions.length.toString());
+    //emit("]");
 }
 function EmitObject(ast, emit, alloc) {
     emit("__MakeObject({");
@@ -508,6 +514,7 @@ function EmitStatement(stmt, emit, alloc) {
             console.log(util.inspect(stmt, false, 999, true));
             break;
     }
+    emit(";");
 }
 // HACK
 var pendingContinue = null;

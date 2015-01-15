@@ -275,18 +275,24 @@ function EmitArray(ast: esprima.Syntax.ArrayExpression, emit: (s: string) => voi
     emit("})");
 }
 
-function EmitSequence(ast: esprima.Syntax.SequenceExpression, emit: (s: string) => void, alloc: () => number) {
-    emit("({");
-    for (var si = 0; si < ast.expressions.length; si++) {
-        var arg = ast.expressions[si];
+function EmitSequence(ast: esprima.Syntax.SequenceExpression, emit: (s: string) => void, alloc: () => number, fromSink: boolean) {
+    emit("(function() ");
+    var ae = ast.expressions;
+    for (var si = 0; si < ae.length; si++) {
+        var arg = ae[si];
         EmitExpression(arg, emit, alloc);
-        if (si != ast.expressions.length - 1) {
-            emit(", ");
+        if (si != ae.length - 1) {
+            emit("; ");
         }
     }
-    emit("})["); // TODO this is awful, optimize this
-    emit(ast.expressions.length.toString());
-    emit("]");
+    if (ae.length > 0 && ae[ae.length - 1].type == 'AssignmentExpression') {
+        var aec = <esprima.Syntax.AssignmentExpression>ae[ae.length - 1];
+        emit(" return ");
+        EmitExpression(aec.left, emit, alloc);
+    }
+    emit(" end)()"); // TODO this is awful, optimize this
+    //emit(ast.expressions.length.toString());
+    //emit("]");
 }
 
 function EmitObject(ast: esprima.Syntax.ObjectExpression, emit: (s: string) => void, alloc: () => number) {
@@ -492,6 +498,7 @@ function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void
             console.log(util.inspect(stmt, false, 999, true));
             break;
     }
+    emit(";");
 }
 // HACK
 

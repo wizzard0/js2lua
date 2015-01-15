@@ -68,8 +68,11 @@ function ComparePrograms(fn) {
             console.log("PARTIAL: ", luasrc);
             return "nocode";
         }
+        var time1 = +new Date();
         vm.runInNewContext(jsRT + source, { print: print, console: { log: print } }, fn);
+        var time2 = +new Date();
         var lua_stdout = RunProgram(luaRT + luasrc, flua);
+        var time3 = +new Date();
         var t1 = js_stdout.trim().replace(/\r\n/g, '\n');
         var t2 = lua_stdout.trim().replace(/\r\n/g, '\n');
         if ((t1 || t2) && ((t1 != t2) || (/ERROR/.exec(t2)))) {
@@ -84,11 +87,13 @@ function ComparePrograms(fn) {
                 console.log(" [RUNTIME] FAIL == " + fn);
                 console.log("JS:", js_stdout);
                 console.log("Lua:", lua_stdout);
+                console.log("TIME JS: ", time2 - time1, " TIME LUA: ", time3 - time2);
                 return false;
             }
         }
         else {
             //console.log(" [OK+]");
+            console.log("TIME JS: ", time2 - time1, " TIME LUA: ", time3 - time2);
             return true;
         }
     }
