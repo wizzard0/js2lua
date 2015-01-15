@@ -280,7 +280,7 @@ function EmitSequence(ast, emit, alloc) {
     emit("]");
 }
 function EmitObject(ast, emit, alloc) {
-    emit("{");
+    emit("__MakeObject({");
     for (var si = 0; si < ast.properties.length; si++) {
         var arg = ast.properties[si];
         emit("[\"");
@@ -297,7 +297,7 @@ function EmitObject(ast, emit, alloc) {
             emit(", ");
         }
     }
-    emit("}");
+    emit("})");
 }
 function EmitFunctionDeclaration(ast, emit, alloc) {
     emit("local ");
@@ -767,6 +767,8 @@ function convertFile(source, fn) {
     };
     var ast = esprima.parse(source);
     var a2 = hoist(ast, true);
+    //console.log(escodegen.generate(a2))
+    //console.log(util.inspect(a2,false,999,true))
     var luasrc = "";
     var emit = function (code) {
         luasrc += code;

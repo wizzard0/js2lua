@@ -279,7 +279,7 @@ function EmitSequence(ast: esprima.Syntax.SequenceExpression, emit: (s: string) 
 }
 
 function EmitObject(ast: esprima.Syntax.ObjectExpression, emit: (s: string) => void, alloc: () => number) {
-    emit("{");
+    emit("__MakeObject({");
     for (var si = 0; si < ast.properties.length; si++) {
         var arg = ast.properties[si];
         emit("[\"");
@@ -295,7 +295,7 @@ function EmitObject(ast: esprima.Syntax.ObjectExpression, emit: (s: string) => v
             emit(", ");
         }
     }
-    emit("}");
+    emit("})");
 }
 
 function EmitFunctionDeclaration(ast: esprima.Syntax.FunctionDeclaration, emit: (s: string) => void, alloc: () => number) {
@@ -751,7 +751,8 @@ export function convertFile(source: string, fn: string): string {
 
     var ast = esprima.parse(source);
     var a2 = hoist(ast, true);
-
+    //console.log(escodegen.generate(a2))
+    //console.log(util.inspect(a2,false,999,true))
     var luasrc = "";
     var emit = function (code) {
         luasrc += code;

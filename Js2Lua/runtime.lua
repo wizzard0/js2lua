@@ -63,8 +63,9 @@ end
 
 local function __ToString(value)
     if type(value) == 'string' then return value end
-    if type(value) == 'table' and value.__ToStringValue then
-        return value.__ToStringValue
+    if type(value) == 'table' then
+        if value.__Prototype then return __CallMember(value, 'toString') end
+        if value.__ToStringValue then return value.__ToStringValue end
     end
     if value == nil then return 'undefined' end
     return tostring(value)
@@ -160,15 +161,19 @@ local function __CallMember(table, key, ...)
     if table.__Prototype then
         local boundMethod = __Get(table, key)
         if boundMethod == nil then
-            error("Tried to call member " .. tostring(key) .. " of " .. tostring(table) .. " which is missing")
+            error("Tried to call method " .. tostring(key) .. " of " .. tostring(table) .. " which is missing")
         end
         return boundMethod(table, ...)
     else
         local unboundMethod = table[key]
+        if unboundMethod == nil then
+            error("Tried to call member " .. tostring(key) .. " of Native " .. tostring(table) .. " which is missing")
+        end
         -- print (key, to_string(table))
         return unboundMethod(...) -- no implicit self on Lua methods
     end
 end
+__Helpers.__CallMember = __CallMember
 
 local function __Call(table, ...)
     local ci = table.__CallImpl
@@ -177,7 +182,8 @@ end
 
 local __ObjectMetatable = {
     __index = __Get,
-    __call = __Call
+    __call = __Call,
+    __tostring = __ToString,
 }
 
 -- wrap Lua function as js function
@@ -299,9 +305,9 @@ Object.prototype.toString = function(self)
     return "[object " .. string.upper(string.sub(t, 1, 1)) .. string.sub(t, 2) .. "]"
     -- return __ToString(self)
 end
-Object.prototype.defineProperty = function(self, key, descriptor)
+Object.defineProperty = function(self, key, descriptor)
     if descriptor.get or descriptor.set then error("getters/setters NYI") end
-    if not descriptor.writable or not descriptor.enumerable or not descriptor.configurable then error("readonly/hidden/unconf props NYI") end
+    if not descriptor.writable or not descriptor.enumerable or not descriptor.configurable then error("Error: readonly/hidden/unconf props NYI") end
     rawset(self, key, descriptor.value)
 end
 Object.__CallImpl = function(self) end
@@ -338,7 +344,9 @@ end
 Number.prototype.toLocaleString = __DefineFunction(function(self)
     return tostring(self.__Value)
 end)
+local isNaN = function(v) return v ~= v end
 __JsGlobalObjects.Number = Number
+__JsGlobalObjects.isNaN = isNaN
 
 -- Array
 local Array = __New(Function)
@@ -370,13 +378,19 @@ end
 local __MakeArray = function(rawArray)
     setmetatable(rawArray, __ObjectMetatable)
     rawArray.__Prototype = Array.prototype
-    rawArray.ctor = Array
+    rawArray.constructor = Array
     local idx = 0 -- fixup length
     for k,v in ipairs(rawArray) do
         idx = idx + 1
     end
     rawArray.__Length = idx
     return rawArray
+end
+local __MakeObject = function(raw)
+    setmetatable(raw, __ObjectMetatable)
+    raw.__Prototype = Object.prototype
+    raw.constructor = Object
+    return raw
 end
 -- Boolean
 local Boolean = __New(Function)
