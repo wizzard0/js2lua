@@ -749,7 +749,9 @@ function EmitLiteral(ex: esprima.Syntax.Literal, emit: (s: string) => void, allo
     //console.log(util.inspect(ex, false, 999, true));
     if (ex.value instanceof RegExp) {
         //console.log("R");
+        emit("__New(RegExp,");
         emit(JSON.stringify((<any>ex).raw)); // TODO https://github.com/o080o/reLua!
+        emit(")");
     } else {
         //console.log(ex.raw);
         emit(JSON.stringify(ex.value)); // TODO

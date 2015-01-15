@@ -510,6 +510,7 @@ RegExp.__CallImpl = function(self, val)
     -- print ('RegExp ctor: ' .. val)
     self.__Value = val
 end
+RegExp.prototype.exec = __DefineFunction(__id)
 
 -- Error
 local Error = __New(Function)
@@ -547,6 +548,10 @@ end
 
 local function _USD_PRINT(s)
     print("INFO: ", s)
+end
+
+local function _USD_FAIL(message)
+    testFailed(message)
 end
 
 local function _USD_INCLUDE() end

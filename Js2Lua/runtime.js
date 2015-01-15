@@ -6,6 +6,11 @@ var $PRINT = function (s) {
     print("INFO: " + s);
 }
 
+function $FAIL(message) {
+    testFailed(message);
+}
+
+
 function $INCLUDE(message) { }
 
 function runTestCase(testcase) {
