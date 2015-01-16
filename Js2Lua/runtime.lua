@@ -622,6 +622,19 @@ local console = {
     ["log"] = function(...) print(__ToString(...)) end
 }
 __JsGlobalObjects.console = console
+--[[
+JSON = assert(loadfile "JSON.lua")()
+function JSON:onEncodeError(message, etc) return 'null' end
+
+local __json = JSON -- global one
+local JSON = __New(Object)
+JSON.parse = __DefineFunction(function(self, str)
+    return __json:decode(str)
+end)
+JSON.stringify = __DefineFunction(function(self, val)
+    return __json:encode_pretty(val)
+end)
+--]]
 -- LIBRARY END
 
 local function _USD_ERROR(s)
