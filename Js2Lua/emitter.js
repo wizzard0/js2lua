@@ -278,24 +278,18 @@ function EmitArray(ast, emit, alloc) {
     }
     emit("})");
 }
-function EmitSequence(ast, emit, alloc, fromSink) {
-    emit("(function() ");
-    var ae = ast.expressions;
-    for (var si = 0; si < ae.length; si++) {
-        var arg = ae[si];
+function EmitSequence(ast, emit, alloc) {
+    emit("({");
+    for (var si = 0; si < ast.expressions.length; si++) {
+        var arg = ast.expressions[si];
         EmitExpression(arg, emit, alloc);
-        if (si != ae.length - 1) {
-            emit("; ");
+        if (si != ast.expressions.length - 1) {
+            emit(", ");
         }
     }
-    if (ae.length > 0 && ae[ae.length - 1].type == 'AssignmentExpression') {
-        var aec = ae[ae.length - 1];
-        emit(" return ");
-        EmitExpression(aec.left, emit, alloc);
-    }
-    emit(" end)()"); // TODO this is awful, optimize this
-    //emit(ast.expressions.length.toString());
-    //emit("]");
+    emit("})["); // TODO this is awful, optimize this
+    emit(ast.expressions.length.toString());
+    emit("]");
 }
 function EmitObject(ast, emit, alloc) {
     emit("__MakeObject({");
@@ -343,23 +337,28 @@ function EmitBlock(ast, emit, alloc) {
 }
 function EmitAssignment(ast, emit, alloc) {
     var aop = ast.operator;
-    //if (aop != '=' && aop.length != 2 && aop.length != 3) {
-    //    emit("--[[4"); emit(ast.type); emit("]]");
-    //    console.log(util.inspect(ast, false, 999, true));
-    //    return;
-    //}
     if (ast.left.type == 'AssignmentExpression' || ast.left.type == 'UpdateExpression') {
-        console.log("Inline Assignment Codegen not implemented");
+        console.log("Rvalue Assignment Codegen not implemented");
         emit("--[[IAC]]");
     }
     EmitExpression(ast.left, emit, alloc, false);
     if (aop == '=') {
         emit(aop);
-        if (ast.right.type == 'AssignmentExpression' || ast.right.type == 'UpdateExpression') {
-            console.log("Inline Assignment Codegen not implemented");
-            emit("--[[IAC]]");
+        if (ast.right.type == 'AssignmentExpression') {
+            var rightA = ast.right;
+            emit('((function() ');
+            EmitAssignment(rightA, emit, alloc);
+            emit('; return ');
+            EmitExpression(rightA.left, emit, alloc);
+            emit(' end)())');
         }
-        EmitExpression(ast.right, emit, alloc);
+        else if (ast.right.type == 'UpdateExpression') {
+            var rightU = ast.right;
+            EmitUpdate(rightU, emit, alloc);
+        }
+        else {
+            EmitExpression(ast.right, emit, alloc);
+        }
     }
     else {
         emit('=');
@@ -380,12 +379,16 @@ function EmitUpdate(ast, emit, alloc) {
         console.log(util.inspect(ast, false, 999, true));
         return;
     }
+    emit('((function() ');
     EmitAssignment({
         type: 'AssignmentExpression',
         operator: aop.substr(0, 1) + '=',
         left: ast.argument,
         right: { type: 'Literal', value: 1, raw: '1' }
     }, emit, alloc);
+    emit('; return ');
+    EmitExpression(ast.argument, emit, alloc);
+    emit(' end)())');
 }
 function EmitUnary(ast, emit, alloc) {
     var aop = ast.operator;
@@ -514,7 +517,6 @@ function EmitStatement(stmt, emit, alloc) {
             console.log(util.inspect(stmt, false, 999, true));
             break;
     }
-    emit(";");
 }
 // HACK
 var pendingContinue = null;
