@@ -71,7 +71,13 @@ function ComparePrograms(fn) {
             return "nocode";
         }
         var time1 = +new Date();
-        vm.runInNewContext(jsRT + source, { print: print, console: { log: print } }, fn);
+        try {
+            vm.runInNewContext(jsRT + source, { print: print, console: { log: print } }, fn);
+        }
+        catch (e) {
+            console.log("JS version failure: ", e);
+            return "skip";
+        }
         var time2 = +new Date();
         var lua_stdout = RunProgram(luaRT + polyfillSrc + luasrc, flua);
         var time3 = +new Date();
