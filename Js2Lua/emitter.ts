@@ -29,7 +29,7 @@ function EmitVariableDeclarator(vd: esprima.Syntax.VariableDeclarator, emit: (s:
     EmitExpression(vd.id, emit, alloc, 0, false); // identifier
     emit(" = ");
     EmitExpression(vd.init, emit, alloc, 0);
-    emit(";\r\n");
+    emit("\r\n");
 }
 
 function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void, alloc: () => number, statementContext: number, isRvalue: boolean = true, strictCheck: boolean = true) {
@@ -43,7 +43,7 @@ function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void
             EmitCall(<esprima.Syntax.CallExpression>ex, emit, alloc);
             break;
         case "SequenceExpression":
-            EmitSequence(<esprima.Syntax.SequenceExpression>ex, emit, alloc);
+            EmitSequence(<esprima.Syntax.SequenceExpression>ex, emit, alloc, statementContext != 0);
             break;
         case "NewExpression":
             EmitNew(<esprima.Syntax.NewExpression>ex, emit, alloc);
@@ -146,7 +146,7 @@ function EmitTryStatement(ast: esprima.Syntax.TryStatement, emit: (s: string) =>
     // handlerS, not handler!
 }
 
-var NonSinkableExpressionTypes = ['VariableDeclaration', 'AssignmentExpression', 'CallExpression', 'UpdateExpression'];
+var NonSinkableExpressionTypes = ['VariableDeclaration', 'AssignmentExpression', 'CallExpression', 'UpdateExpression', 'SequenceExpression'];
 
 function EmitForStatement(ast: esprima.Syntax.ForStatement, emit: (s: string) => void, alloc: () => number) {
     //console.log(util.inspect(ast, false, 999, true));
@@ -283,18 +283,22 @@ function EmitArray(ast: esprima.Syntax.ArrayExpression, emit: (s: string) => voi
     emit("})");
 }
 
-function EmitSequence(ast: esprima.Syntax.SequenceExpression, emit: (s: string) => void, alloc: () => number) {
-    emit("({");
+function EmitSequence(ast: esprima.Syntax.SequenceExpression, emit: (s: string) => void, alloc: () => number, StatementContext: boolean) {
+    if (!StatementContext) {
+        emit("({");
+    }
     for (var si = 0; si < ast.expressions.length; si++) {
         var arg = ast.expressions[si];
-        EmitExpression(arg, emit, alloc, 0);
+        EmitExpression(arg, emit, alloc, StatementContext ? 1 : 0);
         if (si != ast.expressions.length - 1) {
-            emit(", ");
+            emit(StatementContext ? "\r\n" : ", ");
         }
     }
-    emit("})["); // TODO this is awful, optimize this
-    emit(ast.expressions.length.toString());
-    emit("]");
+    if (!StatementContext) {
+        emit("})["); // TODO this is awful, optimize this
+        emit(ast.expressions.length.toString());
+        emit("]");
+    }
 }
 
 function EmitObject(ast: esprima.Syntax.ObjectExpression, emit: (s: string) => void, alloc: () => number) {

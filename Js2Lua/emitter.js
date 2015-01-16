@@ -25,7 +25,7 @@ function EmitVariableDeclarator(vd, emit, alloc) {
     EmitExpression(vd.id, emit, alloc, 0, false); // identifier
     emit(" = ");
     EmitExpression(vd.init, emit, alloc, 0);
-    emit(";\r\n");
+    emit("\r\n");
 }
 function EmitExpression(ex, emit, alloc, statementContext, isRvalue, strictCheck) {
     if (isRvalue === void 0) { isRvalue = true; }
@@ -39,7 +39,7 @@ function EmitExpression(ex, emit, alloc, statementContext, isRvalue, strictCheck
             EmitCall(ex, emit, alloc);
             break;
         case "SequenceExpression":
-            EmitSequence(ex, emit, alloc);
+            EmitSequence(ex, emit, alloc, statementContext != 0);
             break;
         case "NewExpression":
             EmitNew(ex, emit, alloc);
@@ -145,7 +145,7 @@ function EmitTryStatement(ast, emit, alloc) {
     }
     // handlerS, not handler!
 }
-var NonSinkableExpressionTypes = ['VariableDeclaration', 'AssignmentExpression', 'CallExpression', 'UpdateExpression'];
+var NonSinkableExpressionTypes = ['VariableDeclaration', 'AssignmentExpression', 'CallExpression', 'UpdateExpression', 'SequenceExpression'];
 function EmitForStatement(ast, emit, alloc) {
     //console.log(util.inspect(ast, false, 999, true));
     if (ast.init) {
@@ -287,18 +287,22 @@ function EmitArray(ast, emit, alloc) {
     emit("[\"__Length\"]=" + ast.elements.length);
     emit("})");
 }
-function EmitSequence(ast, emit, alloc) {
-    emit("({");
+function EmitSequence(ast, emit, alloc, StatementContext) {
+    if (!StatementContext) {
+        emit("({");
+    }
     for (var si = 0; si < ast.expressions.length; si++) {
         var arg = ast.expressions[si];
-        EmitExpression(arg, emit, alloc, 0);
+        EmitExpression(arg, emit, alloc, StatementContext ? 1 : 0);
         if (si != ast.expressions.length - 1) {
-            emit(", ");
+            emit(StatementContext ? "\r\n" : ", ");
         }
     }
-    emit("})["); // TODO this is awful, optimize this
-    emit(ast.expressions.length.toString());
-    emit("]");
+    if (!StatementContext) {
+        emit("})["); // TODO this is awful, optimize this
+        emit(ast.expressions.length.toString());
+        emit("]");
+    }
 }
 function EmitObject(ast, emit, alloc) {
     emit("__MakeObject({");
