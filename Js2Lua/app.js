@@ -21,6 +21,7 @@ function ComparePrograms(fn) {
     //var print = console.log;
     var flua = fn.replace(".js", ".lua");
     var source = fs.readFileSync(fn).toString();
+    var polyfills = fs.readFileSync("polyfills.js").toString();
     var luaRT = fs.readFileSync("runtime.lua").toString();
     var jsRT = fs.readFileSync("runtime.js").toString();
     var ns = /@negative|negative: (.*)/.exec(source);
@@ -35,6 +36,7 @@ function ComparePrograms(fn) {
     var hasAnythingToDoWithDate = /Date(\.|\()/.exec(source);
     var hasIntl = /testIntl|\bIntl\b/.exec(source);
     var expectErrors = false;
+    var polyfillSrc = emitter.convertFile(polyfills, "polyfills.js");
     if (hasEval || hasWith || hasSwitch || hasOther || weirdTests || hasGlobalDeleteTest || hasIntl || onlyStrict) {
         //console.log(" [SKIP]");
         return "skip";
@@ -46,7 +48,7 @@ function ComparePrograms(fn) {
         try {
             var luasrc = emitter.convertFile(source, fn);
             vm.runInNewContext(jsRT + source, { print: print, console: { log: print } }, fn);
-            var lua_stdout = RunProgram(luaRT + luasrc, flua);
+            var lua_stdout = RunProgram(luaRT + polyfillSrc + luasrc, flua);
             if (js_stdout.trim().length == 0 || lua_stdout.trim().length == 0) {
                 console.log(" NEG FAIL! == " + fn);
                 return false;
@@ -71,7 +73,7 @@ function ComparePrograms(fn) {
         var time1 = +new Date();
         vm.runInNewContext(jsRT + source, { print: print, console: { log: print } }, fn);
         var time2 = +new Date();
-        var lua_stdout = RunProgram(luaRT + luasrc, flua);
+        var lua_stdout = RunProgram(luaRT + polyfillSrc + luasrc, flua);
         var time3 = +new Date();
         var t1 = js_stdout.trim().replace(/\r\n/g, '\n');
         var t2 = lua_stdout.trim().replace(/\r\n/g, '\n');
