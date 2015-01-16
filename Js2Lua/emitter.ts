@@ -416,7 +416,7 @@ function EmitUnary(ast: esprima.Syntax.UnaryExpression, emit: (s: string) => voi
         emit("nil");
     } else if (aop == '!') {
         emit("(not __ToBoolean(");
-        EmitExpression(ast.argument, emit, alloc, 0); 
+        EmitExpression(ast.argument, emit, alloc, 0);
         emit("))");
     } else if (aop == '+' || aop == '-') {
         emit(aop == '-' ? "(-__ToNumber(" : "(__ToNumber("); // TODO ToNumber
@@ -718,11 +718,15 @@ function EmitMember(ast: esprima.Syntax.MemberExpression, emit: (s: string) => v
         emit(id.name); // cannot EmitIdentifier because of escaping
         emit(reservedLuaKeys[id.name] ? "\"]" : "");
     } else {
-        if (ast.object.type == 'Literal') { emit("("); }
+        var argIndexer = ast.object.type == 'Identifier' && (<esprima.Syntax.Identifier>ast.object).name == 'arguments';
+        if (ast.object.type == 'Literal' || argIndexer) { emit("("); }
         EmitExpression(ast.object, emit, alloc, 0);
-        if (ast.object.type == 'Literal') { emit(")"); }
+        if (ast.object.type == 'Literal' || argIndexer) { emit(")"); }
         emit("[");
         EmitExpression(ast.property, emit, alloc, 0);
+        if (argIndexer) {
+            emit("+1");
+        }
         emit("]");
     }
 }

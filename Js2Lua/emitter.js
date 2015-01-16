@@ -732,15 +732,19 @@ function EmitMember(ast, emit, alloc, isRvalue) {
         emit(reservedLuaKeys[id.name] ? "\"]" : "");
     }
     else {
-        if (ast.object.type == 'Literal') {
+        var argIndexer = ast.object.type == 'Identifier' && ast.object.name == 'arguments';
+        if (ast.object.type == 'Literal' || argIndexer) {
             emit("(");
         }
         EmitExpression(ast.object, emit, alloc, 0);
-        if (ast.object.type == 'Literal') {
+        if (ast.object.type == 'Literal' || argIndexer) {
             emit(")");
         }
         emit("[");
         EmitExpression(ast.property, emit, alloc, 0);
+        if (argIndexer) {
+            emit("+1");
+        }
         emit("]");
     }
 }
