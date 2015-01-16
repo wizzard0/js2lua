@@ -45,7 +45,17 @@ function EmitExpression(ex, emit, alloc, statementContext, isRvalue, strictCheck
             EmitNew(ex, emit, alloc);
             break;
         case "AssignmentExpression":
-            EmitAssignment(ex, emit, alloc);
+            if (statementContext) {
+                EmitAssignment(ex, emit, alloc);
+            }
+            else {
+                var rightA = ex;
+                emit('((function() ');
+                EmitAssignment(rightA, emit, alloc);
+                emit('; return ');
+                EmitExpression(rightA.left, emit, alloc, 0);
+                emit(' end)())');
+            }
             break;
         case "BinaryExpression":
             EmitBinary(ex, emit, alloc);
@@ -211,7 +221,7 @@ function EmitVariableDeclaratorOrExpression(ast, emit, alloc) {
         EmitVariableDeclaration(ast, emit, alloc);
     }
     else if (esutils.ast.isExpression(ast)) {
-        EmitExpression(ast, emit, alloc, 0);
+        EmitExpression(ast, emit, alloc, 1);
     }
     else {
         emit("--[[5");
@@ -336,28 +346,10 @@ function EmitBlock(ast, emit, alloc) {
 }
 function EmitAssignment(ast, emit, alloc) {
     var aop = ast.operator;
-    //if (ast.left.type == 'AssignmentExpression' || ast.left.type == 'UpdateExpression') {
-    //    console.log("Rvalue Assignment Codegen not implemented");
-    //    emit("--[[IAC]]")
-    //}
     EmitExpression(ast.left, emit, alloc, 0, false);
     if (aop == '=') {
         emit(aop);
-        if (ast.right.type == 'AssignmentExpression') {
-            var rightA = ast.right;
-            emit('((function() ');
-            EmitAssignment(rightA, emit, alloc);
-            emit('; return ');
-            EmitExpression(rightA.left, emit, alloc, 0);
-            emit(' end)())');
-        }
-        else if (ast.right.type == 'UpdateExpression') {
-            var rightU = ast.right;
-            EmitUpdate(rightU, emit, alloc, false);
-        }
-        else {
-            EmitExpression(ast.right, emit, alloc, 0);
-        }
+        EmitExpression(ast.right, emit, alloc, 0);
     }
     else {
         emit('=');
@@ -403,6 +395,9 @@ function EmitUpdate(ast, emit, alloc, StatementContext) {
         emit('; return ');
         EmitExpression(ast.prefix ? ast.argument : itx, emit, alloc, 0);
         emit(' end)())');
+    }
+    else {
+        emit(";");
     }
 }
 function EmitUnary(ast, emit, alloc) {

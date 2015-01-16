@@ -49,7 +49,16 @@ function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void
             EmitNew(<esprima.Syntax.NewExpression>ex, emit, alloc);
             break;
         case "AssignmentExpression":
-            EmitAssignment(<esprima.Syntax.AssignmentExpression>ex, emit, alloc);
+            if (statementContext) {
+                EmitAssignment(<esprima.Syntax.AssignmentExpression>ex, emit, alloc);
+            } else {
+                var rightA = <esprima.Syntax.AssignmentExpression>ex;
+                emit('((function() ');
+                EmitAssignment(rightA, emit, alloc);
+                emit('; return ');
+                EmitExpression(rightA.left, emit, alloc, 0);
+                emit(' end)())');
+            }
             break;
         case "BinaryExpression":
             EmitBinary(<esprima.Syntax.BinaryExpression>ex, emit, alloc);
@@ -212,7 +221,7 @@ function EmitVariableDeclaratorOrExpression(ast: esprima.Syntax.VariableDeclarat
     if (ast.type == 'VariableDeclaration') {
         EmitVariableDeclaration(<esprima.Syntax.VariableDeclaration><any>ast, emit, alloc);
     } else if (esutils.ast.isExpression(ast)) {
-        EmitExpression(ast, emit, alloc, 0);
+        EmitExpression(ast, emit, alloc, 1);
     } else {
         emit("--[[5"); emit(ast.type); emit("]]");
         console.log(util.inspect(ast, false, 999, true));
@@ -333,27 +342,10 @@ function EmitBlock(ast: esprima.Syntax.BlockStatement, emit: (s: string) => void
 
 function EmitAssignment(ast: esprima.Syntax.AssignmentExpression, emit: (s: string) => void, alloc: () => number) {
     var aop = ast.operator;
-    //if (ast.left.type == 'AssignmentExpression' || ast.left.type == 'UpdateExpression') {
-    //    console.log("Rvalue Assignment Codegen not implemented");
-    //    emit("--[[IAC]]")
-    //}
     EmitExpression(ast.left, emit, alloc, 0, false);
     if (aop == '=') {
         emit(aop);
-
-        if (ast.right.type == 'AssignmentExpression') {
-            var rightA = <esprima.Syntax.AssignmentExpression>ast.right;
-            emit('((function() ');
-            EmitAssignment(rightA, emit, alloc);
-            emit('; return ');
-            EmitExpression(rightA.left, emit, alloc, 0);
-            emit(' end)())');
-        } else if (ast.right.type == 'UpdateExpression') {
-            var rightU = <esprima.Syntax.UpdateExpression>ast.right;
-            EmitUpdate(rightU, emit, alloc, false);
-        } else {
-            EmitExpression(ast.right, emit, alloc, 0);
-        }
+        EmitExpression(ast.right, emit, alloc, 0);
     } else {
         emit('=');
         EmitBinary({
@@ -397,6 +389,8 @@ function EmitUpdate(ast: esprima.Syntax.UpdateExpression, emit: (s: string) => v
         emit('; return ');
         EmitExpression(ast.prefix ? ast.argument : itx, emit, alloc, 0);
         emit(' end)())');
+    } else {
+        emit(";");
     }
 }
 
