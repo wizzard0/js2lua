@@ -22,12 +22,12 @@ function EmitVariableDeclaration(ex, emit, alloc) {
 }
 function EmitVariableDeclarator(vd, emit, alloc) {
     emit("local ");
-    EmitExpression(vd.id, emit, alloc, false); // identifier
+    EmitExpression(vd.id, emit, alloc, 0, false); // identifier
     emit(" = ");
-    EmitExpression(vd.init, emit, alloc);
+    EmitExpression(vd.init, emit, alloc, 0);
     emit(";\r\n");
 }
-function EmitExpression(ex, emit, alloc, isRvalue, strictCheck) {
+function EmitExpression(ex, emit, alloc, statementContext, isRvalue, strictCheck) {
     if (isRvalue === void 0) { isRvalue = true; }
     if (strictCheck === void 0) { strictCheck = true; }
     if (!ex) {
@@ -57,7 +57,7 @@ function EmitExpression(ex, emit, alloc, isRvalue, strictCheck) {
             EmitConditional(ex, emit, alloc);
             break;
         case "UpdateExpression":
-            EmitUpdate(ex, emit, alloc);
+            EmitUpdate(ex, emit, alloc, statementContext != 0);
             break;
         case "ArrayExpression":
             EmitArray(ex, emit, alloc);
@@ -135,7 +135,7 @@ function EmitTryStatement(ast, emit, alloc) {
     }
     // handlerS, not handler!
 }
-var NonSinkableExpressionTypes = ['VariableDeclaration', 'AssignmentExpression', 'CallExpression'];
+var NonSinkableExpressionTypes = ['VariableDeclaration', 'AssignmentExpression', 'CallExpression', 'UpdateExpression'];
 function EmitForStatement(ast, emit, alloc) {
     //console.log(util.inspect(ast, false, 999, true));
     if (ast.init) {
@@ -150,7 +150,7 @@ function EmitForStatement(ast, emit, alloc) {
     }
     emit("\r\nwhile __ToBoolean(");
     if (ast.test) {
-        EmitExpression(ast.test, emit, alloc);
+        EmitExpression(ast.test, emit, alloc, 0);
     }
     else {
         emit("true");
@@ -169,7 +169,7 @@ function EmitForStatement(ast, emit, alloc) {
         if (NonSinkableExpressionTypes.indexOf(aut) == -1) {
             emit("__Sink(");
         }
-        EmitExpression(ast.update, emit, alloc);
+        EmitExpression(ast.update, emit, alloc, 1);
         if (NonSinkableExpressionTypes.indexOf(aut) == -1) {
             emit(")");
         }
@@ -185,13 +185,13 @@ function EmitForInStatement(ast, emit, alloc) {
     emit("for ");
     if (ast.left.type == 'VariableDeclaration') {
         var vd = ast.left;
-        EmitExpression(vd.declarations[0].id, emit, alloc, false);
+        EmitExpression(vd.declarations[0].id, emit, alloc, 0, false);
     }
     else {
-        EmitExpression(ast.left, emit, alloc, false);
+        EmitExpression(ast.left, emit, alloc, 0, false);
     }
     emit(",");
-    EmitExpression({ type: 'Identifier', name: '_tmp' + alloc() }, emit, alloc, false);
+    EmitExpression({ type: 'Identifier', name: '_tmp' + alloc() }, emit, alloc, 0, false);
     emit(" in ");
     EmitCall({
         type: 'CallExpression',
@@ -211,7 +211,7 @@ function EmitVariableDeclaratorOrExpression(ast, emit, alloc) {
         EmitVariableDeclaration(ast, emit, alloc);
     }
     else if (esutils.ast.isExpression(ast)) {
-        EmitExpression(ast, emit, alloc);
+        EmitExpression(ast, emit, alloc, 0);
     }
     else {
         emit("--[[5");
@@ -255,7 +255,7 @@ function EmitFunctionExpr(ast, emit, alloc) {
     for (var si = 0; si < ast.params.length; si++) {
         emit(",");
         var arg = ast.params[si];
-        EmitExpression(arg, emit, alloc, false, false);
+        EmitExpression(arg, emit, alloc, 0, false, false);
     }
     if (hasArguments) {
         emit("=1,...\r\n");
@@ -271,7 +271,7 @@ function EmitArray(ast, emit, alloc) {
     for (var si = 0; si < ast.elements.length; si++) {
         emit("[" + si + "]=");
         var arg = ast.elements[si];
-        EmitExpression(arg, emit, alloc);
+        EmitExpression(arg, emit, alloc, 0);
         emit(", ");
     }
     emit("[\"__Length\"]=" + ast.elements.length);
@@ -281,7 +281,7 @@ function EmitSequence(ast, emit, alloc) {
     emit("({");
     for (var si = 0; si < ast.expressions.length; si++) {
         var arg = ast.expressions[si];
-        EmitExpression(arg, emit, alloc);
+        EmitExpression(arg, emit, alloc, 0);
         if (si != ast.expressions.length - 1) {
             emit(", ");
         }
@@ -300,10 +300,10 @@ function EmitObject(ast, emit, alloc) {
             emit(arg.key.value);
         }
         else {
-            EmitExpression(arg.key, emit, alloc, false);
+            EmitExpression(arg.key, emit, alloc, 0, false);
         }
         emit("\"]=");
-        EmitExpression(arg.value, emit, alloc);
+        EmitExpression(arg.value, emit, alloc, 0);
         if (si != ast.properties.length - 1) {
             emit(", ");
         }
@@ -312,9 +312,9 @@ function EmitObject(ast, emit, alloc) {
 }
 function EmitFunctionDeclaration(ast, emit, alloc) {
     emit("local ");
-    EmitExpression(ast.id, emit, alloc, false);
+    EmitExpression(ast.id, emit, alloc, 0, false);
     emit(";");
-    EmitExpression(ast.id, emit, alloc, false);
+    EmitExpression(ast.id, emit, alloc, 0, false);
     emit(" = ");
     EmitFunctionExpr(ast, emit, alloc);
 }
@@ -336,11 +336,11 @@ function EmitBlock(ast, emit, alloc) {
 }
 function EmitAssignment(ast, emit, alloc) {
     var aop = ast.operator;
-    if (ast.left.type == 'AssignmentExpression' || ast.left.type == 'UpdateExpression') {
-        console.log("Rvalue Assignment Codegen not implemented");
-        emit("--[[IAC]]");
-    }
-    EmitExpression(ast.left, emit, alloc, false);
+    //if (ast.left.type == 'AssignmentExpression' || ast.left.type == 'UpdateExpression') {
+    //    console.log("Rvalue Assignment Codegen not implemented");
+    //    emit("--[[IAC]]")
+    //}
+    EmitExpression(ast.left, emit, alloc, 0, false);
     if (aop == '=') {
         emit(aop);
         if (ast.right.type == 'AssignmentExpression') {
@@ -348,15 +348,15 @@ function EmitAssignment(ast, emit, alloc) {
             emit('((function() ');
             EmitAssignment(rightA, emit, alloc);
             emit('; return ');
-            EmitExpression(rightA.left, emit, alloc);
+            EmitExpression(rightA.left, emit, alloc, 0);
             emit(' end)())');
         }
         else if (ast.right.type == 'UpdateExpression') {
             var rightU = ast.right;
-            EmitUpdate(rightU, emit, alloc);
+            EmitUpdate(rightU, emit, alloc, false);
         }
         else {
-            EmitExpression(ast.right, emit, alloc);
+            EmitExpression(ast.right, emit, alloc, 0);
         }
     }
     else {
@@ -369,7 +369,7 @@ function EmitAssignment(ast, emit, alloc) {
         }, emit, alloc);
     }
 }
-function EmitUpdate(ast, emit, alloc) {
+function EmitUpdate(ast, emit, alloc, StatementContext) {
     //console.log(util.inspect(ast, false, 999, true));
     var aop = ast.operator;
     if (aop != '++' && aop != '--') {
@@ -379,17 +379,19 @@ function EmitUpdate(ast, emit, alloc) {
         console.log(util.inspect(ast, false, 999, true));
         return;
     }
-    emit('((function( ) ');
-    if (!ast.prefix) {
-        var tx = "__tmp" + alloc();
-        var itx = { 'type': 'Identifier', 'name': tx };
-        EmitAssignment({
-            type: 'AssignmentExpression',
-            operator: '=',
-            left: itx,
-            right: ast.argument
-        }, emit, alloc);
-        emit(";");
+    if (!StatementContext) {
+        emit('((function( ) ');
+        if (!ast.prefix) {
+            var tx = "__tmp" + alloc();
+            var itx = { 'type': 'Identifier', 'name': tx };
+            EmitAssignment({
+                type: 'AssignmentExpression',
+                operator: '=',
+                left: itx,
+                right: ast.argument
+            }, emit, alloc);
+            emit(";");
+        }
     }
     EmitAssignment({
         type: 'AssignmentExpression',
@@ -397,22 +399,24 @@ function EmitUpdate(ast, emit, alloc) {
         left: ast.argument,
         right: { type: 'Literal', value: 1, raw: '1' }
     }, emit, alloc);
-    emit('; return ');
-    EmitExpression(ast.prefix ? ast.argument : itx, emit, alloc);
-    emit(' end)())');
+    if (!StatementContext) {
+        emit('; return ');
+        EmitExpression(ast.prefix ? ast.argument : itx, emit, alloc, 0);
+        emit(' end)())');
+    }
 }
 function EmitUnary(ast, emit, alloc) {
     var aop = ast.operator;
     if (aop == 'typeof') {
         emit("__Typeof");
         emit("(");
-        EmitExpression(ast.argument, emit, alloc, true, false);
+        EmitExpression(ast.argument, emit, alloc, 0, true, false);
         emit(")");
     }
     else if (aop == '~') {
         emit("bit32.bnot");
         emit("(");
-        EmitExpression(ast.argument, emit, alloc);
+        EmitExpression(ast.argument, emit, alloc, 0);
         emit(")");
     }
     else if (aop == 'delete') {
@@ -423,12 +427,12 @@ function EmitUnary(ast, emit, alloc) {
     }
     else if (aop == '!') {
         emit("(not __ToBoolean(");
-        EmitExpression(ast.argument, emit, alloc);
+        EmitExpression(ast.argument, emit, alloc, 0);
         emit("))");
     }
     else if (aop == '+' || aop == '-') {
         emit(aop == '-' ? "(-" : "("); // TODO ToNumber
-        EmitExpression(ast.argument, emit, alloc);
+        EmitExpression(ast.argument, emit, alloc, 0);
         emit(")");
     }
     else {
@@ -445,7 +449,7 @@ function EmitDelete(ast, emit, alloc) {
         var ma = ast.argument;
         emit("__Delete"); // TODO emit callexpr
         emit("(");
-        EmitExpression(ma.object, emit, alloc);
+        EmitExpression(ma.object, emit, alloc, 0);
         emit(", \"");
         emit(ma.property.name);
         emit("\")");
@@ -454,7 +458,7 @@ function EmitDelete(ast, emit, alloc) {
         var mm = ast.argument;
         emit("__Delete");
         emit("(");
-        EmitExpression({ type: 'ThisExpression' }, emit, alloc);
+        EmitExpression({ type: 'ThisExpression' }, emit, alloc, 0);
         emit(", \"");
         emit(mm.name);
         emit("\")");
@@ -506,11 +510,11 @@ function EmitStatement(stmt, emit, alloc) {
             break;
         case "ExpressionStatement":
             var et = (stmt.expression).type;
-            if (et != 'AssignmentExpression' && et != 'UpdateExpression' && et != 'CallExpression') {
+            if (NonSinkableExpressionTypes.indexOf(et) == -1) {
                 emit(" __Sink(");
             }
-            EmitExpression(stmt.expression, emit, alloc);
-            if (et != 'AssignmentExpression' && et != 'UpdateExpression' && et != 'CallExpression') {
+            EmitExpression(stmt.expression, emit, alloc, 1);
+            if (NonSinkableExpressionTypes.indexOf(et) == -1) {
                 emit(")");
             }
             break;
@@ -534,7 +538,7 @@ var pendingContinue = null;
 function EmitContinue(ast, emit, alloc) {
     if (ast.label) {
         emit(" goto ");
-        EmitExpression(ast.label, emit, alloc, false, false);
+        EmitExpression(ast.label, emit, alloc, 0, false, false);
     }
     else {
         var pc = "__Continue" + alloc();
@@ -544,11 +548,11 @@ function EmitContinue(ast, emit, alloc) {
 }
 function EmitLabeled(ast, emit, alloc) {
     emit("::");
-    EmitExpression(ast.label, emit, alloc, false, false);
+    EmitExpression(ast.label, emit, alloc, 0, false, false);
     emit(":: ");
     EmitStatement(ast.body, emit, alloc);
     emit("::");
-    EmitExpression(ast.label, emit, alloc, false, false);
+    EmitExpression(ast.label, emit, alloc, 0, false, false);
     emit("__After:: ");
 }
 function EmitDoWhileStatement(ast, emit, alloc) {
@@ -559,12 +563,12 @@ function EmitDoWhileStatement(ast, emit, alloc) {
         pendingContinue = null;
     }
     emit(" until not __ToBoolean(");
-    EmitExpression(ast.test, emit, alloc);
+    EmitExpression(ast.test, emit, alloc, 0);
     emit(")");
 }
 function EmitWhileStatement(ast, emit, alloc) {
     emit("while __ToBoolean(");
-    EmitExpression(ast.test, emit, alloc);
+    EmitExpression(ast.test, emit, alloc, 0);
     emit(") do ");
     EmitStatement(ast.body, emit, alloc);
     if (pendingContinue) {
@@ -575,7 +579,7 @@ function EmitWhileStatement(ast, emit, alloc) {
 }
 function EmitIf(ast, emit, alloc) {
     emit("if __ToBoolean(");
-    EmitExpression(ast.test, emit, alloc);
+    EmitExpression(ast.test, emit, alloc, 0);
     emit(") then\r\n");
     EmitStatement(ast.consequent, emit, alloc);
     if (ast.alternate) {
@@ -586,17 +590,17 @@ function EmitIf(ast, emit, alloc) {
 }
 function EmitReturn(ast, emit, alloc) {
     emit("return ");
-    EmitExpression(ast.argument, emit, alloc);
+    EmitExpression(ast.argument, emit, alloc, 0);
 }
 function EmitThrow(ast, emit, alloc) {
     emit("error({[\"data\"]="); // TODO proper exceptions
-    EmitExpression(ast.argument, emit, alloc);
+    EmitExpression(ast.argument, emit, alloc, 0);
     emit("})");
 }
 function EmitBreak(ast, emit, alloc) {
     if (ast.label) {
         emit(" goto ");
-        EmitExpression(ast.label, emit, alloc, false, false);
+        EmitExpression(ast.label, emit, alloc, 0, false, false);
         emit("__After");
     }
     else {
@@ -640,17 +644,17 @@ function EmitBinary(ast, emit, alloc) {
             aop = '~=';
         }
         emit("(");
-        if (ast.left.type == 'AssignmentExpression' || ast.left.type == 'UpdateExpression') {
-            console.log("Inline Assignment Codegen not implemented");
-            emit("--[[IAC]]");
-        }
-        EmitExpression(ast.left, emit, alloc);
+        //if (ast.left.type == 'AssignmentExpression' || ast.left.type == 'UpdateExpression') {
+        //    console.log("Inline Assignment Codegen not implemented");
+        //    emit("--[[IAC]]")
+        //}
+        EmitExpression(ast.left, emit, alloc, 0);
         emit(aop);
-        if (ast.right.type == 'AssignmentExpression' || ast.right.type == 'UpdateExpression') {
-            console.log("Inline Assignment Codegen not implemented");
-            emit("--[[IAC]]");
-        }
-        EmitExpression(ast.right, emit, alloc);
+        //if (ast.right.type == 'AssignmentExpression' || ast.right.type == 'UpdateExpression') {
+        //    console.log("Inline Assignment Codegen not implemented");
+        //    emit("--[[IAC]]")
+        //}
+        EmitExpression(ast.right, emit, alloc, 0);
         emit(")");
     }
 }
@@ -663,18 +667,18 @@ function EmitLogical(ast, emit, alloc) {
         aop = ' and ';
     }
     emit("(");
-    EmitExpression(ast.left, emit, alloc);
+    EmitExpression(ast.left, emit, alloc, 0);
     emit(aop);
-    EmitExpression(ast.right, emit, alloc);
+    EmitExpression(ast.right, emit, alloc, 0);
     emit(")");
 }
 function EmitConditional(ast, emit, alloc) {
     emit("(((");
-    EmitExpression(ast.test, emit, alloc);
+    EmitExpression(ast.test, emit, alloc, 0);
     emit(") and __TernarySave(");
-    EmitExpression(ast.consequent, emit, alloc);
+    EmitExpression(ast.consequent, emit, alloc, 0);
     emit(") or __TernarySave(");
-    EmitExpression(ast.alternate, emit, alloc);
+    EmitExpression(ast.alternate, emit, alloc, 0);
     emit(")) and __TernaryRestore())");
 }
 var reservedLuaKeys = {
@@ -720,7 +724,7 @@ function EmitMember(ast, emit, alloc, isRvalue) {
         if (ast.object.type == 'Literal') {
             emit("(");
         }
-        EmitExpression(ast.object, emit, alloc);
+        EmitExpression(ast.object, emit, alloc, 0);
         if (ast.object.type == 'Literal') {
             emit(")");
         }
@@ -732,12 +736,12 @@ function EmitMember(ast, emit, alloc, isRvalue) {
         if (ast.object.type == 'Literal') {
             emit("(");
         }
-        EmitExpression(ast.object, emit, alloc);
+        EmitExpression(ast.object, emit, alloc, 0);
         if (ast.object.type == 'Literal') {
             emit(")");
         }
         emit("[");
-        EmitExpression(ast.property, emit, alloc);
+        EmitExpression(ast.property, emit, alloc, 0);
         emit("]");
     }
 }
@@ -745,28 +749,28 @@ function EmitCall(ast, emit, alloc) {
     if (ast.callee.type == 'MemberExpression') {
         var me = ast.callee;
         emit("__CallMember(");
-        EmitExpression(me.object, emit, alloc);
+        EmitExpression(me.object, emit, alloc, 0);
         emit(",");
         if (me.property.type == 'Identifier') {
             emit("\"");
         }
-        EmitExpression(me.property, emit, alloc, true, false);
+        EmitExpression(me.property, emit, alloc, 0, true, false);
         if (me.property.type == 'Identifier') {
             emit("\"");
         }
         emit(ast.arguments.length ? "," : "");
     }
     else {
-        EmitExpression(ast.callee, emit, alloc);
+        EmitExpression(ast.callee, emit, alloc, 0);
         emit("(");
     }
     for (var si = 0; si < ast.arguments.length; si++) {
         var arg = ast.arguments[si];
-        if (arg.type == 'AssignmentExpression' || arg.type == 'UpdateExpression') {
-            console.log("Inline Assignment Codegen not implemented");
-            emit("--[[IAC]]");
-        }
-        EmitExpression(arg, emit, alloc);
+        //if (arg.type == 'AssignmentExpression' || arg.type == 'UpdateExpression') {
+        //    console.log("Inline Assignment Codegen not implemented");
+        //    emit("--[[IAC]]")
+        //}
+        EmitExpression(arg, emit, alloc, 0);
         if (si != ast.arguments.length - 1) {
             emit(", ");
         }
@@ -775,11 +779,11 @@ function EmitCall(ast, emit, alloc) {
 }
 function EmitNew(ast, emit, alloc) {
     emit("__New(");
-    EmitExpression(ast.callee, emit, alloc);
+    EmitExpression(ast.callee, emit, alloc, 0);
     for (var si = 0; si < ast.arguments.length; si++) {
         emit(", ");
         var arg = ast.arguments[si];
-        EmitExpression(arg, emit, alloc);
+        EmitExpression(arg, emit, alloc, 0);
     }
     emit(")");
 }
