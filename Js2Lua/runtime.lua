@@ -390,6 +390,8 @@ local Number = __New(Function)
 Number.NaN = NaN
 Number.POSITIVE_INFINITY = Infinity
 Number.NEGATIVE_INFINITY = -Infinity
+Number.MIN_VALUE = 5e-324
+Number.MAX_VALUE = 1.79E+308
 Number.__CallImpl = function(self, val)
     -- print('new number' .. val)
     self.__Value = val
@@ -398,7 +400,7 @@ Number.prototype.toString = __DefineFunction(function(self)
     -- print('returning '..tostring(self.__Value))
     return tostring(self.__Value)
 end)
-Number.prototype.toLocaleString = Number.prototype.toString
+
 
 local isNaN = function(v) return v ~= v end
 __JsGlobalObjects.Number = Number
@@ -422,24 +424,40 @@ Array.__CallImpl = function(self, ...) -- number or varargs...
     end
     return self
 end
+Array.isArray = function(arr)
+    return arr.__Prototype == Array.prototype
+end
 Array.prototype.forEach = function(self, cb, otherSelf)
     local os = otherSelf or self -- NOPE, should inherit this
     for i=0,self.__Length-1 do
         cb(self[i], i)
     end
 end
-Array.prototype.indexOf = function(self, item)
+Array.prototype.indexOf = function(self, item, fromIndex)
     local os = otherSelf or self -- NOPE, should inherit this
-    for i=0,self.__Length-1 do
-        if(self[i]==item) then return i end
+    for i=fromIndex or 0,self.__Length-1 do
+        if(rawequal(self[i], item)) then return i end
+    end
+    return -1
+end
+Array.prototype.lastIndexOf = function(self, item, fromIndex)
+    local os = otherSelf or self -- NOPE, should inherit this
+    for i=fromIndex or (self.__Length-1),0,-1 do
+        if(rawequal(self[i], item)) then return i end
     end
     return -1
 end
 Array.prototype.push = function(self, element)
     if not self.__Length then error("Malformed array without __Length") end
-    -- print('putting elem '..tostring(element)..' at index '..self.__Length)
     self[self.__Length] = element
     self.__Length = self.__Length + 1
+end
+Array.prototype.pop = function(self)
+    if not self.__Length then error("Malformed array without __Length") end
+    local rv = self[self.__Length - 1]
+    self[self.__Length - 1] = nil
+    self.__Length = self.__Length - 1
+    return rv
 end
 Array.prototype.toString = __DefineFunction(function(self)
     -- print('returning '..tostring(self.__Value))
