@@ -8,6 +8,7 @@
  * @description Strict - checking 'this' from a global scope (Anonymous FunctionExpression defined within strict mode)
  * @onlyStrict
  */
+// LUA_SKIP
 
 "use strict";
 if ((function () {

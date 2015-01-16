@@ -7,7 +7,7 @@
  * @path ch15/15.4/15.4.4/15.4.4.14/15.4.4.14-5-17.js
  * @description Array.prototype.indexOf - value of 'fromIndex' is a string containing -Infinity
  */
-
+// LUA_SKIP
 
 function testcase() {
 

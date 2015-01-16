@@ -329,3 +329,37 @@ var isString = function isString(obj) {
     return to_string.call(obj) === '[object String]';
 };
 
+// NEEDS REGEXES
+function _decodeURIComponent(source) { // @arg String: percent encoded string.
+                                       // @ret String: decode string.
+                                       // @throws: Error("invalid decodeURIComponent()")
+                                       // @help: decodeURIComponent
+                                       // @desc: decodeURIComponent
+    return source.replace(/(%[\da-f][\da-f])+/g, function(match) {
+        var rv = [],
+            ary = match.split("%").slice(1), i = 0, iz = ary.length,
+            a, b, c;
+
+        for (; i < iz; ++i) {
+            a = parseInt(ary[i], 16);
+
+            if (a !== a) { // isNaN(a)
+                throw new Error("invalid decodeURIComponent()");
+            }
+
+            // decode UTF-8
+            if (a < 0x80) { // ASCII(0x00 ~ 0x7f)
+                rv.push(a);
+            } else if (a < 0xE0) {
+                b = parseInt(ary[++i], 16);
+                rv.push((a & 0x1f) <<  6 | (b & 0x3f));
+            } else if (a < 0xF0) {
+                b = parseInt(ary[++i], 16);
+                c = parseInt(ary[++i], 16);
+                rv.push((a & 0x0f) << 12 | (b & 0x3f) << 6
+                                         | (c & 0x3f));
+            }
+        }
+        return String.fromCharCode.apply(null, rv);
+    });
+}
