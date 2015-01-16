@@ -135,7 +135,7 @@ function EmitTryStatement(ast, emit, alloc) {
     }
     // handlerS, not handler!
 }
-var NonSinkableExpressionTypes = ['VariableDeclaration', 'AssignmentExpression', 'CallExpression', 'UpdateExpression'];
+var NonSinkableExpressionTypes = ['VariableDeclaration', 'AssignmentExpression', 'CallExpression'];
 function EmitForStatement(ast, emit, alloc) {
     //console.log(util.inspect(ast, false, 999, true));
     if (ast.init) {

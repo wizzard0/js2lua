@@ -137,7 +137,7 @@ function EmitTryStatement(ast: esprima.Syntax.TryStatement, emit: (s: string) =>
     // handlerS, not handler!
 }
 
-var NonSinkableExpressionTypes = ['VariableDeclaration', 'AssignmentExpression', 'CallExpression', 'UpdateExpression'];
+var NonSinkableExpressionTypes = ['VariableDeclaration', 'AssignmentExpression', 'CallExpression'];
 
 function EmitForStatement(ast: esprima.Syntax.ForStatement, emit: (s: string) => void, alloc: () => number) {
     //console.log(util.inspect(ast, false, 999, true));
