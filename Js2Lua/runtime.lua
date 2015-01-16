@@ -428,6 +428,13 @@ Array.prototype.forEach = function(self, cb, otherSelf)
         cb(self[i], i)
     end
 end
+Array.prototype.indexOf = function(self, item)
+    local os = otherSelf or self -- NOPE, should inherit this
+    for i=0,self.__Length-1 do
+        if(self[i]==item) then return i end
+    end
+    return -1
+end
 Array.prototype.push = function(self, element)
     if not self.__Length then error("Malformed array without __Length") end
     -- print('putting elem '..tostring(element)..' at index '..self.__Length)
