@@ -203,6 +203,9 @@ end
 
 local function __Put(table, k, v)
     rawset(table, k, v)
+    if type(k)=='number' then
+        rawset(table, tostring(k), v)
+    end
     rawset(table, '__propEnumerable_'..k, true)
 end
 
@@ -368,6 +371,7 @@ Function.__TypeofValue = "function"
 Function.__CallImpl = function(self, code) 
     -- print(to_string(self))
     self.prototype = __New(Object)
+    self.__Length = 0
 end
 Function.prototype = __New(Object) -- obj and func are special
 Function.prototype.toString = function(self)
