@@ -8,6 +8,8 @@
  * @description start = Infinity
  */
 
+ // LUA_SKIP
+
 var x = [0,1,2,3];
 var arr = x.splice(Number.POSITIVE_INFINITY,3);
 

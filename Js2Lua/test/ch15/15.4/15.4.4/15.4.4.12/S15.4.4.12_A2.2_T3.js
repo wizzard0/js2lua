@@ -7,6 +7,7 @@
  * @path ch15/15.4/15.4.4/15.4.4.12/S15.4.4.12_A2.2_T3.js
  * @description deleteCount = Infinity
  */
+// LUA_SKIP
 
 var x = [0,1,2,3];
 var arr = x.splice(0,Number.POSITIVE_INFINITY);
