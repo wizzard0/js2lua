@@ -291,7 +291,11 @@ function EmitSequence(ast: esprima.Syntax.SequenceExpression, emit: (s: string) 
     }
     for (var si = 0; si < ast.expressions.length; si++) {
         var arg = ast.expressions[si];
-        EmitExpression(arg, emit, alloc, StatementContext ? 1 : 0);
+        var et = arg.type;
+        var sinkThisExpr = StatementContext && NonSinkableExpressionTypes.indexOf(et) == -1;
+        if (sinkThisExpr) { emit(" __Sink("); }
+        EmitExpression(arg, emit, alloc, (StatementContext && !sinkThisExpr) ? 1 : 0);
+        if (sinkThisExpr) { emit(")"); }
         if (si != ast.expressions.length - 1) {
             emit(StatementContext ? "\r\n" : ", ");
         }
@@ -449,8 +453,10 @@ function EmitDelete(ast: esprima.Syntax.UnaryExpression, emit: (s: string) => vo
         emit(", \"");
         emit(mm.name);
         emit("\")");
-    } else if (ast.argument.type == 'ThisExpression') {        
+    } else if (ast.argument.type == 'ThisExpression') {
         emit("(true)"); // totally correct per ECMA-262
+    } else {
+        emit("(false)"); // maybe correct
     }
 }
 
@@ -746,6 +752,8 @@ function EmitCall(ast: esprima.Syntax.CallExpression, emit: (s: string) => void,
         EmitExpression(me.property, emit, alloc, 0, true, false);
         if (me.property.type == 'Identifier') { emit("\""); }
         emit(ast.arguments.length ? "," : "");
+    } else if(ast.callee.type == 'Literal') {
+        emit("__LiteralCallFail(");
     } else {
         EmitExpression(ast.callee, emit, alloc, 0);
         emit("(");
