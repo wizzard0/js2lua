@@ -32,12 +32,12 @@ function ComparePrograms(fn) {
     var hasOther = /LUA_SKIP/.exec(source);
     var onlyStrict = /\"use strict\"/.exec(source);
     var hasGlobalDeleteTest = /Compound Assignment Operator calls PutValue\(lref, v\)/.exec(source);
-    var weirdTests = /S15\.9\.3\.1_A5|INFINITY/.exec(source);
+    var weirdTests = /S15\.9\.3\.1_A5/.exec(source);
     var hasAnythingToDoWithDate = /Date(\.|\()/.exec(source);
     var hasIntl = /testIntl|\bIntl\b/.exec(source);
     var expectErrors = false;
     var polyfillSrc = emitter.convertFile(polyfills, "polyfills.js");
-    if (hasEval || hasWith || hasSwitch || hasOther || weirdTests || hasGlobalDeleteTest || hasIntl || onlyStrict) {
+    if (false || hasOther) {
         //console.log(" [SKIP]");
         return "skip";
     }
