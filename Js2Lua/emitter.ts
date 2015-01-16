@@ -268,10 +268,9 @@ function EmitArray(ast: esprima.Syntax.ArrayExpression, emit: (s: string) => voi
         emit("[" + si + "]=");
         var arg = ast.elements[si];
         EmitExpression(arg, emit, alloc);
-        if (si != ast.elements.length - 1) {
-            emit(", ");
-        }
+        emit(", ");
     }
+    emit("[\"__Length\"]=" + ast.elements.length);
     emit("})");
 }
 

@@ -272,10 +272,9 @@ function EmitArray(ast, emit, alloc) {
         emit("[" + si + "]=");
         var arg = ast.elements[si];
         EmitExpression(arg, emit, alloc);
-        if (si != ast.elements.length - 1) {
-            emit(", ");
-        }
+        emit(", ");
     }
+    emit("[\"__Length\"]=" + ast.elements.length);
     emit("})");
 }
 function EmitSequence(ast, emit, alloc) {

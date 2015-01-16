@@ -9,11 +9,12 @@ console.log(e)
 console.log(f)
 console.log(d)
 var arr1=[1,2,3];
-var arr2=[0,0,0];
-var i=0;var j=0;
+var arr2=[];
+var j=0;
 while(true){
-	arr2[i++]=arr1[j++];
-	if(i==3)break;
+	arr2.push(arr1[j++]);
+	if(j==3)break;
 }
+console.log(arr1.length);
 console.log(arr2.length);
 console.log(arr2);
