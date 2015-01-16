@@ -714,6 +714,7 @@ function EmitMember(ast, emit, alloc, isRvalue) {
     //if(ast.property.name=='Step') {
     //    console.log(util.inspect(ast, false, 999, true));
     //}
+    var argIndexer = ast.object.type == 'Identifier' && ast.object.name == 'arguments';
     if (ast.property.name == 'length' && isRvalue) {
         EmitCall({
             type: 'CallExpression',
@@ -724,11 +725,11 @@ function EmitMember(ast, emit, alloc, isRvalue) {
     else if (ast.property.type == 'Identifier' && !ast.computed) {
         var id = ast.property;
         var isReserved = !!reservedLuaKeys[id.name];
-        if (ast.object.type == 'Literal' || isReserved) {
+        if (ast.object.type == 'Literal' || argIndexer) {
             emit("(");
         }
         EmitExpression(ast.object, emit, alloc, 0);
-        if (ast.object.type == 'Literal' || isReserved) {
+        if (ast.object.type == 'Literal' || argIndexer) {
             emit(")");
         }
         emit(isReserved ? "[\"" : ".");
@@ -736,7 +737,6 @@ function EmitMember(ast, emit, alloc, isRvalue) {
         emit(isReserved ? "\"]" : "");
     }
     else {
-        var argIndexer = ast.object.type == 'Identifier' && ast.object.name == 'arguments';
         if (ast.object.type == 'Literal' || argIndexer) {
             emit("(");
         }

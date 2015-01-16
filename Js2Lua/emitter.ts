@@ -705,6 +705,7 @@ function EmitMember(ast: esprima.Syntax.MemberExpression, emit: (s: string) => v
     //if(ast.property.name=='Step') {
     //    console.log(util.inspect(ast, false, 999, true));
     //}
+    var argIndexer = ast.object.type == 'Identifier' && (<esprima.Syntax.Identifier>ast.object).name == 'arguments';
     if (ast.property.name == 'length' && isRvalue) {
         EmitCall({
             type: 'CallExpression',
@@ -714,14 +715,13 @@ function EmitMember(ast: esprima.Syntax.MemberExpression, emit: (s: string) => v
     } else if (ast.property.type == 'Identifier' && !ast.computed) {
         var id = <esprima.Syntax.Identifier>ast.property;
         var isReserved = !!reservedLuaKeys[id.name];
-        if (ast.object.type == 'Literal' || isReserved) { emit("("); }
+        if (ast.object.type == 'Literal' || argIndexer) { emit("("); }
         EmitExpression(ast.object, emit, alloc, 0);
-        if (ast.object.type == 'Literal' || isReserved) { emit(")"); }
+        if (ast.object.type == 'Literal' || argIndexer) { emit(")"); }
         emit(isReserved ? "[\"" : ".");
         emit(id.name); // cannot EmitIdentifier because of escaping
         emit(isReserved ? "\"]" : "");
     } else {
-        var argIndexer = ast.object.type == 'Identifier' && (<esprima.Syntax.Identifier>ast.object).name == 'arguments';
         if (ast.object.type == 'Literal' || argIndexer) { emit("("); }
         EmitExpression(ast.object, emit, alloc, 0);
         if (ast.object.type == 'Literal' || argIndexer) { emit(")"); }
