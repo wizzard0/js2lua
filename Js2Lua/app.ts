@@ -88,6 +88,7 @@ function ComparePrograms(fn: string): any {
             if (/expected|outside a vararg|undefined label/.exec(lua_stdout)
                 && !/table expected, got/.exec(lua_stdout)
                 && !/value expected/.exec(lua_stdout)
+                && !/undefined label '__Continue6'/.exec(lua_stdout) // continue from try
                 && !/string expected, got/.exec(lua_stdout)
                 && !/number expected, got/.exec(lua_stdout)) {
                 console.log(" [SYNTAX] FAIL == " + fn);

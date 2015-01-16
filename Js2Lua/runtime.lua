@@ -417,6 +417,9 @@ Array.__CallImpl = function(self, ...) -- number or varargs...
         idx = idx + 1
     end
     self.__Length = idx
+    if self.__Length == 1 then
+        self.__Length = self[0]
+    end
     return self
 end
 Array.prototype.forEach = function(self, cb, otherSelf)
@@ -496,7 +499,7 @@ local function __split(str, pat)
    local idx = 0
    while s do
       if s ~= 1 or cap ~= "" then
-	 t[idx]=cap
+     t[idx]=cap
      idx=idx+1
       end
       last_end = e+1
