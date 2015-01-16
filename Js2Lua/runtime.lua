@@ -421,13 +421,13 @@ Array.__CallImpl = function(self, ...) -- number or varargs...
 end
 Array.prototype.forEach = function(self, cb, otherSelf)
     local os = otherSelf or self -- NOPE, should inherit this
-    for k, v in ipairs(self) do
-        -- print(k, v)
-        cb(os, v, k)
+    for i=0,self.__Length-1 do
+        cb(self[i], i)
     end
 end
 Array.prototype.push = function(self, element)
     if not self.__Length then error("Malformed array without __Length") end
+    print('putting elem '..element..' at index '..self.__Length)
     self[self.__Length] = element
     self.__Length = self.__Length + 1
 end
@@ -435,20 +435,16 @@ Array.prototype.toString = __DefineFunction(function(self)
     -- print('returning '..tostring(self.__Value))
     -- return 'Array['..self.__Length..']'
     if self.__Length == 0 then return '' end
-    if self.__Length == 1 then return __ToString(self[0]) end
-    return __ToString(self[0])..','..table.concat(self, ',')
+    local str = 'A'..__ToString(self[0])..'B'
+    for i=1,self.__Length-1 do
+        str = str .. ',' .. __ToString(self[i])
+    end
+    return str
 end)
 local __MakeArray = function(rawArray)
     setmetatable(rawArray, __ObjectMetatable)
     rawArray.__Prototype = Array.prototype
     Object.defineProperty(rawArray, 'constructor',{["value"]=Array,["writable"]=true,["configurable"]=true})
-    if not rawArray.__Length then
-        local idx = 0 -- fixup length
-        for k,v in ipairs(rawArray) do
-            idx = idx + 1
-        end
-        rawArray.__Length = idx
-    end
     return rawArray
 end
 local __MakeObject = function(raw)

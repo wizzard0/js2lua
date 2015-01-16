@@ -350,7 +350,7 @@ function EmitAssignment(ast: esprima.Syntax.AssignmentExpression, emit: (s: stri
             emit(' end)())');
         } else if (ast.right.type == 'UpdateExpression') {
             var rightU = <esprima.Syntax.UpdateExpression>ast.right;
-            EmitUpdate(rightU, emit, alloc);            
+            EmitUpdate(rightU, emit, alloc);
         } else {
             EmitExpression(ast.right, emit, alloc);
         }
@@ -366,13 +366,24 @@ function EmitAssignment(ast: esprima.Syntax.AssignmentExpression, emit: (s: stri
 }
 
 function EmitUpdate(ast: esprima.Syntax.UpdateExpression, emit: (s: string) => void, alloc: () => number) {
+    console.log(util.inspect(ast, false, 999, true));
     var aop = ast.operator;
     if (aop != '++' && aop != '--') {
         emit("--[[6"); emit(ast.type); emit("]]");
         console.log(util.inspect(ast, false, 999, true));
         return;
     }
-    emit('((function() ');            
+    emit('((function( ) ');
+    if (!ast.prefix) {
+        var tx = "__tmp" + alloc();
+        var itx = { 'type': 'Identifier', 'name': tx };
+        EmitAssignment({
+            type: 'AssignmentExpression',
+            operator: aop.substr(0, 1) + '=',
+            left: itx,
+            right: ast.argument
+        }, emit, alloc);
+    }
     EmitAssignment({
         type: 'AssignmentExpression',
         operator: aop.substr(0, 1) + '=',
@@ -380,7 +391,7 @@ function EmitUpdate(ast: esprima.Syntax.UpdateExpression, emit: (s: string) => v
         right: { type: 'Literal', value: 1, raw: '1' }
     }, emit, alloc);
     emit('; return ');
-    EmitExpression(ast.argument, emit, alloc);
+    EmitExpression(ast.prefix ? ast.argument : itx, emit, alloc);
     emit(' end)())');
 }
 

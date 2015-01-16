@@ -370,6 +370,7 @@ function EmitAssignment(ast, emit, alloc) {
     }
 }
 function EmitUpdate(ast, emit, alloc) {
+    console.log(util.inspect(ast, false, 999, true));
     var aop = ast.operator;
     if (aop != '++' && aop != '--') {
         emit("--[[6");
@@ -378,7 +379,17 @@ function EmitUpdate(ast, emit, alloc) {
         console.log(util.inspect(ast, false, 999, true));
         return;
     }
-    emit('((function() ');
+    emit('((function( ) ');
+    if (!ast.prefix) {
+        var tx = "__tmp" + alloc();
+        var itx = { 'type': 'Identifier', 'name': tx };
+        EmitAssignment({
+            type: 'AssignmentExpression',
+            operator: aop.substr(0, 1) + '=',
+            left: itx,
+            right: ast.argument
+        }, emit, alloc);
+    }
     EmitAssignment({
         type: 'AssignmentExpression',
         operator: aop.substr(0, 1) + '=',
@@ -386,7 +397,7 @@ function EmitUpdate(ast, emit, alloc) {
         right: { type: 'Literal', value: 1, raw: '1' }
     }, emit, alloc);
     emit('; return ');
-    EmitExpression(ast.argument, emit, alloc);
+    EmitExpression(ast.prefix ? ast.argument : itx, emit, alloc);
     emit(' end)())');
 }
 function EmitUnary(ast, emit, alloc) {
