@@ -28,12 +28,12 @@ function ComparePrograms(fn: string): any {
     var polyfills = fs.readFileSync("polyfills.js").toString();
     var luaRT = fs.readFileSync("runtime.lua").toString();
     var jsRT = fs.readFileSync("runtime.js").toString();
-    var ns = /@negative|negative: (.*)/.exec(source);
+    var ns = /@negat[i]ve|ne[g]ative: (.*)/.exec(source);
     var hasEval = /eval\(/.exec(source);
     var hasWith = /with[ ]?\(/.exec(source);
     var hasTry = /finally( {|{)/.exec(source);
     var hasSwitch = /switch/.exec(source);
-    var hasOther = /LUA_SKIP/.exec(source);
+    var hasOther = /LU[A]_SKIP/.exec(source);
     var onlyStrict = /\"use strict\"/.exec(source);
     var hasGlobalDeleteTest = /Compound Assignment Operator calls PutValue\(lref, v\)/.exec(source);
     var weirdTests = /S15\.9\.3\.1_A5/.exec(source);
@@ -41,6 +41,7 @@ function ComparePrograms(fn: string): any {
     var hasIntl = /testIntl|\bIntl\b/.exec(source);
     var expectErrors = false;
     var polyfillSrc = emitter.convertFile(polyfills, "polyfills.js");
+    var jsVersionFailureDict = {};
 
     if (
         false
@@ -85,7 +86,11 @@ function ComparePrograms(fn: string): any {
         try {
             vm.runInNewContext(jsRT + source, { print: print, console: { log: print } }, fn);
         } catch (e) {
-            console.log("JS version failure: ", e);
+            var jfs = e.toString();
+            if (!(jfs in jsVersionFailureDict)) {
+                console.log("JS version failure: ", jfs); // error shown only once
+                jsVersionFailureDict[jfs] = true;
+            }
             return "skip";
         }
         var time2 = +new Date();
