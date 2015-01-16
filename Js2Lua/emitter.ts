@@ -234,10 +234,6 @@ function EmitIdentifier(ast: esprima.Syntax.Identifier, emit: (s: string) => voi
     /// DEBUG
     var ein = (<esprima.Syntax.Identifier>ast).name;
     ein = ein.replace(/\$/g, "_USD_");
-    if (ein == 'arguments') { // HACK
-        ein = '{...}';
-        strictCheck = false;
-    }
     if (Object.prototype.hasOwnProperty.call(reservedLuaKeys, ein)) {
         ein = '_R_' + ein;
     }
@@ -255,7 +251,10 @@ function EmitFunctionExpr(ast: esprima.Syntax.FunctionExpression, emit: (s: stri
     var hasArguments = identList.indexOf('arguments') != -1;
     emit("__DefineFunction(function (self");
     if (hasArguments) {
-        emit(", ...)\r\n local __tmp");
+        emit(", ...)\r\n")
+        if (ast.params.length) {
+            emit("local __tmp");
+        }
     }
     for (var si = 0; si < ast.params.length; si++) {
         emit(",");
@@ -263,7 +262,10 @@ function EmitFunctionExpr(ast: esprima.Syntax.FunctionExpression, emit: (s: stri
         EmitExpression(arg, emit, alloc, 0, false, false);
     }
     if (hasArguments) {
-        emit("=1,...\r\n");
+        if (ast.params.length) {
+            emit("=1,...");
+        }
+        emit("\r\nlocal arguments=...\r\n");
     } else {
         emit(")\r\n"); // arglist close
     }
@@ -339,7 +341,7 @@ function EmitBlock(ast: esprima.Syntax.BlockStatement, emit: (s: string) => void
     for (var si = 0; si < ast.body.length; si++) {
         var arg = ast.body[si];
         EmitStatement(arg, emit, alloc);
-        if (arg.type == 'ReturnStatement') break; // in lua?...
+        if (arg.type == 'ReturnStatement') break; // in lua?..
         emit("\r\n");
     }
 }
@@ -715,16 +717,16 @@ function EmitMember(ast: esprima.Syntax.MemberExpression, emit: (s: string) => v
     } else if (ast.property.type == 'Identifier' && !ast.computed) {
         var id = <esprima.Syntax.Identifier>ast.property;
         var isReserved = !!reservedLuaKeys[id.name];
-        if (ast.object.type == 'Literal' || argIndexer) { emit("("); }
+        if (ast.object.type == 'Literal') { emit("("); }
         EmitExpression(ast.object, emit, alloc, 0);
-        if (ast.object.type == 'Literal' || argIndexer) { emit(")"); }
+        if (ast.object.type == 'Literal') { emit(")"); }
         emit(isReserved ? "[\"" : ".");
         emit(id.name); // cannot EmitIdentifier because of escaping
         emit(isReserved ? "\"]" : "");
     } else {
-        if (ast.object.type == 'Literal' || argIndexer) { emit("("); }
+        if (ast.object.type == 'Literal') { emit("("); }
         EmitExpression(ast.object, emit, alloc, 0);
-        if (ast.object.type == 'Literal' || argIndexer) { emit(")"); }
+        if (ast.object.type == 'Literal') { emit(")"); }
         emit("[");
         EmitExpression(ast.property, emit, alloc, 0);
         if (argIndexer) {
