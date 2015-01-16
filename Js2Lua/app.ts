@@ -35,7 +35,7 @@ function ComparePrograms(fn: string): any {
     var hasOther = /LUA_SKIP/.exec(source);
     var onlyStrict = /\"use strict\"/.exec(source);
     var hasGlobalDeleteTest = /Compound Assignment Operator calls PutValue\(lref, v\)/.exec(source);
-    var hasBrokenDate = /S15\.9\.3\.1_A5/.exec(source);
+    var weirdTests = /S15\.9\.3\.1_A5|S10\.2\.1_A4_T1/.exec(source);
     var hasAnythingToDoWithDate = /Date(\.|\()/.exec(source);
     var hasIntl = /testIntl|\bIntl\b/.exec(source);
     var expectErrors = false;
@@ -43,7 +43,7 @@ function ComparePrograms(fn: string): any {
     if (hasEval || hasWith
     //|| hasTry
         || hasSwitch
-        || hasOther || hasBrokenDate
+        || hasOther || weirdTests
        // || hasAnythingToDoWithDate
         || hasGlobalDeleteTest || hasIntl || onlyStrict
         ) {

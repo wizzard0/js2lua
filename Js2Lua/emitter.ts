@@ -447,6 +447,8 @@ function EmitDelete(ast: esprima.Syntax.UnaryExpression, emit: (s: string) => vo
         emit(", \"");
         emit(mm.name);
         emit("\")");
+    } else if (ast.argument.type == 'ThisExpression') {        
+        emit("(true)"); // totally correct per ECMA-262
     }
 }
 
@@ -711,12 +713,13 @@ function EmitMember(ast: esprima.Syntax.MemberExpression, emit: (s: string) => v
         }, emit, alloc);
     } else if (ast.property.type == 'Identifier' && !ast.computed) {
         var id = <esprima.Syntax.Identifier>ast.property;
-        if (ast.object.type == 'Literal') { emit("("); }
+        var isReserved = !!reservedLuaKeys[id.name];
+        if (ast.object.type == 'Literal' || isReserved) { emit("("); }
         EmitExpression(ast.object, emit, alloc, 0);
-        if (ast.object.type == 'Literal') { emit(")"); }
-        emit(reservedLuaKeys[id.name] ? "[\"" : ".");
+        if (ast.object.type == 'Literal' || isReserved) { emit(")"); }
+        emit(isReserved ? "[\"" : ".");
         emit(id.name); // cannot EmitIdentifier because of escaping
-        emit(reservedLuaKeys[id.name] ? "\"]" : "");
+        emit(isReserved ? "\"]" : "");
     } else {
         var argIndexer = ast.object.type == 'Identifier' && (<esprima.Syntax.Identifier>ast.object).name == 'arguments';
         if (ast.object.type == 'Literal' || argIndexer) { emit("("); }
@@ -793,7 +796,7 @@ export function convertFile(source: string, fn: string): string {
     var ast = esprima.parse(source);
     var a2 = hoist(ast, true);
     //console.log(escodegen.generate(a2))
-    //console.log(util.inspect(a2,false,999,true))
+    //console.log(util.inspect(ast,false,999,true))
     var luasrc = "";
     var emit = function (code) {
         luasrc += code;
