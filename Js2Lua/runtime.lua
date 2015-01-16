@@ -198,7 +198,7 @@ __Helpers.__CallMember = __CallMember
 local function __Call(table, ...)
     local ci = table.__CallImpl
     if not ci then error("TypeError: Tried to call "..__ToString(table).." which is not callable") end
-    return ci(nil, ...)
+    return ci(_G, ...) -- CurrentThis
 end
 
 local function __Put(table, k, v)
@@ -310,7 +310,7 @@ __MathProto.max  = math.max
 __MathProto.min  = math.min
 __MathProto.pow  = math.pow
 __MathProto.random  = math.random
--- __MathProto.round
+__MathProto.round = function(num) return math.floor(num+0.5) end -- hack
 __MathProto.sin  = math.sin
 __MathProto.sqrt  = math.sqrt
 __JsGlobalObjects.Math = __MathProto
@@ -549,11 +549,13 @@ local function __split(str, pat)
 end
 String.__CallImpl = function(self, val) 
     -- print ('string ctor: ' .. val)
+    ns = __New(Object)
     val = __ToString(val)
     local uni = Utf8to32(val)
-    self.__ToStringValue = val
-    self.__Unicode = uni
-    self.__Length = #uni
+    ns.__ToStringValue = val
+    ns.__Unicode = uni
+    ns.__Length = #uni
+    return ns
 end
 String.prototype.charCodeAt = function(self, idx)
     return self.__Unicode[idx] -- TODO unicode!
