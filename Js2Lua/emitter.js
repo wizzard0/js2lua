@@ -430,9 +430,9 @@ function EmitUnary(ast, emit, alloc) {
         emit("))");
     }
     else if (aop == '+' || aop == '-') {
-        emit(aop == '-' ? "(-" : "("); // TODO ToNumber
+        emit(aop == '-' ? "(-__ToNumber(" : "(__ToNumber("); // TODO ToNumber
         EmitExpression(ast.argument, emit, alloc, 0);
-        emit(")");
+        emit("))");
     }
     else {
         emit("--[[5");

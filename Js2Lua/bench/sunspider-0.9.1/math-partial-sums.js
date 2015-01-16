@@ -26,8 +26,12 @@ function partial(n){
         a9 += alt/(2*k -1);
     }
 }
-
+var d1=+new Date();
+for(var attempt=0;attempt<200;attempt++){
 for (var i = 1024; i <= 16384; i *= 2) {
     partial(i);
 }
+}
 
+var d2=+new Date();
+console.log(d2-d1);

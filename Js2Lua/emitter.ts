@@ -416,12 +416,12 @@ function EmitUnary(ast: esprima.Syntax.UnaryExpression, emit: (s: string) => voi
         emit("nil");
     } else if (aop == '!') {
         emit("(not __ToBoolean(");
-        EmitExpression(ast.argument, emit, alloc, 0);
+        EmitExpression(ast.argument, emit, alloc, 0); 
         emit("))");
     } else if (aop == '+' || aop == '-') {
-        emit(aop == '-' ? "(-" : "("); // TODO ToNumber
+        emit(aop == '-' ? "(-__ToNumber(" : "(__ToNumber("); // TODO ToNumber
         EmitExpression(ast.argument, emit, alloc, 0);
-        emit(")");
+        emit("))");
     } else {
         emit("--[[5"); emit(ast.type); emit("]]");
         console.log(util.inspect(ast, false, 999, true));
