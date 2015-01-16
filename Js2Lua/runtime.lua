@@ -427,7 +427,7 @@ Array.prototype.forEach = function(self, cb, otherSelf)
 end
 Array.prototype.push = function(self, element)
     if not self.__Length then error("Malformed array without __Length") end
-    print('putting elem '..element..' at index '..self.__Length)
+    -- print('putting elem '..tostring(element)..' at index '..self.__Length)
     self[self.__Length] = element
     self.__Length = self.__Length + 1
 end
@@ -435,7 +435,7 @@ Array.prototype.toString = __DefineFunction(function(self)
     -- print('returning '..tostring(self.__Value))
     -- return 'Array['..self.__Length..']'
     if self.__Length == 0 then return '' end
-    local str = 'A'..__ToString(self[0])..'B'
+    local str = __ToString(self[0])
     for i=1,self.__Length-1 do
         str = str .. ',' .. __ToString(self[i])
     end

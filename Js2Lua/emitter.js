@@ -370,7 +370,7 @@ function EmitAssignment(ast, emit, alloc) {
     }
 }
 function EmitUpdate(ast, emit, alloc) {
-    console.log(util.inspect(ast, false, 999, true));
+    //console.log(util.inspect(ast, false, 999, true));
     var aop = ast.operator;
     if (aop != '++' && aop != '--') {
         emit("--[[6");
@@ -385,10 +385,11 @@ function EmitUpdate(ast, emit, alloc) {
         var itx = { 'type': 'Identifier', 'name': tx };
         EmitAssignment({
             type: 'AssignmentExpression',
-            operator: aop.substr(0, 1) + '=',
+            operator: '=',
             left: itx,
             right: ast.argument
         }, emit, alloc);
+        emit(";");
     }
     EmitAssignment({
         type: 'AssignmentExpression',

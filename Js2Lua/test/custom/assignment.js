@@ -11,14 +11,21 @@ console.log(f)
 console.log(h)
 console.log(d)
 var arr1=[1,2,3];
+var _2=2;
+console.log(arr1[0])
+console.log(arr1[2])
+console.log(arr1[_2])
 var arr2=[];
 var j=0;
 console.log("iters");
 arr1.forEach(function(i){console.log(i)});
 while(true){
-	arr2.push(arr1[j++]);
+	var el=arr1[j++];
+	console.log(el);
+	arr2.push(el);
 	if(j==3)break;
 }
+arr2[2] = arr1[2]
 console.log("after assign");
 console.log(arr1.length);
 console.log(arr2.length);

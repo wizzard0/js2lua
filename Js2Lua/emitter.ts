@@ -366,7 +366,7 @@ function EmitAssignment(ast: esprima.Syntax.AssignmentExpression, emit: (s: stri
 }
 
 function EmitUpdate(ast: esprima.Syntax.UpdateExpression, emit: (s: string) => void, alloc: () => number) {
-    console.log(util.inspect(ast, false, 999, true));
+    //console.log(util.inspect(ast, false, 999, true));
     var aop = ast.operator;
     if (aop != '++' && aop != '--') {
         emit("--[[6"); emit(ast.type); emit("]]");
@@ -379,11 +379,13 @@ function EmitUpdate(ast: esprima.Syntax.UpdateExpression, emit: (s: string) => v
         var itx = { 'type': 'Identifier', 'name': tx };
         EmitAssignment({
             type: 'AssignmentExpression',
-            operator: aop.substr(0, 1) + '=',
+            operator: '=',
             left: itx,
             right: ast.argument
         }, emit, alloc);
+        emit(";")
     }
+
     EmitAssignment({
         type: 'AssignmentExpression',
         operator: aop.substr(0, 1) + '=',
