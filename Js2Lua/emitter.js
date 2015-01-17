@@ -51,6 +51,7 @@ function EmitProgram(ast, emit, alloc) {
     var scope = new scoping.ScopeStack();
     scope.pushObjectIdent("__JsGlobalObjects", "program");
     var identList = argfinder.analyze(ast.body);
+    //console.log(util.inspect(identList));
     scope.pushLexical(['__JsGlobalObjects', '__Singletons', 'undefined'].concat(identList.vars), ['eval'].concat(identList.funcs, BinaryOpRemapValues, Intrinsics), [], 'builtins-and-toplevels');
     emit("\r\n-- BEGIN\r\n");
     EmitBlock(ast, emit, alloc, scope, false);
@@ -395,8 +396,11 @@ function EmitObject(ast, emit, alloc, scope) {
         if (arg.key.type == 'Literal') {
             emit(arg.key.value);
         }
+        else if (arg.key.type == 'Identifier') {
+            EmitName(arg.key, emit, alloc);
+        }
         else {
-            EmitExpression(arg.key, emit, alloc, scope, 0, true);
+            emit("--[[ EmitObject invalid key " + util.inspect(arg.key) + " ]]");
         }
         emit("\"]=");
         EmitExpression(arg.value, emit, alloc, scope, 0, false);
@@ -408,6 +412,7 @@ function EmitObject(ast, emit, alloc, scope) {
 }
 function EmitFunctionDeclaration(ast, emit, alloc, scope) {
     emit("local ");
+    //console.log(scope.currentScope());
     EmitExpression(ast.id, emit, alloc, scope, 0, true);
     emit(";");
     EmitExpression(ast.id, emit, alloc, scope, 0, true);
@@ -692,7 +697,9 @@ function EmitWith(ast, emit, alloc, scope) {
     EmitExpression(ast.object, emit, alloc, scope, 0, false);
     emit(") -- WithStmt\r\n");
     scope.pushObjectIdent(scopeHolder, "with");
+    scope.pushLexical(['__JsGlobalObjects', '__Singletons', 'undefined'], ['eval'].concat(BinaryOpRemapValues, Intrinsics), [], 'builtins-and-toplevels');
     EmitStatement(ast.body, emit, alloc, scope, false);
+    scope.popScope();
     scope.popScope();
     emit("\r\n -- WithStmtEnd\r\n");
 }
@@ -807,7 +814,7 @@ function EmitMember(ast, emit, alloc, scope, StatementContext, isRef) {
             emit(")");
         }
         emit(isReserved ? "[\"" : ".");
-        emit(id.name); // cannot EmitIdentifier because of escaping
+        EmitName(id, emit, alloc);
         emit(isReserved ? "\"]" : "");
     }
     else {
@@ -834,10 +841,14 @@ function EmitCall(ast, emit, alloc, scope, StatementContext) {
         emit(",");
         if (me.property.type == 'Identifier') {
             emit("\"");
-        }
-        EmitExpression(me.property, emit, alloc, scope, 0, false);
-        if (me.property.type == 'Identifier') {
+            EmitName(me.property, emit, alloc);
             emit("\"");
+        }
+        else if (me.property.type == 'Literal') {
+            EmitExpression(me.property, emit, alloc, scope, 0, false);
+        }
+        else {
+            emit("-- [[ EmitCall unknown property " + util.inspect(me.property) + "--]]");
         }
         emit(ast.arguments.length ? "," : "");
     }

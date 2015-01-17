@@ -6,12 +6,12 @@ function analyze(node) {
         refs: [],
         vars: []
     };
-    types.visit(node.body, {
+    types.visit(node, {
         visitFunctionDeclaration: function (path) {
             var fd = path.node;
             sc.funcs.push(fd.id.name);
             sc.refs.push(fd.id.name);
-            return false;
+            this.traverse(path);
         },
         visitVariableDeclarator: function (path) {
             var fd = path.node;

@@ -55,6 +55,7 @@ function EmitProgram(ast: esprima.Syntax.Program, emit: (s: string) => void, all
     var scope = new scoping.ScopeStack();
     scope.pushObjectIdent("__JsGlobalObjects", "program");
     var identList = argfinder.analyze(ast.body);
+    //console.log(util.inspect(identList));
     scope.pushLexical(['__JsGlobalObjects', '__Singletons', 'undefined'].concat(identList.vars), ['eval'].concat(identList
         .funcs, BinaryOpRemapValues, Intrinsics), [], 'builtins-and-toplevels');
 
@@ -395,8 +396,10 @@ function EmitObject(ast: esprima.Syntax.ObjectExpression, emit: (s: string) => v
         // always coerced to string, as per js spec
         if (arg.key.type == 'Literal') {
             emit(arg.key.value);
-        } else { // identifiers already ok
-            EmitExpression(arg.key, emit, alloc, scope, 0, true);
+        } else if (arg.key.type == 'Identifier') { // identifiers already ok
+            EmitName(arg.key, emit, alloc)
+        } else { 
+            emit("--[[ EmitObject invalid key " + util.inspect(arg.key)+" ]]");
         }
         emit("\"]=");
         EmitExpression(arg.value, emit, alloc, scope, 0, false);
@@ -409,6 +412,7 @@ function EmitObject(ast: esprima.Syntax.ObjectExpression, emit: (s: string) => v
 
 function EmitFunctionDeclaration(ast: esprima.Syntax.FunctionDeclaration, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack) {
     emit("local ");
+    //console.log(scope.currentScope());
     EmitExpression(ast.id, emit, alloc, scope, 0, true);
     emit(";");
     EmitExpression(ast.id, emit, alloc, scope, 0, true);
@@ -680,7 +684,10 @@ function EmitWith(ast: esprima.Syntax.WithStatement, emit: (s: string) => void, 
     EmitExpression(ast.object, emit, alloc, scope, 0, false);
     emit(") -- WithStmt\r\n");
     scope.pushObjectIdent(scopeHolder, "with");
+    scope.pushLexical(['__JsGlobalObjects', '__Singletons', 'undefined'],
+        ['eval'].concat(BinaryOpRemapValues, Intrinsics), [], 'builtins-and-toplevels');
     EmitStatement(ast.body, emit, alloc, scope, false);
+    scope.popScope();
     scope.popScope();
     emit("\r\n -- WithStmtEnd\r\n");
 }
@@ -799,7 +806,7 @@ function EmitMember(ast: esprima.Syntax.MemberExpression, emit: (s: string) => v
         EmitExpression(ast.object, emit, alloc, scope, 0, false);
         if (ast.object.type == 'Literal') { emit(")"); }
         emit(isReserved ? "[\"" : ".");
-        emit(id.name); // cannot EmitIdentifier because of escaping
+        EmitName(id, emit, alloc);
         emit(isReserved ? "\"]" : "");
     } else {
         if (ast.object.type == 'Literal') { emit("("); }
@@ -820,9 +827,15 @@ function EmitCall(ast: esprima.Syntax.CallExpression, emit: (s: string) => void,
         emit("__CallMember(");
         EmitExpression(me.object, emit, alloc, scope, 0, false);
         emit(",");
-        if (me.property.type == 'Identifier') { emit("\""); }
-        EmitExpression(me.property, emit, alloc, scope, 0, false);
-        if (me.property.type == 'Identifier') { emit("\""); }
+        if (me.property.type == 'Identifier') {
+            emit("\"");
+            EmitName(<esprima.Syntax.Identifier>me.property, emit, alloc);
+            emit("\"");
+        } else if (me.property.type == 'Literal') {
+            EmitExpression(me.property, emit, alloc, scope, 0, false);
+        } else {
+            emit("-- [[ EmitCall unknown property " + util.inspect(me.property) + "--]]");
+        }
         emit(ast.arguments.length ? "," : "");
     } else if (ast.callee.type == 'Literal') {
         emit("__LiteralCallFail(");

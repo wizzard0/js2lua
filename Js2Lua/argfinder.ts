@@ -16,12 +16,12 @@ export function analyze(node): IBlockIdentifiers {
         funcs: [], refs: [], vars: []
     };
 
-    types.visit(node.body, {
+    types.visit(node, {
         visitFunctionDeclaration: function (path) {
             var fd = <esprima.Syntax.FunctionDeclaration>path.node;
             sc.funcs.push(fd.id.name);
             sc.refs.push(fd.id.name);
-            return false;
+            this.traverse(path);
         },
         visitVariableDeclarator: function (path) {
             var fd = <esprima.Syntax.VariableDeclarator>path.node;
