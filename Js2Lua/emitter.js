@@ -141,7 +141,7 @@ function EmitTryStatement(ast, emit, alloc) {
     }
     // Just Finally
     if (ast.finalizer) {
-        emit("--JustFinalizer\r\n;" + finalizer + "()");
+        emit("--JustFinalizer\r\n" + finalizer + "()");
     }
     // handlerS, not handler!
 }
@@ -342,6 +342,7 @@ function EmitFunctionDeclaration(ast, emit, alloc) {
     emit(" = ");
     EmitFunctionExpr(ast, emit, alloc);
 }
+var blockAbortStatements = ['ReturnStatement', 'BreakStatement'];
 function EmitBlock(ast, emit, alloc, pendingContinueInThisBlock) {
     if (ast.type != 'BlockStatement' && ast.type != 'Program') {
         emit("--[[3");
@@ -352,12 +353,13 @@ function EmitBlock(ast, emit, alloc, pendingContinueInThisBlock) {
     }
     for (var si = 0; si < ast.body.length; si++) {
         var arg = ast.body[si];
-        if (pendingContinueInThisBlock)
+        var breaker = blockAbortStatements.indexOf(arg.type) != -1;
+        if (pendingContinueInThisBlock && breaker)
             emit(" do ");
         EmitStatement(arg, emit, alloc, false);
-        if (pendingContinueInThisBlock)
+        if (pendingContinueInThisBlock && breaker)
             emit(" end "); // because there MAY be label after return
-        if (arg.type == 'ReturnStatement')
+        if (breaker)
             break; // in lua?..
         emit("\r\n");
     }
@@ -495,7 +497,7 @@ function EmitStatement(stmt, emit, alloc, pendingContinueInThisBlock) {
             EmitThrow(stmt, emit, alloc);
             break;
         case "EmptyStatement":
-            emit(";");
+            emit("\r\n");
             break;
         case "BreakStatement":
             EmitBreak(stmt, emit, alloc);

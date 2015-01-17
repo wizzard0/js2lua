@@ -141,7 +141,7 @@ function EmitTryStatement(ast: esprima.Syntax.TryStatement, emit: (s: string) =>
     }
     // Just Finally
     if (ast.finalizer) {
-        emit("--JustFinalizer\r\n;" + finalizer + "()");
+        emit("--JustFinalizer\r\n" + finalizer + "()");
     }
     // handlerS, not handler!
 }
@@ -336,6 +336,8 @@ function EmitFunctionDeclaration(ast: esprima.Syntax.FunctionDeclaration, emit: 
     EmitFunctionExpr(ast, emit, alloc);
 }
 
+var blockAbortStatements = ['ReturnStatement', 'BreakStatement'];
+
 function EmitBlock(ast: esprima.Syntax.BlockStatement, emit: (s: string) => void, alloc: () => number, pendingContinueInThisBlock: boolean) {
     if (ast.type != 'BlockStatement' && ast.type != 'Program') {
         emit("--[[3"); emit(ast.type); emit("]]");
@@ -344,10 +346,11 @@ function EmitBlock(ast: esprima.Syntax.BlockStatement, emit: (s: string) => void
     }
     for (var si = 0; si < ast.body.length; si++) {
         var arg = ast.body[si];
-        if (pendingContinueInThisBlock /*&& topContinueTargetLabelId*/) emit(" do ");
+        var breaker = blockAbortStatements.indexOf(arg.type) != -1;
+        if (pendingContinueInThisBlock && breaker/*&& topContinueTargetLabelId*/) emit(" do ");
         EmitStatement(arg, emit, alloc, false);
-        if (pendingContinueInThisBlock /*&& topContinueTargetLabelId*/) emit(" end "); // because there MAY be label after return
-        if (arg.type == 'ReturnStatement') break; // in lua?..
+        if (pendingContinueInThisBlock && breaker/*&& topContinueTargetLabelId*/) emit(" end "); // because there MAY be label after return
+        if (breaker) break; // in lua?..
         emit("\r\n");
     }
 }
@@ -475,7 +478,7 @@ function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void
             EmitThrow(<esprima.Syntax.ThrowStatement>stmt, emit, alloc);
             break;
         case "EmptyStatement":
-            emit(";");
+            emit("\r\n");
             break;
         case "BreakStatement":
             EmitBreak(<esprima.Syntax.BreakStatement>stmt, emit, alloc);
