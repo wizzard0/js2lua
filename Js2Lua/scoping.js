@@ -26,16 +26,16 @@ var ScopeStack = (function () {
         if (ident.substr(0, 2) == '__') {
             return { type: 'Lexical' }; // may be alleviated by program-parser
         }
-        for (var i = this.scope.length - 1; i >= 0; i++) {
+        for (var i = this.scope.length - 1; i >= 0; i--) {
             var cs = this.scope[i];
             if (cs.type == 'Lexical') {
-                if (cs.vars && cs.vars.indexOf(ident)) {
+                if (cs.vars && (cs.vars.indexOf(ident) != -1)) {
                     return { type: 'Lexical' };
                 }
-                if (cs.args && cs.args.indexOf(ident)) {
+                if (cs.args && (cs.args.indexOf(ident) != -1)) {
                     return { type: 'Lexical' };
                 }
-                if (cs.funcs && cs.funcs.indexOf(ident)) {
+                if (cs.funcs && (cs.funcs.indexOf(ident) != -1)) {
                     return { type: 'Lexical' };
                 }
             }
