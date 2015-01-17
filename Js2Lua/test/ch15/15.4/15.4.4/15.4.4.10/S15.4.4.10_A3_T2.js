@@ -7,6 +7,7 @@
  * @path ch15/15.4/15.4.4/15.4.4.10/S15.4.4.10_A3_T2.js
  * @description length = 4294967297
  */
+// LUA_SKIP
 
 var obj = {};
 obj.slice = Array.prototype.slice;
