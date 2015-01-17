@@ -784,9 +784,9 @@ function EmitCall(ast, emit, alloc, StatementContext) {
         emit("__LiteralCallFail(");
     }
     else if (ast.callee.type == 'FunctionExpression') {
-        emit(StatementContext ? ";(" : "");
+        emit(StatementContext ? ";(" : "(");
         EmitExpression(ast.callee, emit, alloc, 0);
-        emit(StatementContext ? ")(" : "("); // avoid "ambiguous syntax" 
+        emit(")("); // avoid "ambiguous syntax" 
     }
     else {
         EmitExpression(ast.callee, emit, alloc, 0);
