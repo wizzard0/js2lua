@@ -505,6 +505,9 @@ function EmitStatement(stmt, emit, alloc, pendingContinueInThisBlock) {
         case "IfStatement":
             EmitIf(stmt, emit, alloc);
             break;
+        case "WithStatement":
+            EmitWith(stmt, emit, alloc);
+            break;
         case "ForStatement":
             EmitForStatement(stmt, emit, alloc);
             break;
@@ -608,6 +611,11 @@ function EmitIf(ast, emit, alloc) {
         EmitStatement(ast.alternate, emit, alloc, false);
     }
     emit(" end");
+}
+function EmitWith(ast, emit, alloc) {
+    // todo lexical and object environments
+    // ignoring ast.object
+    EmitExpression(ast.body, emit, alloc, 0);
 }
 function EmitReturn(ast, emit, alloc) {
     emit("return ");

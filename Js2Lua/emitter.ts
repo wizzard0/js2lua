@@ -486,6 +486,9 @@ function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void
         case "IfStatement":
             EmitIf(<esprima.Syntax.IfStatement>stmt, emit, alloc);
             break;
+        case "WithStatement":
+            EmitWith(<esprima.Syntax.WithStatement>stmt, emit, alloc);
+            break;
         case "ForStatement":
             EmitForStatement(<esprima.Syntax.ForStatement>stmt, emit, alloc);
             break;
@@ -586,6 +589,12 @@ function EmitIf(ast: esprima.Syntax.IfStatement, emit: (s: string) => void, allo
         EmitStatement(ast.alternate, emit, alloc, false);
     }
     emit(" end");
+}
+
+function EmitWith(ast: esprima.Syntax.WithStatement, emit: (s: string) => void, alloc: () => number) {
+    // todo lexical and object environments
+    // ignoring ast.object
+    EmitExpression(ast.body, emit, alloc, 0);
 }
 
 function EmitReturn(ast: esprima.Syntax.ReturnStatement, emit: (s: string) => void, alloc: () => number) {
