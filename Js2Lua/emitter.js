@@ -272,14 +272,9 @@ function EmitVariableDeclaratorOrExpression(ast, emit, alloc, scope) {
     }
 }
 function EmitIdentifier(ast, emit, alloc, scope) {
-    var ein = ast.name;
-    ein = ein.replace(/\$/g, "_USD_");
-    if (Object.prototype.hasOwnProperty.call(reservedLuaKeys, ein)) {
-        ein = '_R_' + ein; // TODO better name mangling
-    }
-    var r = scope.lookupReference(ein);
+    var r = scope.lookupReference(ast.name);
     if (r.type == 'Lexical') {
-        emit(ein);
+        EmitName(ast, emit, alloc);
     }
     else if (r.type == 'Object') {
         emit("__RefCheck(");
@@ -296,7 +291,12 @@ function EmitIdentifier(ast, emit, alloc, scope) {
     }
 }
 function EmitName(ast, emit, alloc) {
-    emit(ast.name);
+    var ein = ast.name;
+    ein = ein.replace(/\$/g, "_USD_");
+    if (Object.prototype.hasOwnProperty.call(reservedLuaKeys, ein)) {
+        ein = '_R_' + ein; // TODO better name mangling
+    }
+    emit(ein);
 }
 function EmitFunctionExpr(ast, emit, alloc, scope) {
     //console.log(util.inspect(ast, false, 999, true));

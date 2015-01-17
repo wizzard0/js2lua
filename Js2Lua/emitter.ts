@@ -33,7 +33,7 @@ var Intrinsics = [
     '__Put',
     '__PlusOp',
     '__Delete',
-   // '__Length',
+// '__Length',
     '__InstanceOf',
     '__CallMember',
     '__Call',
@@ -277,14 +277,9 @@ function EmitVariableDeclaratorOrExpression(ast: esprima.Syntax.VariableDeclarat
 }
 
 function EmitIdentifier(ast: esprima.Syntax.Identifier, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack) {
-    var ein = (<esprima.Syntax.Identifier>ast).name;
-    ein = ein.replace(/\$/g, "_USD_");
-    if (Object.prototype.hasOwnProperty.call(reservedLuaKeys, ein)) {
-        ein = '_R_' + ein; // TODO better name mangling
-    }
-    var r = scope.lookupReference(ein);
+    var r = scope.lookupReference(ast.name);
     if (r.type == 'Lexical') {
-        emit(ein);
+        EmitName(ast, emit, alloc);
     } else if (r.type == 'Object') {
         emit("__RefCheck(");
         EmitMember({
@@ -300,7 +295,12 @@ function EmitIdentifier(ast: esprima.Syntax.Identifier, emit: (s: string) => voi
 }
 
 function EmitName(ast: esprima.Syntax.Identifier, emit: (s: string) => void, alloc: () => number) {
-    emit(ast.name);
+    var ein = (<esprima.Syntax.Identifier>ast).name;
+    ein = ein.replace(/\$/g, "_USD_");
+    if (Object.prototype.hasOwnProperty.call(reservedLuaKeys, ein)) {
+        ein = '_R_' + ein; // TODO better name mangling
+    }
+    emit(ein);
 }
 
 function EmitFunctionExpr(ast: esprima.Syntax.FunctionExpression, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack) {
