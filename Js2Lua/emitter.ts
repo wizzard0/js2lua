@@ -8,7 +8,7 @@ import escodegen = require("escodegen"); // debug
 function EmitProgram(ast: esprima.Syntax.Program, emit: (s: string) => void, alloc: () => number) {
     // hack
     emit("\r\n-- BEGIN\r\n");
-    EmitBlock(ast, emit, alloc);
+    EmitBlock(ast, emit, alloc, false);
     //var rootFunctionBody = (<esprima.Syntax.FunctionDeclaration>ast.body[0]).body.body;
     //for (var si = 0; si < rootFunctionBody.length; si++) {
     //    var stmt = rootFunctionBody[si];
@@ -112,12 +112,12 @@ function EmitTryStatement(ast: esprima.Syntax.TryStatement, emit: (s: string) =>
     var finalizer = "__TryFinalizer" + alloc();
     var handler = "__TryHandler" + alloc();
     emit("--TryBody\r\nlocal " + statusName + "," + returnValue + " = pcall(function ()\r\n");
-    EmitStatement(ast.block, emit, alloc);
+    EmitStatement(ast.block, emit, alloc, false);
     emit(" end)\r\n");
     //emit("print( " + statusName + "," + returnValue + ")\r\n");
     if (ast.finalizer) {
         emit("--Finally\r\nlocal " + finalizer + "=(function() ");
-        EmitStatement(ast.finalizer, emit, alloc);
+        EmitStatement(ast.finalizer, emit, alloc, false);
         emit(" end)");
     }
     var ah = ast.handlers;
@@ -126,7 +126,7 @@ function EmitTryStatement(ast: esprima.Syntax.TryStatement, emit: (s: string) =>
         var h = ah[0];
         var paramName = h.param.name;
         emit("--Catch\r\nlocal " + handler + "=(function(" + paramName + ") ");
-        EmitStatement(h.body, emit, alloc);
+        EmitStatement(h.body, emit, alloc, false);
         emit(" end)");
     } else {
         emit("--[[MultipleCatchClauses]]");
@@ -168,10 +168,10 @@ function EmitForStatement(ast: esprima.Syntax.ForStatement, emit: (s: string) =>
     }
     emit(") do\r\n");
     if (ast.body) {
-        EmitStatement(ast.body, emit, alloc);
+        EmitStatement(<esprima.Syntax.BlockStatement>ast.body, emit, alloc, true);
     }
-    if (pendingContinue) {
-        emit("::" + pendingContinue + "::\r\n"); pendingContinue = null;
+    if (topContinueTargetLabelId) {
+        emit("::" + topContinueTargetLabelId + "::\r\n"); topContinueTargetLabelId = null;
     }
     emit("\r\n-- BODY END\r\n");
     if (ast.update) {
@@ -209,9 +209,9 @@ function EmitForInStatement(ast: esprima.Syntax.ForInStatement, emit: (s: string
         arguments: [ast.right]
     }, emit, alloc, false);
     emit(" do\r\n");
-    EmitStatement(ast.body, emit, alloc);
-    if (pendingContinue) {
-        emit("::" + pendingContinue + "::\r\n"); pendingContinue = null;
+    EmitStatement(<esprima.Syntax.BlockStatement>ast.body, emit, alloc, true);
+    if (topContinueTargetLabelId) {
+        emit("::" + topContinueTargetLabelId + "::\r\n"); topContinueTargetLabelId = null;
     }
     emit(" end --ForIn\r\n"); // any breaks?
 }
@@ -269,7 +269,7 @@ function EmitFunctionExpr(ast: esprima.Syntax.FunctionExpression, emit: (s: stri
     } else {
         emit(")\r\n"); // arglist close
     }
-    EmitBlock(ast.body, emit, alloc);
+    EmitStatement(ast.body, emit, alloc, false);
     emit(" end) --FunctionExpr\r\n"); // any breaks?
 }
 
@@ -336,7 +336,7 @@ function EmitFunctionDeclaration(ast: esprima.Syntax.FunctionDeclaration, emit: 
     EmitFunctionExpr(ast, emit, alloc);
 }
 
-function EmitBlock(ast: esprima.Syntax.BlockStatement, emit: (s: string) => void, alloc: () => number) {
+function EmitBlock(ast: esprima.Syntax.BlockStatement, emit: (s: string) => void, alloc: () => number, pendingContinueInThisBlock: boolean) {
     if (ast.type != 'BlockStatement' && ast.type != 'Program') {
         emit("--[[3"); emit(ast.type); emit("]]");
         console.log(util.inspect(ast, false, 999, true));
@@ -344,7 +344,9 @@ function EmitBlock(ast: esprima.Syntax.BlockStatement, emit: (s: string) => void
     }
     for (var si = 0; si < ast.body.length; si++) {
         var arg = ast.body[si];
-        EmitStatement(arg, emit, alloc);
+        if (pendingContinueInThisBlock /*&& topContinueTargetLabelId*/) emit(" do ");
+        EmitStatement(arg, emit, alloc, false);
+        if (pendingContinueInThisBlock /*&& topContinueTargetLabelId*/) emit(" end "); // because there MAY be label after return
         if (arg.type == 'ReturnStatement') break; // in lua?..
         emit("\r\n");
     }
@@ -460,7 +462,7 @@ function EmitDelete(ast: esprima.Syntax.UnaryExpression, emit: (s: string) => vo
     }
 }
 
-function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void, alloc: () => number) {
+function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void, alloc: () => number, pendingContinueInThisBlock: boolean) {
     //console.warn(ex.type);
     switch (stmt.type) {
         case "ReturnStatement":
@@ -497,7 +499,7 @@ function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void
             EmitWhileStatement(<esprima.Syntax.WhileStatement>stmt, emit, alloc);
             break;
         case "BlockStatement":
-            EmitBlock(<esprima.Syntax.BlockStatement>stmt, emit, alloc);
+            EmitBlock(<esprima.Syntax.BlockStatement>stmt, emit, alloc, pendingContinueInThisBlock);
             break;
         case "LabeledStatement":
             EmitLabeled(<esprima.Syntax.LabeledStatement>stmt, emit, alloc);
@@ -526,7 +528,7 @@ function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void
 }
 // HACK
 
-var pendingContinue: string = null;
+var topContinueTargetLabelId: string = null;
 
 function EmitContinue(ast: esprima.Syntax.ContinueStatement, emit: (s: string) => void, alloc: () => number) {
     if (ast.label) {
@@ -534,7 +536,7 @@ function EmitContinue(ast: esprima.Syntax.ContinueStatement, emit: (s: string) =
         EmitExpression(ast.label, emit, alloc, 0, false, false);
     } else {
         var pc = "__Continue" + alloc();
-        pendingContinue = pc;
+        topContinueTargetLabelId = pc;
         emit(" goto " + pc); // TODO 2 nonlabeled continue in the same loop
     }
 }
@@ -543,7 +545,7 @@ function EmitLabeled(ast: esprima.Syntax.LabeledStatement, emit: (s: string) => 
     emit("::");
     EmitExpression(ast.label, emit, alloc, 0, false, false);
     emit(":: ");
-    EmitStatement(ast.body, emit, alloc);
+    EmitStatement(ast.body, emit, alloc, false);
     emit("::");
     EmitExpression(ast.label, emit, alloc, 0, false, false);
     emit("__After:: ");
@@ -551,9 +553,9 @@ function EmitLabeled(ast: esprima.Syntax.LabeledStatement, emit: (s: string) => 
 
 function EmitDoWhileStatement(ast: esprima.Syntax.DoWhileStatement, emit: (s: string) => void, alloc: () => number) {
     emit("repeat ");
-    EmitStatement(ast.body, emit, alloc);
-    if (pendingContinue) {
-        emit("::" + pendingContinue + "::\r\n"); pendingContinue = null;
+    EmitStatement(<esprima.Syntax.BlockStatement>ast.body, emit, alloc, true);
+    if (topContinueTargetLabelId) {
+        emit("::" + topContinueTargetLabelId + "::\r\n"); topContinueTargetLabelId = null;
     }
     emit(" until not __ToBoolean(");
     EmitExpression(ast.test, emit, alloc, 0);
@@ -564,9 +566,9 @@ function EmitWhileStatement(ast: esprima.Syntax.WhileStatement, emit: (s: string
     emit("while __ToBoolean(");
     EmitExpression(ast.test, emit, alloc, 0);
     emit(") do ");
-    EmitStatement(ast.body, emit, alloc);
-    if (pendingContinue) {
-        emit("::" + pendingContinue + "::\r\n"); pendingContinue = null;
+    EmitStatement(<esprima.Syntax.BlockStatement>ast.body, emit, alloc, true);
+    if (topContinueTargetLabelId) {
+        emit("::" + topContinueTargetLabelId + "::\r\n"); topContinueTargetLabelId = null;
     }
     emit(" end ");
 }
@@ -575,10 +577,10 @@ function EmitIf(ast: esprima.Syntax.IfStatement, emit: (s: string) => void, allo
     emit("if __ToBoolean(");
     EmitExpression(ast.test, emit, alloc, 0);
     emit(") then\r\n");
-    EmitStatement(ast.consequent, emit, alloc);
+    EmitStatement(ast.consequent, emit, alloc, false);
     if (ast.alternate) {
         emit(" else\r\n");
-        EmitStatement(ast.alternate, emit, alloc);
+        EmitStatement(ast.alternate, emit, alloc, false);
     }
     emit(" end");
 }

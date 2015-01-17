@@ -6,7 +6,7 @@ var argfinder = require("./argfinder");
 function EmitProgram(ast, emit, alloc) {
     // hack
     emit("\r\n-- BEGIN\r\n");
-    EmitBlock(ast, emit, alloc);
+    EmitBlock(ast, emit, alloc, false);
     //var rootFunctionBody = (<esprima.Syntax.FunctionDeclaration>ast.body[0]).body.body;
     //for (var si = 0; si < rootFunctionBody.length; si++) {
     //    var stmt = rootFunctionBody[si];
@@ -110,12 +110,12 @@ function EmitTryStatement(ast, emit, alloc) {
     var finalizer = "__TryFinalizer" + alloc();
     var handler = "__TryHandler" + alloc();
     emit("--TryBody\r\nlocal " + statusName + "," + returnValue + " = pcall(function ()\r\n");
-    EmitStatement(ast.block, emit, alloc);
+    EmitStatement(ast.block, emit, alloc, false);
     emit(" end)\r\n");
     //emit("print( " + statusName + "," + returnValue + ")\r\n");
     if (ast.finalizer) {
         emit("--Finally\r\nlocal " + finalizer + "=(function() ");
-        EmitStatement(ast.finalizer, emit, alloc);
+        EmitStatement(ast.finalizer, emit, alloc, false);
         emit(" end)");
     }
     var ah = ast.handlers;
@@ -125,7 +125,7 @@ function EmitTryStatement(ast, emit, alloc) {
         var h = ah[0];
         var paramName = h.param.name;
         emit("--Catch\r\nlocal " + handler + "=(function(" + paramName + ") ");
-        EmitStatement(h.body, emit, alloc);
+        EmitStatement(h.body, emit, alloc, false);
         emit(" end)");
     }
     else {
@@ -167,11 +167,11 @@ function EmitForStatement(ast, emit, alloc) {
     }
     emit(") do\r\n");
     if (ast.body) {
-        EmitStatement(ast.body, emit, alloc);
+        EmitStatement(ast.body, emit, alloc, true);
     }
-    if (pendingContinue) {
-        emit("::" + pendingContinue + "::\r\n");
-        pendingContinue = null;
+    if (topContinueTargetLabelId) {
+        emit("::" + topContinueTargetLabelId + "::\r\n");
+        topContinueTargetLabelId = null;
     }
     emit("\r\n-- BODY END\r\n");
     if (ast.update) {
@@ -209,10 +209,10 @@ function EmitForInStatement(ast, emit, alloc) {
         arguments: [ast.right]
     }, emit, alloc, false);
     emit(" do\r\n");
-    EmitStatement(ast.body, emit, alloc);
-    if (pendingContinue) {
-        emit("::" + pendingContinue + "::\r\n");
-        pendingContinue = null;
+    EmitStatement(ast.body, emit, alloc, true);
+    if (topContinueTargetLabelId) {
+        emit("::" + topContinueTargetLabelId + "::\r\n");
+        topContinueTargetLabelId = null;
     }
     emit(" end --ForIn\r\n"); // any breaks?
 }
@@ -275,7 +275,7 @@ function EmitFunctionExpr(ast, emit, alloc) {
     else {
         emit(")\r\n"); // arglist close
     }
-    EmitBlock(ast.body, emit, alloc);
+    EmitStatement(ast.body, emit, alloc, false);
     emit(" end) --FunctionExpr\r\n"); // any breaks?
 }
 function EmitArray(ast, emit, alloc) {
@@ -342,7 +342,7 @@ function EmitFunctionDeclaration(ast, emit, alloc) {
     emit(" = ");
     EmitFunctionExpr(ast, emit, alloc);
 }
-function EmitBlock(ast, emit, alloc) {
+function EmitBlock(ast, emit, alloc, pendingContinueInThisBlock) {
     if (ast.type != 'BlockStatement' && ast.type != 'Program') {
         emit("--[[3");
         emit(ast.type);
@@ -352,7 +352,11 @@ function EmitBlock(ast, emit, alloc) {
     }
     for (var si = 0; si < ast.body.length; si++) {
         var arg = ast.body[si];
-        EmitStatement(arg, emit, alloc);
+        if (pendingContinueInThisBlock)
+            emit(" do ");
+        EmitStatement(arg, emit, alloc, false);
+        if (pendingContinueInThisBlock)
+            emit(" end "); // because there MAY be label after return
         if (arg.type == 'ReturnStatement')
             break; // in lua?..
         emit("\r\n");
@@ -479,7 +483,7 @@ function EmitDelete(ast, emit, alloc) {
         emit("(false)"); // maybe correct
     }
 }
-function EmitStatement(stmt, emit, alloc) {
+function EmitStatement(stmt, emit, alloc, pendingContinueInThisBlock) {
     switch (stmt.type) {
         case "ReturnStatement":
             EmitReturn(stmt, emit, alloc);
@@ -515,7 +519,7 @@ function EmitStatement(stmt, emit, alloc) {
             EmitWhileStatement(stmt, emit, alloc);
             break;
         case "BlockStatement":
-            EmitBlock(stmt, emit, alloc);
+            EmitBlock(stmt, emit, alloc, pendingContinueInThisBlock);
             break;
         case "LabeledStatement":
             EmitLabeled(stmt, emit, alloc);
@@ -549,7 +553,7 @@ function EmitStatement(stmt, emit, alloc) {
     }
 }
 // HACK
-var pendingContinue = null;
+var topContinueTargetLabelId = null;
 function EmitContinue(ast, emit, alloc) {
     if (ast.label) {
         emit(" goto ");
@@ -557,7 +561,7 @@ function EmitContinue(ast, emit, alloc) {
     }
     else {
         var pc = "__Continue" + alloc();
-        pendingContinue = pc;
+        topContinueTargetLabelId = pc;
         emit(" goto " + pc); // TODO 2 nonlabeled continue in the same loop
     }
 }
@@ -565,17 +569,17 @@ function EmitLabeled(ast, emit, alloc) {
     emit("::");
     EmitExpression(ast.label, emit, alloc, 0, false, false);
     emit(":: ");
-    EmitStatement(ast.body, emit, alloc);
+    EmitStatement(ast.body, emit, alloc, false);
     emit("::");
     EmitExpression(ast.label, emit, alloc, 0, false, false);
     emit("__After:: ");
 }
 function EmitDoWhileStatement(ast, emit, alloc) {
     emit("repeat ");
-    EmitStatement(ast.body, emit, alloc);
-    if (pendingContinue) {
-        emit("::" + pendingContinue + "::\r\n");
-        pendingContinue = null;
+    EmitStatement(ast.body, emit, alloc, true);
+    if (topContinueTargetLabelId) {
+        emit("::" + topContinueTargetLabelId + "::\r\n");
+        topContinueTargetLabelId = null;
     }
     emit(" until not __ToBoolean(");
     EmitExpression(ast.test, emit, alloc, 0);
@@ -585,10 +589,10 @@ function EmitWhileStatement(ast, emit, alloc) {
     emit("while __ToBoolean(");
     EmitExpression(ast.test, emit, alloc, 0);
     emit(") do ");
-    EmitStatement(ast.body, emit, alloc);
-    if (pendingContinue) {
-        emit("::" + pendingContinue + "::\r\n");
-        pendingContinue = null;
+    EmitStatement(ast.body, emit, alloc, true);
+    if (topContinueTargetLabelId) {
+        emit("::" + topContinueTargetLabelId + "::\r\n");
+        topContinueTargetLabelId = null;
     }
     emit(" end ");
 }
@@ -596,10 +600,10 @@ function EmitIf(ast, emit, alloc) {
     emit("if __ToBoolean(");
     EmitExpression(ast.test, emit, alloc, 0);
     emit(") then\r\n");
-    EmitStatement(ast.consequent, emit, alloc);
+    EmitStatement(ast.consequent, emit, alloc, false);
     if (ast.alternate) {
         emit(" else\r\n");
-        EmitStatement(ast.alternate, emit, alloc);
+        EmitStatement(ast.alternate, emit, alloc, false);
     }
     emit(" end");
 }
