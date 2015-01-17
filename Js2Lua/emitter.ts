@@ -781,8 +781,9 @@ function EmitBreak(ast: esprima.Syntax.BreakStatement, emit: (s: string) => void
     } else if (defaultBreakTarget) {
         emit(" goto " + defaultBreakTarget);
     } else {
-        emit("break ");
+        emit("break");
     }
+    emit(" ");
 }
 
 

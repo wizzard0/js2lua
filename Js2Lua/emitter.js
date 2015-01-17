@@ -791,8 +791,9 @@ function EmitBreak(ast, emit, alloc, scope, defaultBreakTarget) {
         emit(" goto " + defaultBreakTarget);
     }
     else {
-        emit("break ");
+        emit("break");
     }
+    emit(" ");
 }
 function EmitBinary(ast, emit, alloc, scope, StatementContext) {
     var aop = ast.operator;
