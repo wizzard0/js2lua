@@ -48,6 +48,21 @@ var Intrinsics = [
     '__RefCheck',
     'rawset',
     'rawget',
+    '_USD_ERROR',
+    '_USD_PRINT',
+    '_USD_FAIL',
+    '_USD_INCLUDE',
+    '$ERROR',
+    '$PRINT',
+    '$FAIL',
+    '$INCLUDE',
+    'runTestCase',
+    'fnExists',
+    'Infinity',
+    'NaN',
+    '',
+    '',
+    '',
 ];
 
 function EmitProgram(ast: esprima.Syntax.Program, emit: (s: string) => void, alloc: () => number) {
@@ -398,8 +413,8 @@ function EmitObject(ast: esprima.Syntax.ObjectExpression, emit: (s: string) => v
             emit(arg.key.value);
         } else if (arg.key.type == 'Identifier') { // identifiers already ok
             EmitName(arg.key, emit, alloc)
-        } else { 
-            emit("--[[ EmitObject invalid key " + util.inspect(arg.key)+" ]]");
+        } else {
+            emit("--[[ EmitObject invalid key " + util.inspect(arg.key) + " ]]");
         }
         emit("\"]=");
         EmitExpression(arg.value, emit, alloc, scope, 0, false);
@@ -549,7 +564,8 @@ function EmitDelete(ast: esprima.Syntax.UnaryExpression, emit: (s: string) => vo
     }
 }
 
-function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack, pendingContinueInThisBlock: boolean) {
+function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void, alloc: () => number,
+    scope: scoping.ScopeStack, pendingContinueInThisBlock: boolean, defaultBreakTarget?: string) {
     //console.warn(ex.type);
     switch (stmt.type) {
         case "ReturnStatement":
@@ -565,10 +581,13 @@ function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void
             emit("\r\n");
             break;
         case "BreakStatement":
-            EmitBreak(<esprima.Syntax.BreakStatement>stmt, emit, alloc, scope);
+            EmitBreak(<esprima.Syntax.BreakStatement>stmt, emit, alloc, scope, defaultBreakTarget);
             break;
         case "IfStatement":
             EmitIf(<esprima.Syntax.IfStatement>stmt, emit, alloc, scope);
+            break;
+        case "SwitchStatement":
+            EmitSwitch(<esprima.Syntax.SwitchStatement>stmt, emit, alloc, scope);
             break;
         case "WithStatement":
             EmitWith(<esprima.Syntax.WithStatement>stmt, emit, alloc, scope);
@@ -675,9 +694,57 @@ function EmitIf(ast: esprima.Syntax.IfStatement, emit: (s: string) => void, allo
     emit(" end");
 }
 
+function EmitSwitch(ast: esprima.Syntax.SwitchStatement, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack) {
+    var testHolder = "__tmp" + alloc();
+    var labelPrefix = "__Switch" + alloc();
+
+    emit("\r\nlocal " + testHolder + " = (");
+    EmitExpression(ast.discriminant, emit, alloc, scope, 0, false);
+    emit(") -- SwitchStmt\r\n");
+    var defaultCase: esprima.Syntax.SwitchCase = null;
+    var dci: string;
+
+    var emitTest = function (test, i) {
+        EmitIf({
+            type: 'IfStatement',
+            test: <esprima.Syntax.BinaryExpression>{
+                type: 'BinaryExpression', operator: '===',
+                left: { type: 'Identifier', name: testHolder },
+                right: ci.test
+            }, consequent: <esprima.Syntax.BreakStatement>{
+                type: 'BreakStatement', label: { type: 'Identifier', name: labelPrefix + "_" + i, force: true }
+            }, alternate: null
+        }, emit, alloc, scope); emit("\r\n");
+    }
+    for (var i = 0; i < ast.cases.length; i++) {
+        var ci = ast.cases[i];
+        if (ci.test) {
+            emitTest(ci.test, i);
+        } else {
+            defaultCase = ci;
+            dci = labelPrefix + "_" + i;
+        }
+    }
+    if (defaultCase) {
+        emit(" goto " + dci + "\r\n");
+    }
+    for (var i = 0; i < ast.cases.length; i++) {
+        var ci = ast.cases[i];
+        emit("\r\n::" + labelPrefix + "_" + i + ":: do\r\n");
+        ci.consequent.forEach(function (st) {
+            EmitStatement(st, emit, alloc, scope, false, labelPrefix + "_End");
+        });
+        emit(" end\r\n");
+    }
+
+    emit("::" + labelPrefix + "_End::");
+    emit("\r\n -- SwitchStmtEnd\r\n");
+}
+
+
 function EmitWith(ast: esprima.Syntax.WithStatement, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack) {
     // todo strict mode
-    // ignoring ast.object
+    // scoping is kinda wrong
     var scopeHolder = "__tmp" + alloc();
 
     emit("\r\nlocal " + scopeHolder + " = __ToObject(");
@@ -703,11 +770,16 @@ function EmitThrow(ast: esprima.Syntax.ThrowStatement, emit: (s: string) => void
     emit("})");
 }
 
-function EmitBreak(ast: esprima.Syntax.BreakStatement, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack) {
+function EmitBreak(ast: esprima.Syntax.BreakStatement, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack,
+    defaultBreakTarget?: string) {
     if (ast.label) {
         emit(" goto ");
         EmitName(ast.label, emit, alloc);
-        emit("__After");
+        if (!(<any>ast.label).force) {
+            emit("__After");
+        }
+    } else if (defaultBreakTarget) {
+        emit(" goto " + defaultBreakTarget);
     } else {
         emit("break ");
     }

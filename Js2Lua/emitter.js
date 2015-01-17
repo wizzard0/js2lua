@@ -45,6 +45,21 @@ var Intrinsics = [
     '__RefCheck',
     'rawset',
     'rawget',
+    '_USD_ERROR',
+    '_USD_PRINT',
+    '_USD_FAIL',
+    '_USD_INCLUDE',
+    '$ERROR',
+    '$PRINT',
+    '$FAIL',
+    '$INCLUDE',
+    'runTestCase',
+    'fnExists',
+    'Infinity',
+    'NaN',
+    '',
+    '',
+    '',
 ];
 function EmitProgram(ast, emit, alloc) {
     // hack
@@ -562,7 +577,7 @@ function EmitDelete(ast, emit, alloc, scope) {
         emit("(false)"); // maybe correct
     }
 }
-function EmitStatement(stmt, emit, alloc, scope, pendingContinueInThisBlock) {
+function EmitStatement(stmt, emit, alloc, scope, pendingContinueInThisBlock, defaultBreakTarget) {
     switch (stmt.type) {
         case "ReturnStatement":
             EmitReturn(stmt, emit, alloc, scope);
@@ -577,10 +592,13 @@ function EmitStatement(stmt, emit, alloc, scope, pendingContinueInThisBlock) {
             emit("\r\n");
             break;
         case "BreakStatement":
-            EmitBreak(stmt, emit, alloc, scope);
+            EmitBreak(stmt, emit, alloc, scope, defaultBreakTarget);
             break;
         case "IfStatement":
             EmitIf(stmt, emit, alloc, scope);
+            break;
+        case "SwitchStatement":
+            EmitSwitch(stmt, emit, alloc, scope);
             break;
         case "WithStatement":
             EmitWith(stmt, emit, alloc, scope);
@@ -689,9 +707,58 @@ function EmitIf(ast, emit, alloc, scope) {
     }
     emit(" end");
 }
+function EmitSwitch(ast, emit, alloc, scope) {
+    var testHolder = "__tmp" + alloc();
+    var labelPrefix = "__Switch" + alloc();
+    emit("\r\nlocal " + testHolder + " = (");
+    EmitExpression(ast.discriminant, emit, alloc, scope, 0, false);
+    emit(") -- SwitchStmt\r\n");
+    var defaultCase = null;
+    var dci;
+    var emitTest = function (test, i) {
+        EmitIf({
+            type: 'IfStatement',
+            test: {
+                type: 'BinaryExpression',
+                operator: '===',
+                left: { type: 'Identifier', name: testHolder },
+                right: ci.test
+            },
+            consequent: {
+                type: 'BreakStatement',
+                label: { type: 'Identifier', name: labelPrefix + "_" + i, force: true }
+            },
+            alternate: null
+        }, emit, alloc, scope);
+        emit("\r\n");
+    };
+    for (var i = 0; i < ast.cases.length; i++) {
+        var ci = ast.cases[i];
+        if (ci.test) {
+            emitTest(ci.test, i);
+        }
+        else {
+            defaultCase = ci;
+            dci = labelPrefix + "_" + i;
+        }
+    }
+    if (defaultCase) {
+        emit(" goto " + dci + "\r\n");
+    }
+    for (var i = 0; i < ast.cases.length; i++) {
+        var ci = ast.cases[i];
+        emit("\r\n::" + labelPrefix + "_" + i + ":: do\r\n");
+        ci.consequent.forEach(function (st) {
+            EmitStatement(st, emit, alloc, scope, false, labelPrefix + "_End");
+        });
+        emit(" end\r\n");
+    }
+    emit("::" + labelPrefix + "_End::");
+    emit("\r\n -- SwitchStmtEnd\r\n");
+}
 function EmitWith(ast, emit, alloc, scope) {
     // todo strict mode
-    // ignoring ast.object
+    // scoping is kinda wrong
     var scopeHolder = "__tmp" + alloc();
     emit("\r\nlocal " + scopeHolder + " = __ToObject(");
     EmitExpression(ast.object, emit, alloc, scope, 0, false);
@@ -712,11 +779,16 @@ function EmitThrow(ast, emit, alloc, scope) {
     EmitExpression(ast.argument, emit, alloc, scope, 0, false);
     emit("})");
 }
-function EmitBreak(ast, emit, alloc, scope) {
+function EmitBreak(ast, emit, alloc, scope, defaultBreakTarget) {
     if (ast.label) {
         emit(" goto ");
         EmitName(ast.label, emit, alloc);
-        emit("__After");
+        if (!ast.label.force) {
+            emit("__After");
+        }
+    }
+    else if (defaultBreakTarget) {
+        emit(" goto " + defaultBreakTarget);
     }
     else {
         emit("break ");
