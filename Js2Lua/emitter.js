@@ -8,15 +8,12 @@ function EmitProgram(ast, emit, alloc) {
     // hack
     var scope = new scoping.ScopeStack();
     scope.pushObjectIdent("__JsGlobalObjects", "program");
-    var identList = argfinder(ast.body);
+    var identList = argfinder.analyze(ast.body);
+    scope.pushLexical(['__JsGlobalObjects'].concat(identList.vars), ['eval'].concat(identList.funcs), [], 'builtins-and-toplevels');
     emit("\r\n-- BEGIN\r\n");
-    EmitBlock(ast, emit, alloc, false);
-    //var rootFunctionBody = (<esprima.Syntax.FunctionDeclaration>ast.body[0]).body.body;
-    //for (var si = 0; si < rootFunctionBody.length; si++) {
-    //    var stmt = rootFunctionBody[si];
-    //    EmitStatement(stmt, emit);
-    //}
+    EmitBlock(ast, emit, alloc, scope, false);
     emit("\r\n-- END\r\n");
+    scope.popScope(); // for completeness
 }
 function EmitVariableDeclaration(ex, emit, alloc) {
     for (var i = 0; i < ex.declarations.length; i++) {
@@ -31,7 +28,7 @@ function EmitVariableDeclarator(vd, emit, alloc) {
     EmitExpression(vd.init, emit, alloc, 0);
     emit("\r\n");
 }
-function EmitExpression(ex, emit, alloc, statementContext, isRvalue, strictCheck) {
+function EmitExpression(ex, emit, alloc, scope, statementContext, isRvalue, strictCheck) {
     if (isRvalue === void 0) { isRvalue = true; }
     if (strictCheck === void 0) { strictCheck = true; }
     if (!ex) {
@@ -57,7 +54,7 @@ function EmitExpression(ex, emit, alloc, statementContext, isRvalue, strictCheck
                 emit('((function() ');
                 EmitAssignment(rightA, emit, alloc);
                 emit('; return ');
-                EmitExpression(rightA.left, emit, alloc, 0);
+                EmitExpression(rightA.left, emit, alloc, scope, 0);
                 emit(' end)())');
             }
             break;
@@ -241,7 +238,7 @@ function EmitIdentifier(ast, emit, alloc, rvalue, strictCheck) {
     var ein = ast.name;
     ein = ein.replace(/\$/g, "_USD_");
     if (Object.prototype.hasOwnProperty.call(reservedLuaKeys, ein)) {
-        ein = '_R_' + ein;
+        ein = '_R_' + ein; // TODO can emit dynamic scope lookups in place :)
     }
     if (ein.substr(0, 2) == '__' || ein == 'undefined' || BinaryOpRemapValues.indexOf(ein) != -1) {
         strictCheck = false; // dont recheck builtins
@@ -254,12 +251,14 @@ function EmitIdentifier(ast, emit, alloc, rvalue, strictCheck) {
         emit(")");
     }
 }
-function EmitFunctionExpr(ast, emit, alloc) {
+function EmitFunctionExpr(ast, emit, alloc, scope) {
     //console.log(util.inspect(ast, false, 999, true));
-    var identList = argfinder(ast.body);
-    var hasArguments = identList.indexOf('arguments') != -1;
+    var identList = argfinder.analyze(ast.body);
+    var hasArguments = identList.refs.indexOf('arguments') != -1;
+    var arglist = [];
     emit("__DefineFunction(function (self");
     if (hasArguments) {
+        arglist.push('arguments');
         emit(", ...)\r\n");
         if (ast.params.length) {
             emit("local __tmp");
@@ -268,7 +267,8 @@ function EmitFunctionExpr(ast, emit, alloc) {
     for (var si = 0; si < ast.params.length; si++) {
         emit(",");
         var arg = ast.params[si];
-        EmitExpression(arg, emit, alloc, 0, false, false);
+        arglist.push(arg.name);
+        EmitIdentifier(arg, emit, alloc, scope, 0, false, false);
     }
     if (hasArguments) {
         if (ast.params.length) {
@@ -279,7 +279,9 @@ function EmitFunctionExpr(ast, emit, alloc) {
     else {
         emit(")\r\n"); // arglist close
     }
-    EmitStatement(ast.body, emit, alloc, false);
+    scope.pushLexical(identList.vars, identList.funcs, arglist, 'function');
+    EmitStatement(ast.body, emit, alloc, scope, false);
+    scope.popScope();
     emit(" end) --FunctionExpr\r\n"); // any breaks?
 }
 function EmitArray(ast, emit, alloc) {
@@ -347,7 +349,7 @@ function EmitFunctionDeclaration(ast, emit, alloc) {
     EmitFunctionExpr(ast, emit, alloc);
 }
 var blockAbortStatements = ['ReturnStatement', 'BreakStatement'];
-function EmitBlock(ast, emit, alloc, pendingContinueInThisBlock) {
+function EmitBlock(ast, emit, alloc, scope, pendingContinueInThisBlock) {
     if (ast.type != 'BlockStatement' && ast.type != 'Program') {
         emit("--[[3");
         emit(ast.type);
@@ -360,7 +362,7 @@ function EmitBlock(ast, emit, alloc, pendingContinueInThisBlock) {
         var breaker = blockAbortStatements.indexOf(arg.type) != -1;
         if (pendingContinueInThisBlock && breaker)
             emit(" do ");
-        EmitStatement(arg, emit, alloc, false);
+        EmitStatement(arg, emit, alloc, scope, false);
         if (pendingContinueInThisBlock && breaker)
             emit(" end "); // because there MAY be label after return
         if (breaker)
@@ -489,7 +491,7 @@ function EmitDelete(ast, emit, alloc) {
         emit("(false)"); // maybe correct
     }
 }
-function EmitStatement(stmt, emit, alloc, pendingContinueInThisBlock) {
+function EmitStatement(stmt, emit, alloc, scope, pendingContinueInThisBlock) {
     switch (stmt.type) {
         case "ReturnStatement":
             EmitReturn(stmt, emit, alloc);
@@ -510,7 +512,7 @@ function EmitStatement(stmt, emit, alloc, pendingContinueInThisBlock) {
             EmitIf(stmt, emit, alloc);
             break;
         case "WithStatement":
-            EmitWith(stmt, emit, alloc);
+            EmitWith(stmt, emit, alloc, scope);
             break;
         case "ForStatement":
             EmitForStatement(stmt, emit, alloc);
@@ -528,7 +530,7 @@ function EmitStatement(stmt, emit, alloc, pendingContinueInThisBlock) {
             EmitWhileStatement(stmt, emit, alloc);
             break;
         case "BlockStatement":
-            EmitBlock(stmt, emit, alloc, pendingContinueInThisBlock);
+            EmitBlock(stmt, emit, alloc, scope, pendingContinueInThisBlock);
             break;
         case "LabeledStatement":
             EmitLabeled(stmt, emit, alloc);
@@ -616,10 +618,17 @@ function EmitIf(ast, emit, alloc) {
     }
     emit(" end");
 }
-function EmitWith(ast, emit, alloc) {
-    // todo lexical and object environments
+function EmitWith(ast, emit, alloc, scope) {
+    // todo strict mode
     // ignoring ast.object
-    EmitExpression(ast.body, emit, alloc, 0);
+    var scopeHolder = "__tmp" + alloc();
+    emit("\r\nlocal " + scopeHolder + " = __ToObject(");
+    EmitExpression(ast.object, emit, alloc, scope, 0);
+    emit(") -- WithStmt\r\n");
+    scope.pushObjectIdent(scopeHolder, "with");
+    EmitExpression(ast.body, emit, alloc, scope, 0);
+    scope.popScope();
+    emit("\r\n -- WithStmtEnd\r\n");
 }
 function EmitReturn(ast, emit, alloc) {
     emit("return ");

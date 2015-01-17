@@ -10,16 +10,14 @@ function EmitProgram(ast: esprima.Syntax.Program, emit: (s: string) => void, all
     // hack
     var scope = new scoping.ScopeStack();
     scope.pushObjectIdent("__JsGlobalObjects", "program");
-    var identList = argfinder(ast.body);
+    var identList = argfinder.analyze(ast.body);
+    scope.pushLexical(['__JsGlobalObjects'].concat(identList.vars), ['eval'].concat(identList
+        .funcs), [], 'builtins-and-toplevels');
 
     emit("\r\n-- BEGIN\r\n");
-    EmitBlock(ast, emit, alloc, false);
-    //var rootFunctionBody = (<esprima.Syntax.FunctionDeclaration>ast.body[0]).body.body;
-    //for (var si = 0; si < rootFunctionBody.length; si++) {
-    //    var stmt = rootFunctionBody[si];
-    //    EmitStatement(stmt, emit);
-    //}
+    EmitBlock(ast, emit, alloc, scope, false);
     emit("\r\n-- END\r\n");
+    scope.popScope(); // for completeness
 }
 
 function EmitVariableDeclaration(ex: esprima.Syntax.VariableDeclaration, emit: (s: string) => void, alloc: () => number) {
@@ -37,7 +35,8 @@ function EmitVariableDeclarator(vd: esprima.Syntax.VariableDeclarator, emit: (s:
     emit("\r\n");
 }
 
-function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void, alloc: () => number, statementContext: number, isRvalue: boolean = true, strictCheck: boolean = true) {
+function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void, alloc: () => number,
+    scope: scoping.ScopeStack, statementContext: number, isRvalue: boolean = true, strictCheck: boolean = true) {
     if (!ex) {
         emit('nil');
         return;
@@ -61,7 +60,7 @@ function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void
                 emit('((function() ');
                 EmitAssignment(rightA, emit, alloc);
                 emit('; return ');
-                EmitExpression(rightA.left, emit, alloc, 0);
+                EmitExpression(rightA.left, emit, alloc, scope, 0);
                 emit(' end)())');
             }
             break;
@@ -240,7 +239,7 @@ function EmitIdentifier(ast: esprima.Syntax.Identifier, emit: (s: string) => voi
     var ein = (<esprima.Syntax.Identifier>ast).name;
     ein = ein.replace(/\$/g, "_USD_");
     if (Object.prototype.hasOwnProperty.call(reservedLuaKeys, ein)) {
-        ein = '_R_' + ein;
+        ein = '_R_' + ein; // TODO can emit dynamic scope lookups in place :)
     }
     if (ein.substr(0, 2) == '__' || ein == 'undefined' || BinaryOpRemapValues.indexOf(ein) != -1) {
         strictCheck = false; // dont recheck builtins
@@ -250,12 +249,14 @@ function EmitIdentifier(ast: esprima.Syntax.Identifier, emit: (s: string) => voi
     if (strictCheck && rvalue) { emit(")"); }
 }
 
-function EmitFunctionExpr(ast: esprima.Syntax.FunctionExpression, emit: (s: string) => void, alloc: () => number) {
+function EmitFunctionExpr(ast: esprima.Syntax.FunctionExpression, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack) {
     //console.log(util.inspect(ast, false, 999, true));
-    var identList = argfinder(ast.body);
-    var hasArguments = identList.indexOf('arguments') != -1;
+    var identList = argfinder.analyze(ast.body);
+    var hasArguments = identList.refs.indexOf('arguments') != -1;
+    var arglist: string[] = [];
     emit("__DefineFunction(function (self");
     if (hasArguments) {
+        arglist.push('arguments');
         emit(", ...)\r\n")
         if (ast.params.length) {
             emit("local __tmp");
@@ -263,8 +264,9 @@ function EmitFunctionExpr(ast: esprima.Syntax.FunctionExpression, emit: (s: stri
     }
     for (var si = 0; si < ast.params.length; si++) {
         emit(",");
-        var arg = ast.params[si];
-        EmitExpression(arg, emit, alloc, 0, false, false);
+        var arg = <esprima.Syntax.Identifier>ast.params[si];
+        arglist.push(arg.name);
+        EmitIdentifier(arg, emit, alloc, scope, 0, false, false);
     }
     if (hasArguments) {
         if (ast.params.length) {
@@ -274,7 +276,9 @@ function EmitFunctionExpr(ast: esprima.Syntax.FunctionExpression, emit: (s: stri
     } else {
         emit(")\r\n"); // arglist close
     }
-    EmitStatement(ast.body, emit, alloc, false);
+    scope.pushLexical(identList.vars, identList.funcs, arglist, 'function');
+    EmitStatement(ast.body, emit, alloc, scope, false);
+    scope.popScope();
     emit(" end) --FunctionExpr\r\n"); // any breaks?
 }
 
@@ -343,7 +347,7 @@ function EmitFunctionDeclaration(ast: esprima.Syntax.FunctionDeclaration, emit: 
 
 var blockAbortStatements = ['ReturnStatement', 'BreakStatement'];
 
-function EmitBlock(ast: esprima.Syntax.BlockStatement, emit: (s: string) => void, alloc: () => number, pendingContinueInThisBlock: boolean) {
+function EmitBlock(ast: esprima.Syntax.BlockStatement, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack, pendingContinueInThisBlock: boolean) {
     if (ast.type != 'BlockStatement' && ast.type != 'Program') {
         emit("--[[3"); emit(ast.type); emit("]]");
         console.log(util.inspect(ast, false, 999, true));
@@ -353,7 +357,7 @@ function EmitBlock(ast: esprima.Syntax.BlockStatement, emit: (s: string) => void
         var arg = ast.body[si];
         var breaker = blockAbortStatements.indexOf(arg.type) != -1;
         if (pendingContinueInThisBlock && breaker/*&& topContinueTargetLabelId*/) emit(" do ");
-        EmitStatement(arg, emit, alloc, false);
+        EmitStatement(arg, emit, alloc, scope, false);
         if (pendingContinueInThisBlock && breaker/*&& topContinueTargetLabelId*/) emit(" end "); // because there MAY be label after return
         if (breaker) break; // in lua?..
         emit("\r\n");
@@ -470,7 +474,7 @@ function EmitDelete(ast: esprima.Syntax.UnaryExpression, emit: (s: string) => vo
     }
 }
 
-function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void, alloc: () => number, pendingContinueInThisBlock: boolean) {
+function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack, pendingContinueInThisBlock: boolean) {
     //console.warn(ex.type);
     switch (stmt.type) {
         case "ReturnStatement":
@@ -492,7 +496,7 @@ function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void
             EmitIf(<esprima.Syntax.IfStatement>stmt, emit, alloc);
             break;
         case "WithStatement":
-            EmitWith(<esprima.Syntax.WithStatement>stmt, emit, alloc);
+            EmitWith(<esprima.Syntax.WithStatement>stmt, emit, alloc, scope);
             break;
         case "ForStatement":
             EmitForStatement(<esprima.Syntax.ForStatement>stmt, emit, alloc);
@@ -510,7 +514,7 @@ function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void
             EmitWhileStatement(<esprima.Syntax.WhileStatement>stmt, emit, alloc);
             break;
         case "BlockStatement":
-            EmitBlock(<esprima.Syntax.BlockStatement>stmt, emit, alloc, pendingContinueInThisBlock);
+            EmitBlock(<esprima.Syntax.BlockStatement>stmt, emit, alloc, scope, pendingContinueInThisBlock);
             break;
         case "LabeledStatement":
             EmitLabeled(<esprima.Syntax.LabeledStatement>stmt, emit, alloc);
@@ -596,10 +600,18 @@ function EmitIf(ast: esprima.Syntax.IfStatement, emit: (s: string) => void, allo
     emit(" end");
 }
 
-function EmitWith(ast: esprima.Syntax.WithStatement, emit: (s: string) => void, alloc: () => number) {
-    // todo lexical and object environments
+function EmitWith(ast: esprima.Syntax.WithStatement, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack) {
+    // todo strict mode
     // ignoring ast.object
-    EmitExpression(ast.body, emit, alloc, 0);
+    var scopeHolder = "__tmp" + alloc();
+
+    emit("\r\nlocal " + scopeHolder + " = __ToObject(");
+    EmitExpression(ast.object, emit, alloc, scope, 0);
+    emit(") -- WithStmt\r\n");
+    scope.pushObjectIdent(scopeHolder, "with");
+    EmitExpression(ast.body, emit, alloc, scope, 0);
+    scope.popScope();
+    emit("\r\n -- WithStmtEnd\r\n");
 }
 
 function EmitReturn(ast: esprima.Syntax.ReturnStatement, emit: (s: string) => void, alloc: () => number) {

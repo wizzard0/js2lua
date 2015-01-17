@@ -1,6 +1,6 @@
 'use strict';
 var types = require("ast-types");
-function argfinder(node) {
+function analyze(node) {
     var sc = {
         funcs: [],
         refs: [],
@@ -29,4 +29,5 @@ function argfinder(node) {
     });
     return sc;
 }
+exports.analyze = analyze;
 //# sourceMappingURL=argfinder.js.map

@@ -11,7 +11,7 @@ export interface IBlockIdentifiers {
     refs: string[];
 }
 
-function argfinder(node): IBlockIdentifiers {
+export function analyze(node): IBlockIdentifiers {
     var sc: IBlockIdentifiers = {
         funcs: [], refs: [], vars: []
     };
