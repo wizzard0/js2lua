@@ -97,20 +97,6 @@ local function __Delete(location, key)
     return true
 end
 
-local function __Length(value)
-    if not value then
-        if value == false then return nil end
-        error("TypeError: length of undefined")
-    end
-    if type(value) ~= 'table' then
-        value = __Helpers.__ToObject(value)
-    end
-    if nil ~= value.__Length then
-        return value.__Length
-    end
-    return #value
-end
-
 local function __ToObject(val)
     -- print("ToObject"..tostring(val))
     if type(val) == 'function' then return __Helpers.__DefineFunction(val) end -- todo cache this?
@@ -371,7 +357,7 @@ Function.__TypeofValue = "function"
 Function.__CallImpl = function(self, code) 
     -- print(to_string(self))
     self.prototype = __New(Object)
-    self.__Length = 0
+    self.length = 0
 end
 Function.prototype = __New(Object) -- obj and func are special
 Function.prototype.toString = function(self)
@@ -422,9 +408,9 @@ Array.__CallImpl = function(self, ...) -- number or varargs...
         self[idx] = v
         idx = idx + 1
     end
-    self.__Length = idx
-    if self.__Length == 1 then
-        self.__Length = self[0]
+    self.length = idx
+    if self.length == 1 then
+        self.length = self[0]
     end
     return self
 end
@@ -433,42 +419,42 @@ Array.isArray = function(arr)
 end
 Array.prototype.forEach = function(self, cb, otherSelf)
     local os = otherSelf or self -- NOPE, should inherit this
-    for i=0,self.__Length-1 do
+    for i=0,self.length-1 do
         cb(self[i], i)
     end
 end
 Array.prototype.indexOf = function(self, item, fromIndex)
     local os = otherSelf or self -- NOPE, should inherit this
-    for i=fromIndex or 0,self.__Length-1 do
+    for i=fromIndex or 0,self.length-1 do
         if(rawequal(self[i], item)) then return i end
     end
     return -1
 end
 Array.prototype.lastIndexOf = function(self, item, fromIndex)
     local os = otherSelf or self -- NOPE, should inherit this
-    for i=fromIndex or (self.__Length-1),0,-1 do
+    for i=fromIndex or (self.length-1),0,-1 do
         if(rawequal(self[i], item)) then return i end
     end
     return -1
 end
 Array.prototype.push = function(self, element)
-    if not self.__Length then error("Malformed array without __Length") end
-    self[self.__Length] = element
-    self.__Length = self.__Length + 1
+    if not self.length then error("Malformed array without length") end
+    self[self.length] = element
+    self.length = self.length + 1
 end
 Array.prototype.pop = function(self)
-    if not self.__Length then error("Malformed array without __Length") end
-    local rv = self[self.__Length - 1]
-    self[self.__Length - 1] = nil
-    self.__Length = self.__Length - 1
+    if not self.length then error("Malformed array without length") end
+    local rv = self[self.length - 1]
+    self[self.length - 1] = nil
+    self.length = self.length - 1
     return rv
 end
 Array.prototype.toString = __DefineFunction(function(self)
     -- print('returning '..tostring(self.__Value))
-    -- return 'Array['..self.__Length..']'
-    if self.__Length == 0 then return '' end
+    -- return 'Array['..self.length..']'
+    if self.length == 0 then return '' end
     local str = __ToString(self[0])
-    for i=1,self.__Length-1 do
+    for i=1,self.length-1 do
         str = str .. ',' .. __ToString(self[i])
     end
     return str
@@ -544,7 +530,7 @@ local function __split(str, pat)
       t[idx]=cap
      idx=idx+1
    end
-   t.__Length = idx
+   t.length = idx
    return t
 end
 String.__CallImpl = function(self, val) 
@@ -554,7 +540,7 @@ String.__CallImpl = function(self, val)
     local uni = Utf8to32(val)
     ns.__ToStringValue = val
     ns.__Unicode = uni
-    ns.__Length = #uni
+    ns.length = #uni
     return ns
 end
 String.prototype.charCodeAt = function(self, idx)
@@ -668,7 +654,7 @@ end
 local function fnExists(...)
     error("not implemented")
     -- TODO
-    --[[for (var i = 0; i < __Length({...}); i++) {
+    --[[for (var i = 0; i < length({...}); i++) {
         if (typeof (arguments[i]) !== "function") return false;
     }]]
     return true;
@@ -704,11 +690,11 @@ if __ToBoolean((isConstructor and (not rawequal(__CallMember(Object,"getPrototyp
 _USD_ERROR("Built-in prototype objects must have Object.prototype as their prototype.")
  end
 if __ToBoolean(isFunction) then
-if __ToBoolean(((not rawequal(__Typeof(__Length(obj)), "number")) or (not rawequal(__Length(obj), __CallMember(Math,"floor",__Length(obj)))))) then
+if __ToBoolean(((not rawequal(__Typeof(obj.length), "number")) or (not rawequal(obj.length, __CallMember(Math,"floor",obj.length))))) then
 _USD_ERROR("Built-in functions must have a length property with an integer value.")
  end
-if __ToBoolean((not rawequal(__Length(obj), length))) then
-_USD_ERROR(__PlusOp(__PlusOp(__PlusOp(__PlusOp("Function's length property doesn't have specified value; expected ", length), ", got "), __Length(obj)), "."))
+if __ToBoolean((not rawequal(obj.length, length))) then
+_USD_ERROR(__PlusOp(__PlusOp(__PlusOp(__PlusOp("Function's length property doesn't have specified value; expected ", length), ", got "), obj.length), "."))
  end
 desc=__CallMember(Object,"getOwnPropertyDescriptor",obj, "length")
 if __ToBoolean(desc.writable) then

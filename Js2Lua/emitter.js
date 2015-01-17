@@ -31,7 +31,6 @@ var Intrinsics = [
     '__Put',
     '__PlusOp',
     '__Delete',
-    '__Length',
     '__InstanceOf',
     '__CallMember',
     '__Call',
@@ -118,7 +117,7 @@ function EmitExpression(ex, emit, alloc, scope, statementContext) {
             EmitObject(ex, emit, alloc, scope);
             break;
         case "MemberExpression":
-            EmitMember(ex, emit, alloc, scope, isRvalue, statementContext != 0);
+            EmitMember(ex, emit, alloc, scope, statementContext != 0);
             break;
         case "UnaryExpression":
             EmitUnary(ex, emit, alloc, scope);
@@ -276,17 +275,24 @@ function EmitIdentifier(ast, emit, alloc, scope) {
     var ein = ast.name;
     ein = ein.replace(/\$/g, "_USD_");
     if (Object.prototype.hasOwnProperty.call(reservedLuaKeys, ein)) {
-        ein = '_R_' + ein; // TODO can emit dynamic scope lookups in place :)
+        ein = '_R_' + ein; // TODO better name mangling
     }
-    if (ein.substr(0, 2) == '__' || ein == 'undefined' || BinaryOpRemapValues.indexOf(ein) != -1) {
-        strictCheck = false; // dont recheck builtins
-    } // TODO pass locals here and check AOT
-    if (strictCheck && rvalue) {
+    var r = scope.lookupReference(ein);
+    if (r.type == 'Lexical') {
+        emit(ein);
+    }
+    else if (r.type == 'Object') {
         emit("__RefCheck(");
-    }
-    emit(ein);
-    if (strictCheck && rvalue) {
+        EmitMember({
+            type: 'MemberExpression',
+            computed: false,
+            object: { type: 'Identifier', name: r.ident },
+            property: ast
+        }, emit, alloc, scope, false);
         emit(")");
+    }
+    else {
+        emit("--[[ EmitIdentifier WTF ]]nil");
     }
 }
 function EmitName(ast, emit, alloc) {
@@ -774,19 +780,12 @@ var reservedLuaKeys = {
     'then': true,
     'goto': true,
 };
-function EmitMember(ast, emit, alloc, scope, isRvalue, StatementContext) {
+function EmitMember(ast, emit, alloc, scope, StatementContext) {
     //if(ast.property.name=='Step') {
     //    console.log(util.inspect(ast, false, 999, true));
     //}
     var argIndexer = ast.object.type == 'Identifier' && ast.object.name == 'arguments';
-    if (ast.property.name == 'length' && isRvalue) {
-        EmitCall({
-            type: 'CallExpression',
-            callee: { 'type': 'Identifier', 'name': '__Length' },
-            arguments: [ast.object]
-        }, emit, alloc, scope, StatementContext);
-    }
-    else if (ast.property.type == 'Identifier' && !ast.computed) {
+    if (ast.property.type == 'Identifier' && !ast.computed) {
         var id = ast.property;
         var isReserved = !!reservedLuaKeys[id.name];
         if (ast.object.type == 'Literal') {
@@ -845,10 +844,6 @@ function EmitCall(ast, emit, alloc, scope, StatementContext) {
     }
     for (var si = 0; si < ast.arguments.length; si++) {
         var arg = ast.arguments[si];
-        //if (arg.type == 'AssignmentExpression' || arg.type == 'UpdateExpression') {
-        //    console.log("Inline Assignment Codegen not implemented");
-        //    emit("--[[IAC]]")
-        //}
         EmitExpression(arg, emit, alloc, scope, 0);
         if (si != ast.arguments.length - 1) {
             emit(", ");
