@@ -40,7 +40,7 @@ function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void
     //console.warn(ex.type);
     switch (ex.type) {
         case "CallExpression":
-            EmitCall(<esprima.Syntax.CallExpression>ex, emit, alloc);
+            EmitCall(<esprima.Syntax.CallExpression>ex, emit, alloc, statementContext != 0);
             break;
         case "SequenceExpression":
             EmitSequence(<esprima.Syntax.SequenceExpression>ex, emit, alloc, statementContext != 0);
@@ -207,7 +207,7 @@ function EmitForInStatement(ast: esprima.Syntax.ForInStatement, emit: (s: string
         type: 'CallExpression',
         callee: { 'type': 'Identifier', 'name': '__Iterate' },
         arguments: [ast.right]
-    }, emit, alloc);
+    }, emit, alloc, false);
     emit(" do\r\n");
     EmitStatement(ast.body, emit, alloc);
     if (pendingContinue) {
@@ -742,7 +742,7 @@ function EmitMember(ast: esprima.Syntax.MemberExpression, emit: (s: string) => v
     }
 }
 
-function EmitCall(ast: esprima.Syntax.CallExpression, emit: (s: string) => void, alloc: () => number) {
+function EmitCall(ast: esprima.Syntax.CallExpression, emit: (s: string) => void, alloc: () => number, StatementContext: boolean) {
     if (ast.callee.type == 'MemberExpression') {
         var me = <esprima.Syntax.MemberExpression>ast.callee;
         emit("__CallMember(");
@@ -752,8 +752,12 @@ function EmitCall(ast: esprima.Syntax.CallExpression, emit: (s: string) => void,
         EmitExpression(me.property, emit, alloc, 0, true, false);
         if (me.property.type == 'Identifier') { emit("\""); }
         emit(ast.arguments.length ? "," : "");
-    } else if(ast.callee.type == 'Literal') {
+    } else if (ast.callee.type == 'Literal') {
         emit("__LiteralCallFail(");
+    } else if (ast.callee.type == 'FunctionExpression') { // IIFE pattern
+        emit(StatementContext ? ";(" : "");
+        EmitExpression(ast.callee, emit, alloc, 0);
+        emit(StatementContext ? ")(" : "("); // avoid "ambiguous syntax" 
     } else {
         EmitExpression(ast.callee, emit, alloc, 0);
         emit("(");
@@ -796,7 +800,7 @@ function EmitLiteral(ex: esprima.Syntax.Literal, emit: (s: string) => void, allo
     }
 }
 
-export function convertFile(source: string, fn: string): string {
+export function convertFile(source: string, fn: string, printCode: boolean): string {
     var allocIndex = 0;
     var alloc = function () {
         allocIndex++;
@@ -806,7 +810,9 @@ export function convertFile(source: string, fn: string): string {
     var ast = esprima.parse(source);
     var a2 = hoist(ast, true);
     //console.log(escodegen.generate(a2))
-    //console.log(util.inspect(ast,false,999,true))
+    if (printCode) {
+        console.log(util.inspect(ast, false, 999, true))
+    }
     var luasrc = "";
     var emit = function (code) {
         luasrc += code;

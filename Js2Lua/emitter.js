@@ -36,7 +36,7 @@ function EmitExpression(ex, emit, alloc, statementContext, isRvalue, strictCheck
     }
     switch (ex.type) {
         case "CallExpression":
-            EmitCall(ex, emit, alloc);
+            EmitCall(ex, emit, alloc, statementContext != 0);
             break;
         case "SequenceExpression":
             EmitSequence(ex, emit, alloc, statementContext != 0);
@@ -207,7 +207,7 @@ function EmitForInStatement(ast, emit, alloc) {
         type: 'CallExpression',
         callee: { 'type': 'Identifier', 'name': '__Iterate' },
         arguments: [ast.right]
-    }, emit, alloc);
+    }, emit, alloc, false);
     emit(" do\r\n");
     EmitStatement(ast.body, emit, alloc);
     if (pendingContinue) {
@@ -765,7 +765,7 @@ function EmitMember(ast, emit, alloc, isRvalue) {
         emit("]");
     }
 }
-function EmitCall(ast, emit, alloc) {
+function EmitCall(ast, emit, alloc, StatementContext) {
     if (ast.callee.type == 'MemberExpression') {
         var me = ast.callee;
         emit("__CallMember(");
@@ -782,6 +782,11 @@ function EmitCall(ast, emit, alloc) {
     }
     else if (ast.callee.type == 'Literal') {
         emit("__LiteralCallFail(");
+    }
+    else if (ast.callee.type == 'FunctionExpression') {
+        emit(StatementContext ? ";(" : "");
+        EmitExpression(ast.callee, emit, alloc, 0);
+        emit(StatementContext ? ")(" : "("); // avoid "ambiguous syntax" 
     }
     else {
         EmitExpression(ast.callee, emit, alloc, 0);
@@ -823,7 +828,7 @@ function EmitLiteral(ex, emit, alloc) {
         emit(JSON.stringify(ex.value)); // TODO
     }
 }
-function convertFile(source, fn) {
+function convertFile(source, fn, printCode) {
     var allocIndex = 0;
     var alloc = function () {
         allocIndex++;
@@ -832,7 +837,9 @@ function convertFile(source, fn) {
     var ast = esprima.parse(source);
     var a2 = hoist(ast, true);
     //console.log(escodegen.generate(a2))
-    //console.log(util.inspect(ast,false,999,true))
+    if (printCode) {
+        console.log(util.inspect(ast, false, 999, true));
+    }
     var luasrc = "";
     var emit = function (code) {
         luasrc += code;

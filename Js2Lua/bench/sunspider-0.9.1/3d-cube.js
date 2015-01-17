@@ -323,7 +323,7 @@ function Init(CubeSize) {
   Loop();
 }
 
-for ( var i = 20; i <= 160; i *= 2 ) {
+for ( var i = 20; i <= 16000; i *= 2 ) {
   Init(i);
 }
 

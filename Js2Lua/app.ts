@@ -8,7 +8,7 @@ var vm = require("vm");
 
 function RunProgram(src: string, ff: string) {
     fs.writeFileSync(ff, src);
-    var rc = sh.exec("C:/bin/zbs/bin/lua " + ff);
+    var rc = sh.exec("\\bin\\luajit\\luajit " + ff);
     //console.log(rc.stdout);
     //console.log("Return Code", rc.code);
     return rc.stdout;
@@ -40,7 +40,7 @@ function ComparePrograms(fn: string): any {
     var hasAnythingToDoWithDate = /Date(\.|\()/.exec(source);
     var hasIntl = /testIntl|\bIntl\b/.exec(source);
     var expectErrors = false;
-    var polyfillSrc = emitter.convertFile(polyfills, "polyfills.js");
+    var polyfillSrc = emitter.convertFile(polyfills, "polyfills.js", false);
     var jsVersionFailureDict = {};
 
     if (
@@ -61,7 +61,7 @@ function ComparePrograms(fn: string): any {
     }
     if (expectErrors) {
         try {
-            var luasrc = emitter.convertFile(source, fn);
+            var luasrc = emitter.convertFile(source, fn, false);
             vm.runInNewContext(jsRT + source, { print: print, console: { log: print } }, fn);
             var lua_stdout = RunProgram(luaRT + polyfillSrc + luasrc, flua);
             if (js_stdout.trim().length == 0 || lua_stdout.trim().length == 0) {
@@ -76,7 +76,7 @@ function ComparePrograms(fn: string): any {
             return true;
         }
     } else {
-        var luasrc = emitter.convertFile(source, fn);
+        var luasrc = emitter.convertFile(source, fn, false);
         if (/--\[\[/.exec(luasrc)) {
             console.log(" [FAIL] NO CODE GENERATED " + fn);
             console.log("PARTIAL: ", luasrc);
