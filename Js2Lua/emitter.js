@@ -58,7 +58,7 @@ function EmitExpression(ex, emit, alloc, statementContext, isRvalue, strictCheck
             }
             break;
         case "BinaryExpression":
-            EmitBinary(ex, emit, alloc);
+            EmitBinary(ex, emit, alloc, statementContext != 0);
             break;
         case "LogicalExpression":
             EmitLogical(ex, emit, alloc);
@@ -76,7 +76,7 @@ function EmitExpression(ex, emit, alloc, statementContext, isRvalue, strictCheck
             EmitObject(ex, emit, alloc);
             break;
         case "MemberExpression":
-            EmitMember(ex, emit, alloc, isRvalue);
+            EmitMember(ex, emit, alloc, isRvalue, statementContext != 0);
             break;
         case "UnaryExpression":
             EmitUnary(ex, emit, alloc);
@@ -372,7 +372,7 @@ function EmitAssignment(ast, emit, alloc) {
             operator: aop.substr(0, aop.length - 1),
             left: ast.left,
             right: ast.right
-        }, emit, alloc);
+        }, emit, alloc, false);
     }
 }
 function EmitUpdate(ast, emit, alloc, StatementContext) {
@@ -639,7 +639,7 @@ var BinaryOpRemapValues = [];
 for (var x in BinaryOpRemap) {
     BinaryOpRemapValues.push(BinaryOpRemap[x]);
 }
-function EmitBinary(ast, emit, alloc) {
+function EmitBinary(ast, emit, alloc, StatementContext) {
     var aop = ast.operator;
     if (aop in BinaryOpRemap) {
         if (aop == '!==') {
@@ -649,7 +649,7 @@ function EmitBinary(ast, emit, alloc) {
             type: 'CallExpression',
             callee: { 'type': 'Identifier', 'name': BinaryOpRemap[aop] },
             arguments: [ast.left, ast.right]
-        }, emit, alloc);
+        }, emit, alloc, StatementContext);
         if (aop == '!==') {
             emit(")");
         }
@@ -723,7 +723,7 @@ var reservedLuaKeys = {
     'then': true,
     'goto': true,
 };
-function EmitMember(ast, emit, alloc, isRvalue) {
+function EmitMember(ast, emit, alloc, isRvalue, StatementContext) {
     //if(ast.property.name=='Step') {
     //    console.log(util.inspect(ast, false, 999, true));
     //}
@@ -733,7 +733,7 @@ function EmitMember(ast, emit, alloc, isRvalue) {
             type: 'CallExpression',
             callee: { 'type': 'Identifier', 'name': '__Length' },
             arguments: [ast.object]
-        }, emit, alloc);
+        }, emit, alloc, StatementContext);
     }
     else if (ast.property.type == 'Identifier' && !ast.computed) {
         var id = ast.property;

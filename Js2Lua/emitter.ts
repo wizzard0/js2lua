@@ -61,7 +61,7 @@ function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void
             }
             break;
         case "BinaryExpression":
-            EmitBinary(<esprima.Syntax.BinaryExpression>ex, emit, alloc);
+            EmitBinary(<esprima.Syntax.BinaryExpression>ex, emit, alloc, statementContext != 0);
             break;
         case "LogicalExpression":
             EmitLogical(<esprima.Syntax.LogicalExpression>ex, emit, alloc);
@@ -79,7 +79,7 @@ function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void
             EmitObject(<esprima.Syntax.ObjectExpression>ex, emit, alloc);
             break;
         case "MemberExpression":
-            EmitMember(<esprima.Syntax.MemberExpression>ex, emit, alloc, isRvalue);
+            EmitMember(<esprima.Syntax.MemberExpression>ex, emit, alloc, isRvalue, statementContext != 0);
             break;
         case "UnaryExpression":
             EmitUnary(<esprima.Syntax.UnaryExpression>ex, emit, alloc);
@@ -363,7 +363,7 @@ function EmitAssignment(ast: esprima.Syntax.AssignmentExpression, emit: (s: stri
             operator: aop.substr(0, aop.length - 1),
             left: ast.left,
             right: ast.right
-        }, emit, alloc);
+        }, emit, alloc, false);
     }
 }
 
@@ -621,7 +621,7 @@ for (var x in BinaryOpRemap) {
     BinaryOpRemapValues.push(BinaryOpRemap[x]);
 }
 
-function EmitBinary(ast: esprima.Syntax.BinaryExpression, emit: (s: string) => void, alloc: () => number) {
+function EmitBinary(ast: esprima.Syntax.BinaryExpression, emit: (s: string) => void, alloc: () => number, StatementContext: boolean) {
     var aop = ast.operator;
     if (aop in BinaryOpRemap) {
         if (aop == '!==') {
@@ -631,7 +631,7 @@ function EmitBinary(ast: esprima.Syntax.BinaryExpression, emit: (s: string) => v
             type: 'CallExpression',
             callee: { 'type': 'Identifier', 'name': BinaryOpRemap[aop] },
             arguments: [ast.left, ast.right]
-        }, emit, alloc);
+        }, emit, alloc, StatementContext);
         if (aop == '!==') {
             emit(")");
         }
@@ -709,7 +709,7 @@ var reservedLuaKeys = {
     'goto': true,
 }
 
-function EmitMember(ast: esprima.Syntax.MemberExpression, emit: (s: string) => void, alloc: () => number, isRvalue) {
+function EmitMember(ast: esprima.Syntax.MemberExpression, emit: (s: string) => void, alloc: () => number, isRvalue, StatementContext: boolean) {
     //if(ast.property.name=='Step') {
     //    console.log(util.inspect(ast, false, 999, true));
     //}
@@ -719,7 +719,7 @@ function EmitMember(ast: esprima.Syntax.MemberExpression, emit: (s: string) => v
             type: 'CallExpression',
             callee: { 'type': 'Identifier', 'name': '__Length' },
             arguments: [ast.object]
-        }, emit, alloc);
+        }, emit, alloc, StatementContext);
     } else if (ast.property.type == 'Identifier' && !ast.computed) {
         var id = <esprima.Syntax.Identifier>ast.property;
         var isReserved = !!reservedLuaKeys[id.name];
