@@ -241,15 +241,21 @@ function EmitForInStatement(ast: esprima.Syntax.ForInStatement, emit: (s: string
     if (ast.left.type == 'VariableDeclaration') {
         EmitVariableDeclaration(<esprima.Syntax.VariableDeclaration><any>ast.left, emit, alloc, scope);
     }
+    var tmpIdent2 = '_tmp' + alloc();
     emit("for ");
     if (ast.left.type == 'VariableDeclaration') {
         var vd = <esprima.Syntax.VariableDeclaration><any>ast.left;
-        EmitExpression(vd.declarations[0].id, emit, alloc, scope, 0, true/* indifferent */);
+        EmitName(vd.declarations[0].id, emit, alloc);
+        scope.pushLexical([vd.declarations[0].id.name, tmpIdent2], [], [], 'for-in');
+    } else if (ast.left.type == 'Identifier') {
+        var vi = <esprima.Syntax.Identifier><any>ast.left;
+        EmitName(vi, emit, alloc);
+        scope.pushLexical([vi.name, tmpIdent2], [], [], 'for-in');
     } else {
-        EmitExpression(ast.left, emit, alloc, scope, 0, true/*indifferent*/);
+        emit("--[[ ForIn WTF, unknown ast.left ]]");
     }
     emit(",");
-    EmitExpression({ type: 'Identifier', name: '_tmp' + alloc() }, emit, alloc, scope, 0, false);
+    EmitName({ type: 'Identifier', name: tmpIdent2 }, emit, alloc);
     emit(" in ");
     EmitCall({
         type: 'CallExpression',
@@ -262,6 +268,7 @@ function EmitForInStatement(ast: esprima.Syntax.ForInStatement, emit: (s: string
         emit("::" + topContinueTargetLabelId + "::\r\n"); topContinueTargetLabelId = null;
     }
     emit(" end --ForIn\r\n"); // any breaks?
+    scope.popScope();
 }
 
 
