@@ -1,19 +1,32 @@
 'use strict';
 var types = require("ast-types");
-// fugly code style
 function argfinder(node) {
-    var ids = [];
+    var sc = {
+        funcs: [],
+        refs: [],
+        vars: []
+    };
     types.visit(node.body, {
+        visitFunctionDeclaration: function (path) {
+            var fd = path.node;
+            sc.funcs.push(fd.id.name);
+            sc.refs.push(fd.id.name);
+            return false;
+        },
+        visitVariableDeclarator: function (path) {
+            var fd = path.node;
+            sc.vars.push(fd.id.name);
+            sc.refs.push(fd.id.name);
+            this.traverse(path);
+        },
         visitIdentifier: function (path) {
-            ids.push(path.node.name);
+            sc.refs.push(path.node.name);
             return false;
         },
         visitFunctionExpression: function (path) {
-            //return path.node == node;
             return false;
         }
     });
-    return ids;
+    return sc;
 }
-module.exports = argfinder;
 //# sourceMappingURL=argfinder.js.map

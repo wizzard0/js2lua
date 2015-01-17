@@ -4,9 +4,14 @@ import esutils = require("esutils");
 import hoist = require("./ast-hoist");
 import argfinder = require("./argfinder");
 import escodegen = require("escodegen"); // debug
+import scoping = require("./scoping");
 
 function EmitProgram(ast: esprima.Syntax.Program, emit: (s: string) => void, alloc: () => number) {
     // hack
+    var scope = new scoping.ScopeStack();
+    scope.pushObjectIdent("__JsGlobalObjects", "program");
+    var identList = argfinder(ast.body);
+
     emit("\r\n-- BEGIN\r\n");
     EmitBlock(ast, emit, alloc, false);
     //var rootFunctionBody = (<esprima.Syntax.FunctionDeclaration>ast.body[0]).body.body;

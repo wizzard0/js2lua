@@ -3,6 +3,7 @@ export interface IScope {
     type: string;
     vars: string[];
     funcs: string[];
+    args: string[];
     hint: string;
     ident?: string;
 }
@@ -18,10 +19,11 @@ export class ScopeStack {
         this.scope = [];
     }
 
-    pushLexical(vars: string[], funcs: string[], hint: string) {
+    pushLexical(vars: string[], funcs: string[], args: string[], hint: string) {
         this.scope.push({
             type: 'Lexical',
             vars: vars,
+            args: args,
             funcs: funcs,
             hint: hint
         });
@@ -32,16 +34,21 @@ export class ScopeStack {
             type: 'Object',
             vars: [],
             funcs: [],
+            args: [],
             hint: hint,
             ident: ident
         });
     }
 
-    lookupName(ident: string): ILexicalReference {
+    lookupReference(ident: string): ILexicalReference {
+        // hackish for builtins
+        if (ident.substr(0, 2) == '__') {
+            return { type: 'Lexical' };
+        }
         for (var i = this.scope.length - 1; i >= 0; i++) {
             var cs = this.scope[i];
             if (cs.type == 'Lexical') {
-                if (cs.vars.indexOf(ident) != -1 || cs.funcs.indexOf(ident) != -1) {
+                if (cs.vars.indexOf(ident) != -1 || cs.funcs.indexOf(ident) != -1 || cs.args.indexOf(ident) != -1) {
                     return { type: 'Lexical' };
                 }
             } else {
@@ -49,6 +56,10 @@ export class ScopeStack {
             }
         }
         throw new Error("should not get here");
+    }
+
+    currentScope() {
+        return this.scope[this.scope.length - 1];
     }
 
     popScope() {

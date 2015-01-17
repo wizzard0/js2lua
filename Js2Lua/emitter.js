@@ -3,8 +3,12 @@ var util = require("util");
 var esutils = require("esutils");
 var hoist = require("./ast-hoist");
 var argfinder = require("./argfinder");
+var scoping = require("./scoping");
 function EmitProgram(ast, emit, alloc) {
     // hack
+    var scope = new scoping.ScopeStack();
+    scope.pushObjectIdent("__JsGlobalObjects", "program");
+    var identList = argfinder(ast.body);
     emit("\r\n-- BEGIN\r\n");
     EmitBlock(ast, emit, alloc, false);
     //var rootFunctionBody = (<esprima.Syntax.FunctionDeclaration>ast.body[0]).body.body;
