@@ -820,7 +820,7 @@ function EmitCall(ast: esprima.Syntax.CallExpression, emit: (s: string) => void,
     } else if (ast.callee.type == 'Literal') {
         emit("__LiteralCallFail(");
     } else if (ast.callee.type == 'FunctionExpression') { // IIFE pattern
-        emit(StatementContext ? ";(" : "(");
+        emit(StatementContext ? " do end (" : "(");
         EmitExpression(ast.callee, emit, alloc, scope, 0, false);
         emit(")("); // avoid "ambiguous syntax" 
     } else {
