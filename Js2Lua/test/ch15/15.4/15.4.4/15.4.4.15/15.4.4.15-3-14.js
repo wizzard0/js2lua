@@ -7,7 +7,7 @@
  * @path ch15/15.4/15.4.4/15.4.4.15/15.4.4.15-3-14.js
  * @description Array.prototype.lastIndexOf - value of 'length' is a string containing +/-Infinity
  */
-
+// LUA_SKIP
 
 function testcase() {
 

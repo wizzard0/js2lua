@@ -374,7 +374,7 @@ function EmitArray(ast, emit, alloc, scope) {
         EmitExpression(arg, emit, alloc, scope, 0, false);
         emit(", ");
     }
-    emit("[\"__Length\"]=" + ast.elements.length);
+    emit("[\"length\"]=" + ast.elements.length);
     emit("})");
 }
 function EmitSequence(ast, emit, alloc, scope, StatementContext) {

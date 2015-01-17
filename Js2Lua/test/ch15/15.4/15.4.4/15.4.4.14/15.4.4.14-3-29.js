@@ -7,7 +7,7 @@
  * @path ch15/15.4/15.4.4/15.4.4.14/15.4.4.14-3-29.js
  * @description Array.prototype.indexOf - value of 'length' is boundary value (2^32 + 1)
  */
-
+// LUA_SKIP
 
 function testcase() {
         var targetObj = {};

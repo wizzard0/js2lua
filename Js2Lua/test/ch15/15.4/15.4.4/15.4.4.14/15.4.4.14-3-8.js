@@ -7,7 +7,7 @@
  * @path ch15/15.4/15.4.4/15.4.4.14/15.4.4.14-3-8.js
  * @description Array.prototype.indexOf - value of 'length' is a number (value is Infinity)
  */
-
+// LUA_SKIP
 
 function testcase() {
 

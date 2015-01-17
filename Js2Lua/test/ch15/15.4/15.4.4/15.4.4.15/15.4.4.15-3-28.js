@@ -7,7 +7,7 @@
  * @path ch15/15.4/15.4.4/15.4.4.15/15.4.4.15-3-28.js
  * @description Array.prototype.lastIndexOf - value of 'length' is boundary value (2^32)
  */
-
+// LUA_SKIP
 
 function testcase() {
 

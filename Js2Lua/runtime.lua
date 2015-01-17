@@ -418,21 +418,25 @@ Array.isArray = function(arr)
   return arr.__Prototype == Array.prototype
 end
 Array.prototype.forEach = function(self, cb, otherSelf)
+  local sl = bit32.arshift(self.length,0)
   local os = otherSelf or self -- NOPE, should inherit this
-  for i=0,self.length-1 do
+  for i=0,sl-1 do
     cb(self[i], i)
   end
 end
 Array.prototype.indexOf = function(self, item, fromIndex)
+  local sl = bit32.arshift(self.length,0)
+  local fi = bit32.arshift(fromIndex or 0, 0)
   local os = otherSelf or self -- NOPE, should inherit this
-  for i=fromIndex or 0,self.length-1 do
+  for i=fi,sl-1 do
     if(rawequal(self[i], item)) then return i end
   end
   return -1
 end
 Array.prototype.lastIndexOf = function(self, item, fromIndex)
+  local sl = bit32.arshift(self.length,0)
   local os = otherSelf or self -- NOPE, should inherit this
-  for i=fromIndex or (self.length-1),0,-1 do
+  for i=fromIndex or (sl-1),0,-1 do
     if(rawequal(self[i], item)) then return i end
   end
   return -1
@@ -454,7 +458,8 @@ Array.prototype.toString = __DefineFunction(function(self)
     -- return 'Array['..self.length..']'
     if self.length == 0 then return '' end
     local str = __ToString(self[0])
-    for i=1,self.length-1 do
+    local sl = bit32.arshift(self.length,0)
+    for i=1,sl-1 do
       str = str .. ',' .. __ToString(self[i])
     end
     return str

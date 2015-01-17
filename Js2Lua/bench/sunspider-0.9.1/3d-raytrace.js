@@ -312,6 +312,7 @@ Camera.prototype.render = function(scene, pixels, width, height) {
 
 function raytraceScene()
 {
+    console.log("rs1")
     var startDate = new Date().getTime();
     var numTriangles = 2 * 6;
     var triangles = new Array();//numTriangles);
@@ -386,19 +387,24 @@ function raytraceScene()
     _scene.lights[2].colour = createVector(0.7, 0.7, 0.7);
     _scene.ambient = createVector(0.1, 0.1, 0.1);
     //  _scene.background = createVector(0.7, 0.7, 1.0);
+    console.log("rs2")
     
     var size = 30;
     var pixels = new Array();
     for (var y = 0; y < size; y++) {
+        //console.log("SP")
         pixels[y] = new Array();
         for (var x = 0; x < size; x++) {
             pixels[y][x] = 0;
         }
     }
 
+    console.log(pixels.length)
     var _camera = new Camera(createVector(-40, 40, 40), createVector(0, 0, 0), createVector(0, 1, 0));
+    console.log("rs3")
     _camera.render(_scene, pixels, size, size);
-
+    console.log("rs4")
+    console.log(pixels.length)
     return pixels;
 }
 
@@ -413,6 +419,7 @@ function arrayToCanvasCommands(pixels)
         }
         s+= "],";
     }
+    console.log(s);
     s += '];\n    var canvas = document.getElementById("renderCanvas").getContext("2d");\n\
 \n\
 \n\

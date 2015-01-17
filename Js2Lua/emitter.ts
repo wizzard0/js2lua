@@ -377,7 +377,7 @@ function EmitArray(ast: esprima.Syntax.ArrayExpression, emit: (s: string) => voi
         EmitExpression(arg, emit, alloc, scope, 0, false);
         emit(", ");
     }
-    emit("[\"__Length\"]=" + ast.elements.length);
+    emit("[\"length\"]=" + ast.elements.length);
     emit("})");
 }
 
