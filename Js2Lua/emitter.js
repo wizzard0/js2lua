@@ -67,10 +67,10 @@ function EmitVariableDeclarator(vd, emit, alloc, scope) {
     emit("local ");
     EmitName(vd.id, emit, alloc); // identifier
     emit(" = ");
-    EmitExpression(vd.init, emit, alloc, scope, 0);
+    EmitExpression(vd.init, emit, alloc, scope, 0, false);
     emit("\r\n");
 }
-function EmitExpression(ex, emit, alloc, scope, statementContext) {
+function EmitExpression(ex, emit, alloc, scope, statementContext, isRef) {
     if (!ex) {
         emit('nil');
         return;
@@ -94,7 +94,7 @@ function EmitExpression(ex, emit, alloc, scope, statementContext) {
                 emit('((function() ');
                 EmitAssignment(rightA, emit, alloc, scope);
                 emit('; return ');
-                EmitExpression(rightA.left, emit, alloc, scope, 0);
+                EmitExpression(rightA.left, emit, alloc, scope, 0, false);
                 emit(' end)())');
             }
             break;
@@ -117,7 +117,7 @@ function EmitExpression(ex, emit, alloc, scope, statementContext) {
             EmitObject(ex, emit, alloc, scope);
             break;
         case "MemberExpression":
-            EmitMember(ex, emit, alloc, scope, statementContext != 0);
+            EmitMember(ex, emit, alloc, scope, statementContext != 0, isRef);
             break;
         case "UnaryExpression":
             EmitUnary(ex, emit, alloc, scope);
@@ -126,7 +126,7 @@ function EmitExpression(ex, emit, alloc, scope, statementContext) {
             EmitFunctionExpr(ex, emit, alloc, scope);
             break;
         case "Identifier":
-            EmitIdentifier(ex, emit, alloc, scope);
+            EmitIdentifier(ex, emit, alloc, scope, isRef);
             break;
         case "ThisExpression":
             emit("self");
@@ -201,7 +201,7 @@ function EmitForStatement(ast, emit, alloc, scope) {
     }
     emit("\r\nwhile __ToBoolean(");
     if (ast.test) {
-        EmitExpression(ast.test, emit, alloc, scope, 0);
+        EmitExpression(ast.test, emit, alloc, scope, 0, false);
     }
     else {
         emit("true");
@@ -220,7 +220,7 @@ function EmitForStatement(ast, emit, alloc, scope) {
         if (NonSinkableExpressionTypes.indexOf(aut) == -1) {
             emit("__Sink(");
         }
-        EmitExpression(ast.update, emit, alloc, scope, 1);
+        EmitExpression(ast.update, emit, alloc, scope, 1, false);
         if (NonSinkableExpressionTypes.indexOf(aut) == -1) {
             emit(")");
         }
@@ -236,13 +236,13 @@ function EmitForInStatement(ast, emit, alloc, scope) {
     emit("for ");
     if (ast.left.type == 'VariableDeclaration') {
         var vd = ast.left;
-        EmitExpression(vd.declarations[0].id, emit, alloc, scope, 0);
+        EmitExpression(vd.declarations[0].id, emit, alloc, scope, 0, true);
     }
     else {
-        EmitExpression(ast.left, emit, alloc, scope, 0);
+        EmitExpression(ast.left, emit, alloc, scope, 0, true);
     }
     emit(",");
-    EmitExpression({ type: 'Identifier', name: '_tmp' + alloc() }, emit, alloc, scope, 0);
+    EmitExpression({ type: 'Identifier', name: '_tmp' + alloc() }, emit, alloc, scope, 0, false);
     emit(" in ");
     EmitCall({
         type: 'CallExpression',
@@ -262,7 +262,7 @@ function EmitVariableDeclaratorOrExpression(ast, emit, alloc, scope) {
         EmitVariableDeclaration(ast, emit, alloc, scope);
     }
     else if (esutils.ast.isExpression(ast)) {
-        EmitExpression(ast, emit, alloc, scope, 1);
+        EmitExpression(ast, emit, alloc, scope, 1, false);
     }
     else {
         emit("--[[5");
@@ -271,20 +271,31 @@ function EmitVariableDeclaratorOrExpression(ast, emit, alloc, scope) {
         console.log(util.inspect(ast, false, 999, true));
     }
 }
-function EmitIdentifier(ast, emit, alloc, scope) {
+function EmitIdentifier(ast, emit, alloc, scope, isRef) {
     var r = scope.lookupReference(ast.name);
     if (r.type == 'Lexical') {
         EmitName(ast, emit, alloc);
     }
     else if (r.type == 'Object') {
-        emit("__RefCheck(");
-        EmitMember({
-            type: 'MemberExpression',
-            computed: false,
-            object: { type: 'Identifier', name: r.ident },
-            property: ast
-        }, emit, alloc, scope, false);
-        emit(")");
+        if (!isRef) {
+            emit("__RefCheck(");
+            EmitMember({
+                type: 'MemberExpression',
+                computed: false,
+                object: { type: 'Identifier', name: r.ident },
+                property: ast
+            }, emit, alloc, scope, false, isRef);
+            emit(")");
+        }
+        else {
+            // set non-local prop
+            EmitMember({
+                type: 'MemberExpression',
+                computed: false,
+                object: { type: 'Identifier', name: r.ident },
+                property: ast
+            }, emit, alloc, scope, false, isRef);
+        }
     }
     else {
         emit("--[[ EmitIdentifier WTF ]]nil");
@@ -336,7 +347,7 @@ function EmitArray(ast, emit, alloc, scope) {
     for (var si = 0; si < ast.elements.length; si++) {
         emit("[" + si + "]=");
         var arg = ast.elements[si];
-        EmitExpression(arg, emit, alloc, scope, 0);
+        EmitExpression(arg, emit, alloc, scope, 0, false);
         emit(", ");
     }
     emit("[\"__Length\"]=" + ast.elements.length);
@@ -353,7 +364,7 @@ function EmitSequence(ast, emit, alloc, scope, StatementContext) {
         if (sinkThisExpr) {
             emit(" __Sink(");
         }
-        EmitExpression(arg, emit, alloc, scope, (StatementContext && !sinkThisExpr) ? 1 : 0);
+        EmitExpression(arg, emit, alloc, scope, (StatementContext && !sinkThisExpr) ? 1 : 0, false);
         if (sinkThisExpr) {
             emit(")");
         }
@@ -377,10 +388,10 @@ function EmitObject(ast, emit, alloc, scope) {
             emit(arg.key.value);
         }
         else {
-            EmitExpression(arg.key, emit, alloc, scope, 0);
+            EmitExpression(arg.key, emit, alloc, scope, 0, true);
         }
         emit("\"]=");
-        EmitExpression(arg.value, emit, alloc, scope, 0);
+        EmitExpression(arg.value, emit, alloc, scope, 0, false);
         if (si != ast.properties.length - 1) {
             emit(", ");
         }
@@ -389,9 +400,9 @@ function EmitObject(ast, emit, alloc, scope) {
 }
 function EmitFunctionDeclaration(ast, emit, alloc, scope) {
     emit("local ");
-    EmitExpression(ast.id, emit, alloc, scope, 0);
+    EmitExpression(ast.id, emit, alloc, scope, 0, true);
     emit(";");
-    EmitExpression(ast.id, emit, alloc, scope, 0);
+    EmitExpression(ast.id, emit, alloc, scope, 0, true);
     emit(" = ");
     EmitFunctionExpr(ast, emit, alloc, scope);
 }
@@ -419,10 +430,10 @@ function EmitBlock(ast, emit, alloc, scope, pendingContinueInThisBlock) {
 }
 function EmitAssignment(ast, emit, alloc, scope) {
     var aop = ast.operator;
-    EmitExpression(ast.left, emit, alloc, scope, 0);
+    EmitExpression(ast.left, emit, alloc, scope, 0, true);
     if (aop == '=') {
         emit(aop);
-        EmitExpression(ast.right, emit, alloc, scope, 0);
+        EmitExpression(ast.right, emit, alloc, scope, 0, false);
     }
     else {
         emit('=');
@@ -466,7 +477,7 @@ function EmitUpdate(ast, emit, alloc, scope, StatementContext) {
     }, emit, alloc, scope);
     if (!StatementContext) {
         emit('; return ');
-        EmitExpression(ast.prefix ? ast.argument : itx, emit, alloc, scope, 0);
+        EmitExpression(ast.prefix ? ast.argument : itx, emit, alloc, scope, 0, false);
         emit(' end)())');
     }
     else {
@@ -478,13 +489,13 @@ function EmitUnary(ast, emit, alloc, scope) {
     if (aop == 'typeof') {
         emit("__Typeof");
         emit("(");
-        EmitExpression(ast.argument, emit, alloc, scope, 0);
+        EmitExpression(ast.argument, emit, alloc, scope, 0, false);
         emit(")");
     }
     else if (aop == '~') {
         emit("bit32.bnot");
         emit("(");
-        EmitExpression(ast.argument, emit, alloc, scope, 0);
+        EmitExpression(ast.argument, emit, alloc, scope, 0, false);
         emit(")");
     }
     else if (aop == 'delete') {
@@ -495,12 +506,12 @@ function EmitUnary(ast, emit, alloc, scope) {
     }
     else if (aop == '!') {
         emit("(not __ToBoolean(");
-        EmitExpression(ast.argument, emit, alloc, scope, 0);
+        EmitExpression(ast.argument, emit, alloc, scope, 0, false);
         emit("))");
     }
     else if (aop == '+' || aop == '-') {
         emit(aop == '-' ? "(-__ToNumber(" : "(__ToNumber("); // TODO ToNumber
-        EmitExpression(ast.argument, emit, alloc, scope, 0);
+        EmitExpression(ast.argument, emit, alloc, scope, 0, false);
         emit("))");
     }
     else {
@@ -517,7 +528,7 @@ function EmitDelete(ast, emit, alloc, scope) {
         var ma = ast.argument;
         emit("__Delete"); // TODO emit callexpr
         emit("(");
-        EmitExpression(ma.object, emit, alloc, scope, 0);
+        EmitExpression(ma.object, emit, alloc, scope, 0, true);
         emit(", \"");
         emit(ma.property.name);
         emit("\")");
@@ -526,9 +537,9 @@ function EmitDelete(ast, emit, alloc, scope) {
         var mm = ast.argument;
         emit("__Delete");
         emit("(");
-        EmitExpression({ type: 'ThisExpression' }, emit, alloc, scope, 0);
+        EmitExpression({ type: 'ThisExpression' }, emit, alloc, scope, 0, true);
         emit(", \"");
-        emit(mm.name);
+        emit(mm.name); // TODO error-prone
         emit("\")");
     }
     else if (ast.argument.type == 'ThisExpression') {
@@ -590,7 +601,7 @@ function EmitStatement(stmt, emit, alloc, scope, pendingContinueInThisBlock) {
             if (NonSinkableExpressionTypes.indexOf(et) == -1) {
                 emit(" __Sink(");
             }
-            EmitExpression(stmt.expression, emit, alloc, scope, 1);
+            EmitExpression(stmt.expression, emit, alloc, scope, 1, false);
             if (NonSinkableExpressionTypes.indexOf(et) == -1) {
                 emit(")");
             }
@@ -615,7 +626,7 @@ var topContinueTargetLabelId = null;
 function EmitContinue(ast, emit, alloc, scope) {
     if (ast.label) {
         emit(" goto ");
-        EmitExpression(ast.label, emit, alloc, scope, 0);
+        EmitName(ast.label, emit, alloc);
     }
     else {
         var pc = "__Continue" + alloc();
@@ -625,11 +636,11 @@ function EmitContinue(ast, emit, alloc, scope) {
 }
 function EmitLabeled(ast, emit, alloc, scope) {
     emit("::");
-    EmitExpression(ast.label, emit, alloc, scope, 0);
+    EmitName(ast.label, emit, alloc);
     emit(":: ");
     EmitStatement(ast.body, emit, alloc, scope, false);
     emit("::");
-    EmitExpression(ast.label, emit, alloc, scope, 0);
+    EmitName(ast.label, emit, alloc);
     emit("__After:: ");
 }
 function EmitDoWhileStatement(ast, emit, alloc, scope) {
@@ -640,12 +651,12 @@ function EmitDoWhileStatement(ast, emit, alloc, scope) {
         topContinueTargetLabelId = null;
     }
     emit(" until not __ToBoolean(");
-    EmitExpression(ast.test, emit, alloc, scope, 0);
+    EmitExpression(ast.test, emit, alloc, scope, 0, false);
     emit(")");
 }
 function EmitWhileStatement(ast, emit, alloc, scope) {
     emit("while __ToBoolean(");
-    EmitExpression(ast.test, emit, alloc, scope, 0);
+    EmitExpression(ast.test, emit, alloc, scope, 0, false);
     emit(") do ");
     EmitStatement(ast.body, emit, alloc, scope, true);
     if (topContinueTargetLabelId) {
@@ -656,7 +667,7 @@ function EmitWhileStatement(ast, emit, alloc, scope) {
 }
 function EmitIf(ast, emit, alloc, scope) {
     emit("if __ToBoolean(");
-    EmitExpression(ast.test, emit, alloc, scope, 0);
+    EmitExpression(ast.test, emit, alloc, scope, 0, false);
     emit(") then\r\n");
     EmitStatement(ast.consequent, emit, alloc, scope, false);
     if (ast.alternate) {
@@ -670,26 +681,26 @@ function EmitWith(ast, emit, alloc, scope) {
     // ignoring ast.object
     var scopeHolder = "__tmp" + alloc();
     emit("\r\nlocal " + scopeHolder + " = __ToObject(");
-    EmitExpression(ast.object, emit, alloc, scope, 0);
+    EmitExpression(ast.object, emit, alloc, scope, 0, false);
     emit(") -- WithStmt\r\n");
     scope.pushObjectIdent(scopeHolder, "with");
-    EmitExpression(ast.body, emit, alloc, scope, 0);
+    EmitStatement(ast.body, emit, alloc, scope, false);
     scope.popScope();
     emit("\r\n -- WithStmtEnd\r\n");
 }
 function EmitReturn(ast, emit, alloc, scope) {
     emit("return ");
-    EmitExpression(ast.argument, emit, alloc, scope, 0);
+    EmitExpression(ast.argument, emit, alloc, scope, 0, false);
 }
 function EmitThrow(ast, emit, alloc, scope) {
     emit("error({[\"data\"]="); // TODO proper exceptions
-    EmitExpression(ast.argument, emit, alloc, scope, 0);
+    EmitExpression(ast.argument, emit, alloc, scope, 0, false);
     emit("})");
 }
 function EmitBreak(ast, emit, alloc, scope) {
     if (ast.label) {
         emit(" goto ");
-        EmitExpression(ast.label, emit, alloc, scope, 0);
+        EmitName(ast.label, emit, alloc);
         emit("__After");
     }
     else {
@@ -716,17 +727,9 @@ function EmitBinary(ast, emit, alloc, scope, StatementContext) {
             aop = '~=';
         }
         emit("(");
-        //if (ast.left.type == 'AssignmentExpression' || ast.left.type == 'UpdateExpression') {
-        //    console.log("Inline Assignment Codegen not implemented");
-        //    emit("--[[IAC]]")
-        //}
-        EmitExpression(ast.left, emit, alloc, scope, 0);
+        EmitExpression(ast.left, emit, alloc, scope, 0, false);
         emit(aop);
-        //if (ast.right.type == 'AssignmentExpression' || ast.right.type == 'UpdateExpression') {
-        //    console.log("Inline Assignment Codegen not implemented");
-        //    emit("--[[IAC]]")
-        //}
-        EmitExpression(ast.right, emit, alloc, scope, 0);
+        EmitExpression(ast.right, emit, alloc, scope, 0, false);
         emit(")");
     }
 }
@@ -739,18 +742,18 @@ function EmitLogical(ast, emit, alloc, scope) {
         aop = ' and ';
     }
     emit("(");
-    EmitExpression(ast.left, emit, alloc, scope, 0);
+    EmitExpression(ast.left, emit, alloc, scope, 0, false);
     emit(aop);
-    EmitExpression(ast.right, emit, alloc, scope, 0);
+    EmitExpression(ast.right, emit, alloc, scope, 0, false);
     emit(")");
 }
 function EmitConditional(ast, emit, alloc, scope) {
     emit("(((");
-    EmitExpression(ast.test, emit, alloc, scope, 0);
+    EmitExpression(ast.test, emit, alloc, scope, 0, false);
     emit(") and __TernarySave(");
-    EmitExpression(ast.consequent, emit, alloc, scope, 0);
+    EmitExpression(ast.consequent, emit, alloc, scope, 0, false);
     emit(") or __TernarySave(");
-    EmitExpression(ast.alternate, emit, alloc, scope, 0);
+    EmitExpression(ast.alternate, emit, alloc, scope, 0, false);
     emit(")) and __TernaryRestore())");
 }
 var reservedLuaKeys = {
@@ -780,7 +783,7 @@ var reservedLuaKeys = {
     'then': true,
     'goto': true,
 };
-function EmitMember(ast, emit, alloc, scope, StatementContext) {
+function EmitMember(ast, emit, alloc, scope, StatementContext, isRef) {
     //if(ast.property.name=='Step') {
     //    console.log(util.inspect(ast, false, 999, true));
     //}
@@ -790,8 +793,8 @@ function EmitMember(ast, emit, alloc, scope, StatementContext) {
         var isReserved = !!reservedLuaKeys[id.name];
         if (ast.object.type == 'Literal') {
             emit("(");
-        }
-        EmitExpression(ast.object, emit, alloc, scope, 0);
+        } // ToObject here?
+        EmitExpression(ast.object, emit, alloc, scope, 0, false);
         if (ast.object.type == 'Literal') {
             emit(")");
         }
@@ -803,12 +806,12 @@ function EmitMember(ast, emit, alloc, scope, StatementContext) {
         if (ast.object.type == 'Literal') {
             emit("(");
         }
-        EmitExpression(ast.object, emit, alloc, scope, 0);
+        EmitExpression(ast.object, emit, alloc, scope, 0, false); // TODO emit SetPropCheck
         if (ast.object.type == 'Literal') {
             emit(")");
         }
         emit("[");
-        EmitExpression(ast.property, emit, alloc, scope, 0);
+        EmitExpression(ast.property, emit, alloc, scope, 0, false);
         if (argIndexer) {
             emit("+1");
         }
@@ -819,12 +822,12 @@ function EmitCall(ast, emit, alloc, scope, StatementContext) {
     if (ast.callee.type == 'MemberExpression') {
         var me = ast.callee;
         emit("__CallMember(");
-        EmitExpression(me.object, emit, alloc, scope, 0);
+        EmitExpression(me.object, emit, alloc, scope, 0, false);
         emit(",");
         if (me.property.type == 'Identifier') {
             emit("\"");
         }
-        EmitExpression(me.property, emit, alloc, scope, 0);
+        EmitExpression(me.property, emit, alloc, scope, 0, false);
         if (me.property.type == 'Identifier') {
             emit("\"");
         }
@@ -835,16 +838,16 @@ function EmitCall(ast, emit, alloc, scope, StatementContext) {
     }
     else if (ast.callee.type == 'FunctionExpression') {
         emit(StatementContext ? ";(" : "(");
-        EmitExpression(ast.callee, emit, alloc, scope, 0);
+        EmitExpression(ast.callee, emit, alloc, scope, 0, false);
         emit(")("); // avoid "ambiguous syntax" 
     }
     else {
-        EmitExpression(ast.callee, emit, alloc, scope, 0);
+        EmitExpression(ast.callee, emit, alloc, scope, 0, false);
         emit("(");
     }
     for (var si = 0; si < ast.arguments.length; si++) {
         var arg = ast.arguments[si];
-        EmitExpression(arg, emit, alloc, scope, 0);
+        EmitExpression(arg, emit, alloc, scope, 0, false);
         if (si != ast.arguments.length - 1) {
             emit(", ");
         }
@@ -853,11 +856,11 @@ function EmitCall(ast, emit, alloc, scope, StatementContext) {
 }
 function EmitNew(ast, emit, alloc, scope) {
     emit("__New(");
-    EmitExpression(ast.callee, emit, alloc, scope, 0);
+    EmitExpression(ast.callee, emit, alloc, scope, 0, false);
     for (var si = 0; si < ast.arguments.length; si++) {
         emit(", ");
         var arg = ast.arguments[si];
-        EmitExpression(arg, emit, alloc, scope, 0);
+        EmitExpression(arg, emit, alloc, scope, 0, false);
     }
     emit(")");
 }

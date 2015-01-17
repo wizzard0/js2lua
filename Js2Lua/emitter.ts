@@ -75,12 +75,12 @@ function EmitVariableDeclarator(vd: esprima.Syntax.VariableDeclarator, emit: (s:
     emit("local ");
     EmitName(vd.id, emit, alloc); // identifier
     emit(" = ");
-    EmitExpression(vd.init, emit, alloc, scope, 0);
+    EmitExpression(vd.init, emit, alloc, scope, 0, false);
     emit("\r\n");
 }
 
 function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void, alloc: () => number,
-    scope: scoping.ScopeStack, statementContext: number) {
+    scope: scoping.ScopeStack, statementContext: number, isRef: boolean) {
     if (!ex) {
         emit('nil');
         return;
@@ -104,7 +104,7 @@ function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void
                 emit('((function() ');
                 EmitAssignment(rightA, emit, alloc, scope);
                 emit('; return ');
-                EmitExpression(rightA.left, emit, alloc, scope, 0);
+                EmitExpression(rightA.left, emit, alloc, scope, 0, false);
                 emit(' end)())');
             }
             break;
@@ -127,7 +127,7 @@ function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void
             EmitObject(<esprima.Syntax.ObjectExpression>ex, emit, alloc, scope);
             break;
         case "MemberExpression":
-            EmitMember(<esprima.Syntax.MemberExpression>ex, emit, alloc, scope, statementContext != 0);
+            EmitMember(<esprima.Syntax.MemberExpression>ex, emit, alloc, scope, statementContext != 0, isRef);
             break;
         case "UnaryExpression":
             EmitUnary(<esprima.Syntax.UnaryExpression>ex, emit, alloc, scope);
@@ -136,7 +136,7 @@ function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void
             EmitFunctionExpr(<esprima.Syntax.FunctionExpression>ex, emit, alloc, scope);
             break;
         case "Identifier":
-            EmitIdentifier(<esprima.Syntax.Identifier>ex, emit, alloc, scope);
+            EmitIdentifier(<esprima.Syntax.Identifier>ex, emit, alloc, scope, isRef);
             break;
         case "ThisExpression":
             emit("self");
@@ -210,7 +210,7 @@ function EmitForStatement(ast: esprima.Syntax.ForStatement, emit: (s: string) =>
     }
     emit("\r\nwhile __ToBoolean(");
     if (ast.test) {
-        EmitExpression(ast.test, emit, alloc, scope, 0);
+        EmitExpression(ast.test, emit, alloc, scope, 0, false);
     } else {
         emit("true");
     }
@@ -227,7 +227,7 @@ function EmitForStatement(ast: esprima.Syntax.ForStatement, emit: (s: string) =>
         if (NonSinkableExpressionTypes.indexOf(aut) == -1) {
             emit("__Sink(");
         }
-        EmitExpression(ast.update, emit, alloc, scope, 1);
+        EmitExpression(ast.update, emit, alloc, scope, 1, false);
         if (NonSinkableExpressionTypes.indexOf(aut) == -1) {
             emit(")");
         }
@@ -244,12 +244,12 @@ function EmitForInStatement(ast: esprima.Syntax.ForInStatement, emit: (s: string
     emit("for ");
     if (ast.left.type == 'VariableDeclaration') {
         var vd = <esprima.Syntax.VariableDeclaration><any>ast.left;
-        EmitExpression(vd.declarations[0].id, emit, alloc, scope, 0);
+        EmitExpression(vd.declarations[0].id, emit, alloc, scope, 0, true/* indifferent */);
     } else {
-        EmitExpression(ast.left, emit, alloc, scope, 0);
+        EmitExpression(ast.left, emit, alloc, scope, 0, true/*indifferent*/);
     }
     emit(",");
-    EmitExpression({ type: 'Identifier', name: '_tmp' + alloc() }, emit, alloc, scope, 0);
+    EmitExpression({ type: 'Identifier', name: '_tmp' + alloc() }, emit, alloc, scope, 0, false);
     emit(" in ");
     EmitCall({
         type: 'CallExpression',
@@ -269,26 +269,36 @@ function EmitVariableDeclaratorOrExpression(ast: esprima.Syntax.VariableDeclarat
     if (ast.type == 'VariableDeclaration') {
         EmitVariableDeclaration(<esprima.Syntax.VariableDeclaration><any>ast, emit, alloc, scope);
     } else if (esutils.ast.isExpression(ast)) {
-        EmitExpression(ast, emit, alloc, scope, 1);
+        EmitExpression(ast, emit, alloc, scope, 1, false);
     } else {
         emit("--[[5"); emit(ast.type); emit("]]");
         console.log(util.inspect(ast, false, 999, true));
     }
 }
 
-function EmitIdentifier(ast: esprima.Syntax.Identifier, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack) {
+function EmitIdentifier(ast: esprima.Syntax.Identifier, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack, isRef: boolean) {
     var r = scope.lookupReference(ast.name);
     if (r.type == 'Lexical') {
         EmitName(ast, emit, alloc);
     } else if (r.type == 'Object') {
-        emit("__RefCheck(");
-        EmitMember({
-            type: 'MemberExpression',
-            computed: false,
-            object: { type: 'Identifier', name: r.ident },
-            property: ast
-        }, emit, alloc, scope, false);
-        emit(")");
+        if (!isRef) {
+            emit("__RefCheck(");
+            EmitMember({
+                type: 'MemberExpression',
+                computed: false,
+                object: { type: 'Identifier', name: r.ident },
+                property: ast
+            }, emit, alloc, scope, false, isRef);
+            emit(")");
+        } else {
+            // set non-local prop
+            EmitMember({
+                type: 'MemberExpression',
+                computed: false,
+                object: { type: 'Identifier', name: r.ident },
+                property: ast
+            }, emit, alloc, scope, false, isRef);
+        }
     } else {
         emit("--[[ EmitIdentifier WTF ]]nil");
     }
@@ -341,7 +351,7 @@ function EmitArray(ast: esprima.Syntax.ArrayExpression, emit: (s: string) => voi
     for (var si = 0; si < ast.elements.length; si++) {
         emit("[" + si + "]=");
         var arg = ast.elements[si];
-        EmitExpression(arg, emit, alloc, scope, 0);
+        EmitExpression(arg, emit, alloc, scope, 0, false);
         emit(", ");
     }
     emit("[\"__Length\"]=" + ast.elements.length);
@@ -357,7 +367,7 @@ function EmitSequence(ast: esprima.Syntax.SequenceExpression, emit: (s: string) 
         var et = arg.type;
         var sinkThisExpr = StatementContext && NonSinkableExpressionTypes.indexOf(et) == -1;
         if (sinkThisExpr) { emit(" __Sink("); }
-        EmitExpression(arg, emit, alloc, scope, (StatementContext && !sinkThisExpr) ? 1 : 0);
+        EmitExpression(arg, emit, alloc, scope, (StatementContext && !sinkThisExpr) ? 1 : 0, false);
         if (sinkThisExpr) { emit(")"); }
         if (si != ast.expressions.length - 1) {
             emit(StatementContext ? "\r\n" : ", ");
@@ -379,10 +389,10 @@ function EmitObject(ast: esprima.Syntax.ObjectExpression, emit: (s: string) => v
         if (arg.key.type == 'Literal') {
             emit(arg.key.value);
         } else { // identifiers already ok
-            EmitExpression(arg.key, emit, alloc, scope, 0);
+            EmitExpression(arg.key, emit, alloc, scope, 0, true);
         }
         emit("\"]=");
-        EmitExpression(arg.value, emit, alloc, scope, 0);
+        EmitExpression(arg.value, emit, alloc, scope, 0, false);
         if (si != ast.properties.length - 1) {
             emit(", ");
         }
@@ -392,9 +402,9 @@ function EmitObject(ast: esprima.Syntax.ObjectExpression, emit: (s: string) => v
 
 function EmitFunctionDeclaration(ast: esprima.Syntax.FunctionDeclaration, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack) {
     emit("local ");
-    EmitExpression(ast.id, emit, alloc, scope, 0);
+    EmitExpression(ast.id, emit, alloc, scope, 0, true);
     emit(";");
-    EmitExpression(ast.id, emit, alloc, scope, 0);
+    EmitExpression(ast.id, emit, alloc, scope, 0, true);
     emit(" = ");
     EmitFunctionExpr(ast, emit, alloc, scope);
 }
@@ -420,10 +430,10 @@ function EmitBlock(ast: esprima.Syntax.BlockStatement, emit: (s: string) => void
 
 function EmitAssignment(ast: esprima.Syntax.AssignmentExpression, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack) {
     var aop = ast.operator;
-    EmitExpression(ast.left, emit, alloc, scope, 0);
+    EmitExpression(ast.left, emit, alloc, scope, 0, true);
     if (aop == '=') {
         emit(aop);
-        EmitExpression(ast.right, emit, alloc, scope, 0);
+        EmitExpression(ast.right, emit, alloc, scope, 0, false);
     } else {
         emit('=');
         EmitBinary({
@@ -465,7 +475,7 @@ function EmitUpdate(ast: esprima.Syntax.UpdateExpression, emit: (s: string) => v
     }, emit, alloc, scope);
     if (!StatementContext) {
         emit('; return ');
-        EmitExpression(ast.prefix ? ast.argument : itx, emit, alloc, scope, 0);
+        EmitExpression(ast.prefix ? ast.argument : itx, emit, alloc, scope, 0, false);
         emit(' end)())');
     } else {
         emit(";");
@@ -477,12 +487,12 @@ function EmitUnary(ast: esprima.Syntax.UnaryExpression, emit: (s: string) => voi
     if (aop == 'typeof') {
         emit("__Typeof");
         emit("(");
-        EmitExpression(ast.argument, emit, alloc, scope, 0);
+        EmitExpression(ast.argument, emit, alloc, scope, 0, false);
         emit(")");
     } else if (aop == '~') {
         emit("bit32.bnot");
         emit("(");
-        EmitExpression(ast.argument, emit, alloc, scope, 0);
+        EmitExpression(ast.argument, emit, alloc, scope, 0, false);
         emit(")");
     } else if (aop == 'delete') {
         EmitDelete(ast, emit, alloc, scope);
@@ -490,11 +500,11 @@ function EmitUnary(ast: esprima.Syntax.UnaryExpression, emit: (s: string) => voi
         emit("nil");
     } else if (aop == '!') {
         emit("(not __ToBoolean(");
-        EmitExpression(ast.argument, emit, alloc, scope, 0);
+        EmitExpression(ast.argument, emit, alloc, scope, 0, false);
         emit("))");
     } else if (aop == '+' || aop == '-') {
         emit(aop == '-' ? "(-__ToNumber(" : "(__ToNumber("); // TODO ToNumber
-        EmitExpression(ast.argument, emit, alloc, scope, 0);
+        EmitExpression(ast.argument, emit, alloc, scope, 0, false);
         emit("))");
     } else {
         emit("--[[5"); emit(ast.type); emit("]]");
@@ -509,7 +519,7 @@ function EmitDelete(ast: esprima.Syntax.UnaryExpression, emit: (s: string) => vo
         var ma = <esprima.Syntax.MemberExpression>ast.argument;
         emit("__Delete"); // TODO emit callexpr
         emit("(");
-        EmitExpression(ma.object, emit, alloc, scope, 0);
+        EmitExpression(ma.object, emit, alloc, scope, 0, true);
         emit(", \"");
         emit(ma.property.name);
         emit("\")");
@@ -517,9 +527,9 @@ function EmitDelete(ast: esprima.Syntax.UnaryExpression, emit: (s: string) => vo
         var mm = <esprima.Syntax.Identifier>ast.argument;
         emit("__Delete");
         emit("(");
-        EmitExpression({ type: 'ThisExpression' }, emit, alloc, scope, 0);
+        EmitExpression({ type: 'ThisExpression' }, emit, alloc, scope, 0, true);
         emit(", \"");
-        emit(mm.name);
+        emit(mm.name); // TODO error-prone
         emit("\")");
     } else if (ast.argument.type == 'ThisExpression') {
         emit("(true)"); // totally correct per ECMA-262
@@ -579,7 +589,7 @@ function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void
         case "ExpressionStatement":
             var et = ((<esprima.Syntax.ExpressionStatement>stmt).expression).type;
             if (NonSinkableExpressionTypes.indexOf(et) == -1) { emit(" __Sink("); }
-            EmitExpression((<esprima.Syntax.ExpressionStatement>stmt).expression, emit, alloc, scope, 1);
+            EmitExpression((<esprima.Syntax.ExpressionStatement>stmt).expression, emit, alloc, scope, 1, false);
             if (NonSinkableExpressionTypes.indexOf(et) == -1) { emit(")"); }
             break;
         case "VariableDeclaration":
@@ -602,7 +612,7 @@ var topContinueTargetLabelId: string = null;
 function EmitContinue(ast: esprima.Syntax.ContinueStatement, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack) {
     if (ast.label) {
         emit(" goto ");
-        EmitExpression(ast.label, emit, alloc, scope, 0);
+        EmitName(ast.label, emit, alloc);
     } else {
         var pc = "__Continue" + alloc();
         topContinueTargetLabelId = pc;
@@ -612,11 +622,11 @@ function EmitContinue(ast: esprima.Syntax.ContinueStatement, emit: (s: string) =
 
 function EmitLabeled(ast: esprima.Syntax.LabeledStatement, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack) {
     emit("::");
-    EmitExpression(ast.label, emit, alloc, scope, 0);
+    EmitName(ast.label, emit, alloc);
     emit(":: ");
     EmitStatement(ast.body, emit, alloc, scope, false);
     emit("::");
-    EmitExpression(ast.label, emit, alloc, scope, 0);
+    EmitName(ast.label, emit, alloc);
     emit("__After:: ");
 }
 
@@ -627,13 +637,13 @@ function EmitDoWhileStatement(ast: esprima.Syntax.DoWhileStatement, emit: (s: st
         emit("::" + topContinueTargetLabelId + "::\r\n"); topContinueTargetLabelId = null;
     }
     emit(" until not __ToBoolean(");
-    EmitExpression(ast.test, emit, alloc, scope, 0);
+    EmitExpression(ast.test, emit, alloc, scope, 0, false);
     emit(")");
 }
 
 function EmitWhileStatement(ast: esprima.Syntax.WhileStatement, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack) {
     emit("while __ToBoolean(");
-    EmitExpression(ast.test, emit, alloc, scope, 0);
+    EmitExpression(ast.test, emit, alloc, scope, 0, false);
     emit(") do ");
     EmitStatement(<esprima.Syntax.BlockStatement>ast.body, emit, alloc, scope, true);
     if (topContinueTargetLabelId) {
@@ -644,7 +654,7 @@ function EmitWhileStatement(ast: esprima.Syntax.WhileStatement, emit: (s: string
 
 function EmitIf(ast: esprima.Syntax.IfStatement, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack) {
     emit("if __ToBoolean(");
-    EmitExpression(ast.test, emit, alloc, scope, 0);
+    EmitExpression(ast.test, emit, alloc, scope, 0, false);
     emit(") then\r\n");
     EmitStatement(ast.consequent, emit, alloc, scope, false);
     if (ast.alternate) {
@@ -660,29 +670,29 @@ function EmitWith(ast: esprima.Syntax.WithStatement, emit: (s: string) => void, 
     var scopeHolder = "__tmp" + alloc();
 
     emit("\r\nlocal " + scopeHolder + " = __ToObject(");
-    EmitExpression(ast.object, emit, alloc, scope, 0);
+    EmitExpression(ast.object, emit, alloc, scope, 0, false);
     emit(") -- WithStmt\r\n");
     scope.pushObjectIdent(scopeHolder, "with");
-    EmitExpression(ast.body, emit, alloc, scope, 0);
+    EmitStatement(ast.body, emit, alloc, scope, false);
     scope.popScope();
     emit("\r\n -- WithStmtEnd\r\n");
 }
 
 function EmitReturn(ast: esprima.Syntax.ReturnStatement, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack) {
     emit("return ");
-    EmitExpression(ast.argument, emit, alloc, scope, 0);
+    EmitExpression(ast.argument, emit, alloc, scope, 0, false);
 }
 
 function EmitThrow(ast: esprima.Syntax.ThrowStatement, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack) {
     emit("error({[\"data\"]="); // TODO proper exceptions
-    EmitExpression(ast.argument, emit, alloc, scope, 0);
+    EmitExpression(ast.argument, emit, alloc, scope, 0, false);
     emit("})");
 }
 
 function EmitBreak(ast: esprima.Syntax.BreakStatement, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack) {
     if (ast.label) {
         emit(" goto ");
-        EmitExpression(ast.label, emit, alloc, scope, 0);
+        EmitName(ast.label, emit, alloc);
         emit("__After");
     } else {
         emit("break ");
@@ -709,17 +719,9 @@ function EmitBinary(ast: esprima.Syntax.BinaryExpression, emit: (s: string) => v
             aop = '~=';
         }
         emit("(");
-        //if (ast.left.type == 'AssignmentExpression' || ast.left.type == 'UpdateExpression') {
-        //    console.log("Inline Assignment Codegen not implemented");
-        //    emit("--[[IAC]]")
-        //}
-        EmitExpression(ast.left, emit, alloc, scope, 0);
+        EmitExpression(ast.left, emit, alloc, scope, 0, false);
         emit(aop);
-        //if (ast.right.type == 'AssignmentExpression' || ast.right.type == 'UpdateExpression') {
-        //    console.log("Inline Assignment Codegen not implemented");
-        //    emit("--[[IAC]]")
-        //}
-        EmitExpression(ast.right, emit, alloc, scope, 0);
+        EmitExpression(ast.right, emit, alloc, scope, 0, false);
         emit(")");
     }
 }
@@ -734,19 +736,19 @@ function EmitLogical(ast: esprima.Syntax.BinaryExpression, emit: (s: string) => 
         aop = ' and ';
     }
     emit("(");
-    EmitExpression(ast.left, emit, alloc, scope, 0);
+    EmitExpression(ast.left, emit, alloc, scope, 0, false);
     emit(aop);
-    EmitExpression(ast.right, emit, alloc, scope, 0);
+    EmitExpression(ast.right, emit, alloc, scope, 0, false);
     emit(")");
 }
 
 function EmitConditional(ast: esprima.Syntax.ConditionalExpression, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack) {
     emit("(((");
-    EmitExpression(ast.test, emit, alloc, scope, 0);
+    EmitExpression(ast.test, emit, alloc, scope, 0, false);
     emit(") and __TernarySave(");
-    EmitExpression(ast.consequent, emit, alloc, scope, 0);
+    EmitExpression(ast.consequent, emit, alloc, scope, 0, false);
     emit(") or __TernarySave(");
-    EmitExpression(ast.alternate, emit, alloc, scope, 0);
+    EmitExpression(ast.alternate, emit, alloc, scope, 0, false);
     emit(")) and __TernaryRestore())");
 }
 
@@ -778,7 +780,7 @@ var reservedLuaKeys = {
     'goto': true,
 }
 
-function EmitMember(ast: esprima.Syntax.MemberExpression, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack, StatementContext: boolean) {
+function EmitMember(ast: esprima.Syntax.MemberExpression, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack, StatementContext: boolean, isRef: boolean) {
     //if(ast.property.name=='Step') {
     //    console.log(util.inspect(ast, false, 999, true));
     //}
@@ -786,18 +788,18 @@ function EmitMember(ast: esprima.Syntax.MemberExpression, emit: (s: string) => v
     if (ast.property.type == 'Identifier' && !ast.computed) {
         var id = <esprima.Syntax.Identifier>ast.property;
         var isReserved = !!reservedLuaKeys[id.name];
-        if (ast.object.type == 'Literal') { emit("("); }
-        EmitExpression(ast.object, emit, alloc, scope, 0);
+        if (ast.object.type == 'Literal') { emit("("); } // ToObject here?
+        EmitExpression(ast.object, emit, alloc, scope, 0, false);
         if (ast.object.type == 'Literal') { emit(")"); }
         emit(isReserved ? "[\"" : ".");
         emit(id.name); // cannot EmitIdentifier because of escaping
         emit(isReserved ? "\"]" : "");
     } else {
         if (ast.object.type == 'Literal') { emit("("); }
-        EmitExpression(ast.object, emit, alloc, scope, 0);
+        EmitExpression(ast.object, emit, alloc, scope, 0, false); // TODO emit SetPropCheck
         if (ast.object.type == 'Literal') { emit(")"); }
         emit("[");
-        EmitExpression(ast.property, emit, alloc, scope, 0);
+        EmitExpression(ast.property, emit, alloc, scope, 0, false);
         if (argIndexer) {
             emit("+1");
         }
@@ -809,25 +811,25 @@ function EmitCall(ast: esprima.Syntax.CallExpression, emit: (s: string) => void,
     if (ast.callee.type == 'MemberExpression') {
         var me = <esprima.Syntax.MemberExpression>ast.callee;
         emit("__CallMember(");
-        EmitExpression(me.object, emit, alloc, scope, 0);
+        EmitExpression(me.object, emit, alloc, scope, 0, false);
         emit(",");
         if (me.property.type == 'Identifier') { emit("\""); }
-        EmitExpression(me.property, emit, alloc, scope, 0);
+        EmitExpression(me.property, emit, alloc, scope, 0, false);
         if (me.property.type == 'Identifier') { emit("\""); }
         emit(ast.arguments.length ? "," : "");
     } else if (ast.callee.type == 'Literal') {
         emit("__LiteralCallFail(");
     } else if (ast.callee.type == 'FunctionExpression') { // IIFE pattern
         emit(StatementContext ? ";(" : "(");
-        EmitExpression(ast.callee, emit, alloc, scope, 0);
+        EmitExpression(ast.callee, emit, alloc, scope, 0, false);
         emit(")("); // avoid "ambiguous syntax" 
     } else {
-        EmitExpression(ast.callee, emit, alloc, scope, 0);
+        EmitExpression(ast.callee, emit, alloc, scope, 0, false);
         emit("(");
     }
     for (var si = 0; si < ast.arguments.length; si++) {
         var arg = ast.arguments[si];
-        EmitExpression(arg, emit, alloc, scope, 0);
+        EmitExpression(arg, emit, alloc, scope, 0, false);
         if (si != ast.arguments.length - 1) {
             emit(", ");
         }
@@ -837,11 +839,11 @@ function EmitCall(ast: esprima.Syntax.CallExpression, emit: (s: string) => void,
 
 function EmitNew(ast: esprima.Syntax.CallExpression, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack) {
     emit("__New(");
-    EmitExpression(ast.callee, emit, alloc, scope, 0);
+    EmitExpression(ast.callee, emit, alloc, scope, 0, false);
     for (var si = 0; si < ast.arguments.length; si++) {
         emit(", ");
         var arg = ast.arguments[si];
-        EmitExpression(arg, emit, alloc, scope, 0);
+        EmitExpression(arg, emit, alloc, scope, 0, false);
     }
     emit(")");
 }
