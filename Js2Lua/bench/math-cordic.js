@@ -93,4 +93,4 @@ function cordic( runs ) {
 }
 
 var result = cordic(2000000);
-console.log(result);
+//console.log(result);
