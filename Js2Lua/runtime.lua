@@ -196,19 +196,20 @@ local function __Put(table, k, v)
 end
 
 local function __ArrayPut(table, k, v)
-    local oi = bit32.tobit(tonumber(k))
+    local oi = bit32.tobit(tonumber(k) or 1/0)
+    local bs = rawget(table, '__BackingStore')
     if k=='length' then
-        local ol = tonumber(table.__BackingStore.length)
-        local nl = tonumber(v)
+        local ol = bit32.tobit(tonumber(bs.length))
+        local nl = bit32.tobit(tonumber(v))
         if nl < ol then
-            for i=nl,ol do table.__BackingStore[i]=nil end
+            for i=nl,ol do bs[i]=nil end
         end
-        table.__BackingStore.length = nl
-    else if oi~=nil
-        local ol = tonumber(table.__BackingStore.length)
-        table.__BackingStore[oi]=v
+        bs.length = nl
+    elseif oi~=nil then
+        local ol = bit32.tobit(tonumber(bs.length))
+        bs[oi]=v
         if oi>=ol then
-            table.__BackingStore.length = oi+1
+            bs.length = oi+1
         end
     else -- non-numeric property
         rawset(table, k, v)
@@ -216,13 +217,14 @@ local function __ArrayPut(table, k, v)
 end
 
 local function __ArrayGet(table, k)
-    local oi = bit32.tobit(tonumber(k))
+    local oi = bit32.tobit(tonumber(k) or 1/0)
+    local bs = rawget(table, '__BackingStore')
     if k=='length' then
-        local ol = tonumber(table.__BackingStore.length)
-        return table.__BackingStore.length
-    else if oi~=nil
-        local ol = tonumber(table.__BackingStore.length)
-        return table.__BackingStore[oi]
+        local ol = bit32.tobit(tonumber(bs.length))
+        return bs.length
+    elseif oi~=nil then
+        local ol = bit32.tobit(tonumber(bs.length))
+        return bs[oi]
     else -- non-numeric property
         return rawget(table, k)
     end
@@ -439,6 +441,7 @@ local Array = __New(Function)
 __JsGlobalObjects.Array = Array
 Array.__CallImpl = function(self, ...) -- number or varargs...
   self = self or __New(Array)
+  self.__BackingStore = {["length"]=0}
   setmetatable(self, __ArrayMetatable)
   local orig = {...}
   -- print('array with ' .. #orig .. ' args')
