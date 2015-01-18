@@ -759,12 +759,6 @@ end
 
 local function _USD_INCLUDE() end
 
-local function runTestCase(x, testcase)
-  if (testcase() ~= true) then
-    _USD_ERROR("Test case returned non-true value!")
-  end
-end
-
 local self = __JsGlobalObjects
 
 local function fnGlobalObject()

@@ -36,7 +36,7 @@ function ComparePrograms(fn) {
     var hasAnythingToDoWithDate = /Date(\.|\()/.exec(source);
     var hasIntl = /testIntl|\bIntl\b/.exec(source);
     var expectErrors = false;
-    var polyfillSrc = emitter.convertFile(polyfills, "polyfills.js", false);
+    //var polyfillSrc = emitter.convertFile(polyfills, "polyfills.js", false);
     var jsVersionFailureDict = {};
     //    console.log("AfterPF");
     if (false || hasOther) {
@@ -48,9 +48,9 @@ function ComparePrograms(fn) {
     }
     if (expectErrors) {
         try {
-            var luasrc = emitter.convertFile(source, fn, false);
+            var luasrc = emitter.convertFile(polyfills + source, fn, false);
             vm.runInNewContext(jsRT + source, { print: print }, fn);
-            var lua_stdout = RunProgram(luaRT + polyfillSrc + luasrc, flua);
+            var lua_stdout = RunProgram(luaRT + luasrc, flua);
             if (js_stdout.trim().length == 0 || lua_stdout.trim().length == 0) {
                 console.log(" NEG FAIL! == " + fn);
                 return false;
@@ -66,7 +66,7 @@ function ComparePrograms(fn) {
         }
     }
     else {
-        var luasrc = emitter.convertFile(source, fn, false);
+        var luasrc = emitter.convertFile(polyfills + source, fn, false);
         if (/--\[\[/.exec(luasrc)) {
             console.log(" [FAIL] NO CODE GENERATED " + fn);
             console.log("PARTIAL: ", luasrc);
@@ -85,7 +85,7 @@ function ComparePrograms(fn) {
             return "skip";
         }
         var time2 = +new Date();
-        var lua_stdout = RunProgram(luaRT + polyfillSrc + luasrc, flua);
+        var lua_stdout = RunProgram(luaRT + luasrc, flua);
         var time3 = +new Date();
         var t1 = js_stdout.trim().replace(/\r\n/g, '\n');
         var t2 = lua_stdout.trim().replace(/\r\n/g, '\n');

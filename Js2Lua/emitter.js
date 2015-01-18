@@ -58,7 +58,6 @@ var Intrinsics = [
     '$PRINT',
     '$FAIL',
     '$INCLUDE',
-    'runTestCase',
     'fnExists',
     'Infinity',
     'NaN',

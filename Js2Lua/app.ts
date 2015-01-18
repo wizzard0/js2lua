@@ -20,7 +20,7 @@ function ComparePrograms(fn: string): any {
     var js_stdout = "";
     var print = function (s) {
         js_stdout += s + "\r\n";
-       // console.log(s);
+        // console.log(s);
     };
     //var print = console.log;
     var flua = fn.replace(".js", ".lua");
@@ -40,18 +40,18 @@ function ComparePrograms(fn: string): any {
     var hasAnythingToDoWithDate = /Date(\.|\()/.exec(source);
     var hasIntl = /testIntl|\bIntl\b/.exec(source);
     var expectErrors = false;
-    var polyfillSrc = emitter.convertFile(polyfills, "polyfills.js", false);
+    //var polyfillSrc = emitter.convertFile(polyfills, "polyfills.js", false);
     var jsVersionFailureDict = {};
-//    console.log("AfterPF");
+    //    console.log("AfterPF");
     if (
         false
-      //  || hasEval || hasWith
-    //|| hasTry
+        //  || hasEval || hasWith
+        //|| hasTry
         //|| hasSwitch
-         || hasOther 
-      //  || weirdTests
-       // || hasAnythingToDoWithDate
-      //  || hasGlobalDeleteTest || hasIntl || onlyStrict
+        || hasOther
+    //  || weirdTests
+    // || hasAnythingToDoWithDate
+    //  || hasGlobalDeleteTest || hasIntl || onlyStrict
         ) {
         //console.log(" [SKIP]");
         return "skip";
@@ -61,9 +61,9 @@ function ComparePrograms(fn: string): any {
     }
     if (expectErrors) {
         try {
-            var luasrc = emitter.convertFile(source, fn, false);
+            var luasrc = emitter.convertFile(polyfills + source, fn, false);
             vm.runInNewContext(jsRT + source, { print: print }, fn);
-            var lua_stdout = RunProgram(luaRT + polyfillSrc + luasrc, flua);
+            var lua_stdout = RunProgram(luaRT + luasrc, flua);
             if (js_stdout.trim().length == 0 || lua_stdout.trim().length == 0) {
                 console.log(" NEG FAIL! == " + fn);
                 return false;
@@ -76,7 +76,7 @@ function ComparePrograms(fn: string): any {
             return true;
         }
     } else {
-        var luasrc = emitter.convertFile(source, fn, false);
+        var luasrc = emitter.convertFile(polyfills + source, fn, false);
         if (/--\[\[/.exec(luasrc)) {
             console.log(" [FAIL] NO CODE GENERATED " + fn);
             console.log("PARTIAL: ", luasrc);
@@ -84,7 +84,7 @@ function ComparePrograms(fn: string): any {
         }
         var time1 = +new Date();
         try {
-           vm.runInNewContext(jsRT + source, { print: print }, fn);
+            vm.runInNewContext(jsRT + source, { print: print }, fn);
         } catch (e) {
             var jfs = e.toString();
             if (!(jfs in jsVersionFailureDict)) {
@@ -94,12 +94,12 @@ function ComparePrograms(fn: string): any {
             return "skip";
         }
         var time2 = +new Date();
-        var lua_stdout = RunProgram(luaRT + polyfillSrc + luasrc, flua);
+        var lua_stdout = RunProgram(luaRT + luasrc, flua);
         var time3 = +new Date();
         var t1 = js_stdout.trim().replace(/\r\n/g, '\n');
         var t2 = lua_stdout.trim().replace(/\r\n/g, '\n');
 
-    if ((t1 || t2) && ((t1 != t2) || (/ERROR/.exec(t2)))) {
+        if ((t1 || t2) && ((t1 != t2) || (/ERROR/.exec(t2)))) {
             if (/expected|outside a vararg|undefined label/.exec(lua_stdout)
                 && !/table expected, got/.exec(lua_stdout)
                 && !/value expected/.exec(lua_stdout)
