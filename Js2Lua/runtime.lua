@@ -201,6 +201,12 @@ local function __InstanceOf(table, ctor)
   return false
 end
 
+local function __DiscardThis(f)
+    return function(self, ...)
+        return f(...)
+    end
+end
+
 local function __CallMember(table, key, ...)
   -- print("calling " .. __ToString(key))
   if table == nil then
@@ -210,14 +216,19 @@ local function __CallMember(table, key, ...)
     table = __ToObject(table)
   end
   local unboundMethod = rawget(table, key)
-  if unboundMethod ~= nil then return unboundMethod(...) end
+  if unboundMethod ~= nil then
+      print('cm3')
+      return unboundMethod(table, ...) 
+  end
   if table.__Prototype then
     local boundMethod = __Get(table.__Prototype, key)
     -- print('got boundmethod '..tostring(table)..'.'..tostring(key)..'='..tostring(boundMethod)..'='..tostring(boundMethod ~= nil))
     if boundMethod ~= nil then
       if type(boundMethod) ~= 'function' and boundMethod.__CallImpl then
+        print('cm4')
         return boundMethod.__CallImpl(table, ...) -- wrapped
       else 
+        print('cm5')
         return boundMethod(table, ...) -- builtin
       end
     end
@@ -309,14 +320,17 @@ local function __RefCheck(val)
 end
 
 local function __New(ctor, ...)
-  local obj = {}
-  setmetatable(obj, __ObjectMetatable)
-  obj.__Prototype = ctor.prototype
-  __JsGlobalObjects.Object.defineProperty(obj,'constructor',{["value"]=ctor,["writable"]=true,["configurable"]=true})
-  obj.__TypeofValue = "object"
-  -- print('new:[' .. to_string{...} .. ']')
-  local rv2 = ctor.__CallImpl(obj, ...)
-  if rv2 then return rv2 else return obj end
+    if ctor == nil then
+        error("new NULL!")
+    end
+    local obj = {}
+    setmetatable(obj, __ObjectMetatable)
+    obj.__Prototype = ctor.prototype
+    __JsGlobalObjects.Object.defineProperty(obj,'constructor',{["value"]=ctor,["writable"]=true,["configurable"]=true})
+    obj.__TypeofValue = "object"
+    -- print('new:[' .. to_string{...} .. ']')
+    local rv2 = ctor.__CallImpl(obj, ...)
+    if rv2 then return rv2 else return obj end
 end
 __Helpers.__New = __New
 
@@ -367,30 +381,30 @@ __MathProto.LOG10E = 0.4342944819032518
 __MathProto.LOG2E = 1.4426950408889634
 __MathProto.SQRT1_2 = 0.7071067811865476
 __MathProto.SQRT2 = 1.4142135623730951
-__MathProto.abs  = math.abs
-__MathProto.acos  = math.acos
-__MathProto.asin  = math.asin
-__MathProto.atan  = math.atan
-__MathProto.atan2  = math.atan2
-__MathProto.ceil  = math.ceil
-__MathProto.cos  = math.cos
-__MathProto.cosh  = math.cosh
-__MathProto.exp  = math.exp
-__MathProto.floor  = math.floor
-__MathProto.log  = math.log
-__MathProto.max  = math.max
-__MathProto.min  = math.min
-__MathProto.pow  = math.pow
-__MathProto.random  = math.random
-__MathProto.round = function(num) return math.floor(num+0.5) end -- hack
-__MathProto.sin  = math.sin
-__MathProto.sqrt  = math.sqrt
+__MathProto.abs  = __DiscardThis(math.abs)
+__MathProto.acos  = __DiscardThis(math.acos)
+__MathProto.asin  = __DiscardThis(math.asin)
+__MathProto.atan  = __DiscardThis(math.atan)
+__MathProto.atan2  = __DiscardThis(math.atan2)
+__MathProto.ceil  = __DiscardThis(math.ceil)
+__MathProto.cos  = __DiscardThis(math.cos)
+__MathProto.cosh  = __DiscardThis(math.cosh)
+__MathProto.exp  = __DiscardThis(math.exp)
+__MathProto.floor  = __DiscardThis(math.floor)
+__MathProto.log  = __DiscardThis(math.log)
+__MathProto.max  = __DiscardThis(math.max)
+__MathProto.min  = __DiscardThis(math.min)
+__MathProto.pow  = __DiscardThis(math.pow)
+__MathProto.random  = __DiscardThis(math.random)
+__MathProto.round = function(self, num) return math.floor(num+0.5) end -- hack
+__MathProto.sin  = __DiscardThis(math.sin)
+__MathProto.sqrt  = __DiscardThis(math.sqrt)
 __JsGlobalObjects.Math = __MathProto
 local Math = __MathProto
 
 -- Object
 local Object = { ["prototype"] = {} }
-Object.getOwnPropertyDescriptor = function(object, key)
+Object.getOwnPropertyDescriptor = function(x,object, key)
   -- print(tostring(self).."/"..tostring(object).."/"..tostring(key))
   local length_hack = (key ~= "length")
   local val = 0
@@ -402,9 +416,9 @@ Object.getOwnPropertyDescriptor = function(object, key)
     ["configurable"] = length_hack
   }
 end
-Object.getPrototypeOf = function(obj) return obj.__Prototype end
-Object.isExtensible = function(obj) return true end
-Object.getOwnPropertyNames = function(obj)
+Object.getPrototypeOf = function(x,obj) return obj.__Prototype end
+Object.isExtensible = function(x,obj) return true end
+Object.getOwnPropertyNames = function(x,obj)
   return pairs(obj)
 end
 Object.prototype.hasOwnProperty = function(self, key)
@@ -734,21 +748,21 @@ end)
 --]]
 -- LIBRARY END
 
-local function _USD_ERROR(s)
+local function _USD_ERROR(x, s)
   print("ERROR: ", s)
 end
 
-local function _USD_PRINT(s)
+local function _USD_PRINT(x, s)
   print("INFO: ", s)
 end
 local testFailed = _USD_ERROR
-local function _USD_FAIL(message)
-  testFailed(message)
+local function _USD_FAIL(x, message)
+  testFailed(x, message)
 end
 
 local function _USD_INCLUDE() end
 
-local function runTestCase(testcase)
+local function runTestCase(x, testcase)
   if (testcase() ~= true) then
     _USD_ERROR("Test case returned non-true value!")
   end

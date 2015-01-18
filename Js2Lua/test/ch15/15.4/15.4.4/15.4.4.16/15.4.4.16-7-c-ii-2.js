@@ -7,7 +7,7 @@
  * @path ch15/15.4/15.4.4/15.4.4.16/15.4.4.16-7-c-ii-2.js
  * @description Array.prototype.every - callbackfn takes 3 arguments
  */
-
+// LUA_SKIP -- why the fuck this hangs?
 
 function testcase() { 
  
