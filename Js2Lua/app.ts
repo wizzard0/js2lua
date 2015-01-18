@@ -6,15 +6,15 @@ import glob = require("glob");
 var vm = require("vm");
 
 
-function RunProgram(src: string, ff: string) {
+function RunProgram(src: string, ff: string, profile: boolean) {
     fs.writeFileSync(ff, src);
-    var rc = sh.exec("\\bin\\luajit\\luajit " + ff);
+    var rc = sh.exec("\\bin\\luajit\\luajit " + (profile ? "-jp=a " : "") + ff);
     //console.log(rc.stdout);
     //console.log("Return Code", rc.code);
     return rc.stdout;
 }
 
-function ComparePrograms(fn: string): any {
+function ComparePrograms(fn: string, profile: boolean): any {
     console.log(" TRYING " + fn);
     //process.stdout.write(".");
     var js_stdout = "";
@@ -63,7 +63,7 @@ function ComparePrograms(fn: string): any {
         try {
             var luasrc = emitter.convertFile(polyfills + source, fn, false);
             vm.runInNewContext(jsRT + source, { print: print }, fn);
-            var lua_stdout = RunProgram(luaRT + luasrc, flua);
+            var lua_stdout = RunProgram(luaRT + luasrc, flua, profile);
             if (js_stdout.trim().length == 0 || lua_stdout.trim().length == 0) {
                 console.log(" NEG FAIL! == " + fn);
                 return false;
@@ -94,7 +94,7 @@ function ComparePrograms(fn: string): any {
             return "skip";
         }
         var time2 = +new Date();
-        var lua_stdout = RunProgram(luaRT + luasrc, flua);
+        var lua_stdout = RunProgram(luaRT + luasrc, flua, profile);
         var time3 = +new Date();
         var t1 = js_stdout.trim().replace(/\r\n/g, '\n');
         var t2 = lua_stdout.trim().replace(/\r\n/g, '\n');
@@ -131,6 +131,7 @@ var maxSyntaxErrors = 999999;
 if (process.argv[3]) {
     maxSyntaxErrors = parseInt(process.argv[3]);
 }
+var prof = maxSyntaxErrors == -1;
 var filenames = glob.sync(arg.replace("\\", "/"));
 var total = filenames.length;
 var passed = 0;
@@ -139,7 +140,8 @@ var skipped = 0;
 var nocode = 0;
 var start = +new Date();
 filenames.forEach(function (fn) {
-    var pass = ComparePrograms(fn);
+    var pass = ComparePrograms(fn, prof);
+    if (prof) return;
     if (pass == "skip") { skipped++ }
     else if (pass == "nocode") {
         nocode++;
