@@ -17,6 +17,10 @@ var BinaryOpRemap = {
     '^': 'bit32.bxor',
     '|': 'bit32.bor',
     '+': '__PlusOp',
+    '<': '__Less',
+    '<=': '__LessEqual',
+    '>': '__Greater',
+    '>=': '__GreaterEqual',
     'in': '__ContainsKey',
     'instanceof': '__InstanceOf',
 };

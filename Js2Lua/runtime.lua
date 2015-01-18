@@ -130,6 +130,50 @@ local function __PlusOp(left, right)
   end
 end
 
+local function __CmpLess(x, y) -- not really compliant?
+    if type(x)=='string' and type(y)=='string' then
+        return x<y
+    else
+        local nx=__ToNumber(x)
+        local ny=__ToNumber(y)
+        if nx~=nx or ny~=ny then return nil end
+        return nx<ny
+    end
+end
+
+local function __CmpGreater(x, y) -- not really compliant?
+    if type(x)=='string' and type(y)=='string' then
+        return x<y
+    else
+        local nx=__ToNumber(x)
+        local ny=__ToNumber(y)
+        if nx~=nx or ny~=ny then return nil end
+        return nx>ny
+    end
+end
+
+local function __CmpLessEqual(x, y) -- not really compliant?
+    if type(x)=='string' and type(y)=='string' then
+        return x<y
+    else
+        local nx=__ToNumber(x)
+        local ny=__ToNumber(y)
+        if nx~=nx or ny~=ny then return nil end
+        return nx<=ny
+    end
+end
+
+local function __CmpGreaterEqual(x, y) -- not really compliant?
+    if type(x)=='string' and type(y)=='string' then
+        return x<y
+    else
+        local nx=__ToNumber(x)
+        local ny=__ToNumber(y)
+        if nx~=nx or ny~=ny then return nil end
+        return nx>=ny
+    end
+end
+
 local function __Get(table, key)
   if type(table) ~= 'table' then
     error("Tried to access member " .. __ToString(key) .. " of non-table: " .. to_string(table))
