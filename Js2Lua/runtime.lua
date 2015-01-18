@@ -115,7 +115,7 @@ local function __ToNumber(val)
   if type(val) == 'function' then error("TypeError: valueof function") end
   if type(val) == 'string' then return tonumber(val) end
   if type(val) == 'table' and val.__Value then return val.__Value end
-  if type(val) == 'table' and val.__Prototype then return __CallMember(val, 'valueOf') end
+  if type(val) == 'table' and val.__Prototype then return __Helpers.__CallMember(val, 'valueOf') end
   local jsType = __Typeof(val)
   return 0/0
   -- error("__ToNumber not implemented for " .. jsType .. "/" .. type(val) .. "/" .. tostring(val))
