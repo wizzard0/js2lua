@@ -22,10 +22,6 @@ var ScopeStack = (function () {
         });
     };
     ScopeStack.prototype.lookupReference = function (ident) {
-        // hackish for builtins
-        if (ident.substr(0, 2) == '__') {
-            return { type: 'Lexical' }; // may be alleviated by program-parser
-        }
         for (var i = this.scope.length - 1; i >= 0; i--) {
             var cs = this.scope[i];
             if (cs.type == 'Lexical') {
