@@ -199,6 +199,7 @@ local function __ArrayPut(table, k, v)
     local oi = bit32.tobit(tonumber(k) or 1/0)
     local bs = rawget(table, '__BackingStore')
     if k=='length' then
+        -- print('SetLen')
         local ol = bit32.tobit(tonumber(bs.length))
         local nl = bit32.tobit(tonumber(v))
         if nl < ol then
@@ -496,21 +497,22 @@ Array.prototype.pop = function(self)
   return rv
 end
 Array.prototype.toString = __DefineFunction(function(self)
-    -- print('returning '..tostring(self.__Value))
+    -- print('atos')
     -- return 'Array['..self.length..']'
     if self.length == 0 then return '' end
-    local str = __ToString(self[0])
+    local str = (self[0]~=nil) and __ToString(self[0]) or ''
     local sl = bit32.arshift(self.length,0)
     for i=1,sl-1 do
-      str = str .. ',' .. __ToString(self[i])
+      str = str .. ',' .. ((self[i]~=nil) and __ToString(self[i]) or '')
     end
     return str
   end)
 local __MakeArray = function(rawArray)
-  setmetatable(rawArray, __ObjectMetatable)
-  rawArray.__Prototype = Array.prototype
-  Object.defineProperty(rawArray, 'constructor',{["value"]=Array,["writable"]=true,["configurable"]=true})
-  return rawArray
+    local front = {["__BackingStore"]=rawArray}
+    front.__Prototype = Array.prototype
+    Object.defineProperty(front, 'constructor',{["value"]=Array,["writable"]=true,["configurable"]=true})
+    setmetatable(front, __ArrayMetatable)
+    return front
 end
 local __MakeObject = function(raw)
   setmetatable(raw, __ObjectMetatable)
@@ -654,7 +656,11 @@ local parseFloat = __DefineFunction(function(self, str) return tonumber(str) end
 __JsGlobalObjects.parseFloat = parseFloat
 
 local console = {
-  ["log"] = function(...) print(__ToString(...)) end
+  ["log"] = function(...)
+    local table={...} 
+    succ, val = pcall(function() return __CallMember(table[1],'toString') end)
+    if(succ) then print(val) else print('???:'..val) end
+  end
 }
 __JsGlobalObjects.console = console
 --[[
