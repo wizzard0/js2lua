@@ -514,6 +514,21 @@ local __MakeArray = function(rawArray)
     setmetatable(front, __ArrayMetatable)
     return front
 end
+local __MakeArguments = function(rawArray)
+    local front = {["__BackingStore"]=rawArray}
+    local len = 0
+    for i=1,1000 do
+        if rawArray[i]~=nil then
+            len = i
+            rawArray[i-1]=rawArray[i]
+        else break end
+    end
+    rawArray.length = len
+    front.__Prototype = Array.prototype
+    Object.defineProperty(front, 'constructor',{["value"]=Array,["writable"]=true,["configurable"]=true})
+    setmetatable(front, __ArrayMetatable)
+    return front
+end
 local __MakeObject = function(raw)
   setmetatable(raw, __ObjectMetatable)
   raw.__Prototype = Object.prototype
@@ -589,6 +604,7 @@ String.__CallImpl = function(self, val)
   local uni = Utf8to32(val)
   ns.__ToStringValue = val
   ns.__Unicode = uni
+  ns.__Prototype = String.prototype
   ns.length = #uni
   return ns
 end

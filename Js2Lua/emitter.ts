@@ -1,4 +1,5 @@
-﻿import esprima = require("esprima");
+﻿"use strict";
+import esprima = require("esprima");
 import util = require("util");
 import esutils = require("esutils");
 import hoist = require("./ast-hoist");
@@ -359,7 +360,7 @@ function EmitFunctionExpr(ast: esprima.Syntax.FunctionExpression, emit: (s: stri
         if (ast.params.length) {
             emit("=1,...");
         }
-        emit("\r\nlocal arguments=...\r\n");
+        emit("\r\nlocal arguments=__MakeArguments({...})\r\n");
     } else {
         emit(")\r\n"); // arglist close
     }
@@ -871,7 +872,7 @@ function EmitMember(ast: esprima.Syntax.MemberExpression, emit: (s: string) => v
     //if(ast.property.name=='Step') {
     //    console.log(util.inspect(ast, false, 999, true));
     //}
-    var argIndexer = ast.object.type == 'Identifier' && (<esprima.Syntax.Identifier>ast.object).name == 'arguments';
+   // var argIndexer = ast.object.type == 'Identifier' && (<esprima.Syntax.Identifier>ast.object).name == 'arguments';
     if (ast.property.type == 'Identifier' && !ast.computed) {
         var id = <esprima.Syntax.Identifier>ast.property;
         var isReserved = !!reservedLuaKeys[id.name];
@@ -887,9 +888,9 @@ function EmitMember(ast: esprima.Syntax.MemberExpression, emit: (s: string) => v
         if (ast.object.type == 'Literal') { emit(")"); }
         emit("[");
         EmitExpression(ast.property, emit, alloc, scope, 0, false);
-        if (argIndexer) {
-            emit("+1");
-        }
+        //if (argIndexer) {
+        //    emit("+1");
+        //}
         emit("]");
     }
 }

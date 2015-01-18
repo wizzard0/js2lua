@@ -1,3 +1,4 @@
+"use strict";
 var esprima = require("esprima");
 var util = require("util");
 var esutils = require("esutils");
@@ -356,7 +357,7 @@ function EmitFunctionExpr(ast, emit, alloc, scope) {
         if (ast.params.length) {
             emit("=1,...");
         }
-        emit("\r\nlocal arguments=...\r\n");
+        emit("\r\nlocal arguments=__MakeArguments({...})\r\n");
     }
     else {
         emit(")\r\n"); // arglist close
@@ -875,7 +876,7 @@ function EmitMember(ast, emit, alloc, scope, StatementContext, isRef) {
     //if(ast.property.name=='Step') {
     //    console.log(util.inspect(ast, false, 999, true));
     //}
-    var argIndexer = ast.object.type == 'Identifier' && ast.object.name == 'arguments';
+    // var argIndexer = ast.object.type == 'Identifier' && (<esprima.Syntax.Identifier>ast.object).name == 'arguments';
     if (ast.property.type == 'Identifier' && !ast.computed) {
         var id = ast.property;
         var isReserved = !!reservedLuaKeys[id.name];
@@ -900,9 +901,9 @@ function EmitMember(ast, emit, alloc, scope, StatementContext, isRef) {
         }
         emit("[");
         EmitExpression(ast.property, emit, alloc, scope, 0, false);
-        if (argIndexer) {
-            emit("+1");
-        }
+        //if (argIndexer) {
+        //    emit("+1");
+        //}
         emit("]");
     }
 }

@@ -11,6 +11,12 @@ var qq = function(q1,q2){
 
 var qInstance=new qq(new Array("aaa","bbb"),"ccc");
 console.log("==============")
+console.log(1)
+console.log(false)
+console.log(null)
+console.log(undefined)
+console.log({})
+console.log([])
 console.log(qInstance);
 console.log(qInstance.q1);
 console.log(qInstance.q2);
