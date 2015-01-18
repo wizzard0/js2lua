@@ -62,9 +62,9 @@ end
 
 local function __ToString(value)
   if value == nil then return 'undefined' end
+  if value == __JsGlobalObjects.null then return 'null' end
   if type(value) == 'string' then return value end
   if type(value) == 'table' then
-    if value.__ToStringValue then return value.__ToStringValue end
     if value.__Prototype then return __Helpers.__CallMember(value, 'toString') end
     return '[native '..to_string(value)..']'
   end
@@ -101,6 +101,7 @@ local function __ToObject(val)
   -- print("ToObject"..tostring(val))
   if type(val) == 'function' then return __Helpers.__DefineFunction(val) end -- todo cache this?
   if type(val) == 'string' then return __Helpers.__New(__JsGlobalObjects.String, val) end
+  if type(val) == 'boolean' then return __Helpers.__New(__JsGlobalObjects.Boolean, val) end
   if type(val) == 'number' then return __Helpers.__New(__JsGlobalObjects.Number, val) end
   local jsType = __Typeof(val)
   error("__ToObject not implemented for " .. jsType .. "/" .. type(val) .. "/" .. tostring(val))
@@ -543,7 +544,12 @@ local Boolean = __New(Function)
 Boolean.__CallImpl = function(self, val) 
   -- print ('Boolean ctor: ' .. val)
   self.__Value = __ToBoolean(val)
+  self.__Prototype = Boolean.prototype
 end
+
+Boolean.prototype.toString = __DefineFunction(function(self)
+    return tostring(self.__Value)
+  end)
 __JsGlobalObjects.Boolean = Boolean
 
 
@@ -674,7 +680,7 @@ __JsGlobalObjects.parseFloat = parseFloat
 local console = {
   ["log"] = function(...)
     local table={...} 
-    succ, val = pcall(function() return __CallMember(table[1],'toString') end)
+    succ, val = pcall(function() return __ToString(table[1]) end)
     if(succ) then print(val) else print('???:'..val) end
   end
 }
