@@ -343,9 +343,7 @@ function EmitFunctionExpr(ast, emit, alloc, scope) {
     if (hasArguments) {
         arglist.push('arguments');
         emit(", ...)\r\n");
-        if (ast.params.length) {
-            emit("local __tmp");
-        }
+        emit("local __argCnt");
     }
     for (var si = 0; si < ast.params.length; si++) {
         emit(",");
@@ -354,10 +352,11 @@ function EmitFunctionExpr(ast, emit, alloc, scope) {
         EmitName(arg, emit, alloc);
     }
     if (hasArguments) {
+        emit("=select('#', ...)");
         if (ast.params.length) {
-            emit("=1,...");
+            emit(", ...");
         }
-        emit("\r\nlocal arguments=__MakeArguments({...})\r\n");
+        emit("\r\nlocal arguments=__MakeArguments(__argCnt,{...})\r\n");
     }
     else {
         emit(")\r\n"); // arglist close

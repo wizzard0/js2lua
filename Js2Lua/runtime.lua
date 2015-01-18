@@ -513,16 +513,13 @@ local __MakeArray = function(rawArray)
     setmetatable(front, __ArrayMetatable)
     return front
 end
-local __MakeArguments = function(rawArray)
+local __MakeArguments = function(n, rawArray)
     local front = {["__BackingStore"]=rawArray}
     local len = 0
-    for i=1,1000 do
-        if rawArray[i]~=nil then
-            len = i
-            rawArray[i-1]=rawArray[i]
-        else break end
+    for i=1,n do
+        rawArray[i-1]=rawArray[i]
     end
-    rawArray.length = len
+    rawArray.length = n
     front.__Prototype = Array.prototype
     Object.defineProperty(front, 'constructor',{["value"]=Array,["writable"]=true,["configurable"]=true})
     setmetatable(front, __ArrayMetatable)
