@@ -8,7 +8,7 @@
  * @description Trying to convert undefined to Object
  * @noStrict
  */
-// LUA_SKIP RECURSION DA FUCK
+
 // CHECK#1
 try{
   undefined['foo'];

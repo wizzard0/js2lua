@@ -754,7 +754,7 @@ function EmitWith(ast: esprima.Syntax.WithStatement, emit: (s: string) => void, 
     EmitExpression(ast.object, emit, alloc, scope, 0, false);
     emit(") -- WithStmt\r\n");
     scope.pushObjectIdent(scopeHolder, "with");
-    scope.pushLexical(['__JsGlobalObjects', '__Singletons', 'undefined'],
+    scope.pushLexical(['__JsGlobalObjects', '__Singletons', 'undefined', scopeHolder],
         ['eval'].concat(BinaryOpRemapValues, Intrinsics), [], 'builtins-and-toplevels');
     //console.log("EE");
     EmitStatement(ast.body, emit, alloc, scope, false);
@@ -875,7 +875,7 @@ function EmitMember(ast: esprima.Syntax.MemberExpression, emit: (s: string) => v
     //if(ast.property.name=='Step') {
     //    console.log(util.inspect(ast, false, 999, true));
     //}
-   // var argIndexer = ast.object.type == 'Identifier' && (<esprima.Syntax.Identifier>ast.object).name == 'arguments';
+    // var argIndexer = ast.object.type == 'Identifier' && (<esprima.Syntax.Identifier>ast.object).name == 'arguments';
     if (ast.property.type == 'Identifier' && !ast.computed) {
         var id = <esprima.Syntax.Identifier>ast.property;
         var isReserved = !!reservedLuaKeys[id.name];

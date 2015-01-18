@@ -768,7 +768,7 @@ function EmitWith(ast, emit, alloc, scope) {
     EmitExpression(ast.object, emit, alloc, scope, 0, false);
     emit(") -- WithStmt\r\n");
     scope.pushObjectIdent(scopeHolder, "with");
-    scope.pushLexical(['__JsGlobalObjects', '__Singletons', 'undefined'], ['eval'].concat(BinaryOpRemapValues, Intrinsics), [], 'builtins-and-toplevels');
+    scope.pushLexical(['__JsGlobalObjects', '__Singletons', 'undefined', scopeHolder], ['eval'].concat(BinaryOpRemapValues, Intrinsics), [], 'builtins-and-toplevels');
     //console.log("EE");
     EmitStatement(ast.body, emit, alloc, scope, false);
     scope.popScope();
