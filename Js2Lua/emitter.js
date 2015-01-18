@@ -936,15 +936,25 @@ function EmitCall(ast, emit, alloc, scope, StatementContext) {
     else if (ast.callee.type == 'FunctionExpression') {
         emit(StatementContext ? " do end (" : "(");
         EmitExpression(ast.callee, emit, alloc, scope, 0, false);
-        emit(")("); // avoid "ambiguous syntax" 
+        emit(")(self"); // avoid "ambiguous syntax" 
+        if (ast.arguments.length)
+            emit(",");
+    }
+    else if (ast.callee.type == 'Identifier') {
+        var act = ast.callee;
+        var nameIsBuiltin = (BinaryOpRemapValues.indexOf(act.name) != -1) || (Intrinsics.indexOf(act.name) != -1);
+        EmitExpression(ast.callee, emit, alloc, scope, 0, false);
+        emit(nameIsBuiltin ? "(" : "(self");
+        if (!nameIsBuiltin && ast.arguments.length)
+            emit(",");
     }
     else {
-        EmitExpression(ast.callee, emit, alloc, scope, 0, false);
-        emit("(self");
+        emit("--[[WTF Call " + util.inspect(ast) + " --]]");
     }
     for (var si = 0; si < ast.arguments.length; si++) {
         var arg = ast.arguments[si];
-        emit(",");
+        if (si)
+            emit(",");
         EmitExpression(arg, emit, alloc, scope, 0, false);
     }
     emit(")");

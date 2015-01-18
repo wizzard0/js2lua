@@ -217,7 +217,7 @@ local function __CallMember(table, key, ...)
   end
   local unboundMethod = rawget(table, key)
   if unboundMethod ~= nil then
-      print('cm3')
+--      print('cm3')
       return unboundMethod(table, ...) 
   end
   if table.__Prototype then
@@ -225,10 +225,10 @@ local function __CallMember(table, key, ...)
     -- print('got boundmethod '..tostring(table)..'.'..tostring(key)..'='..tostring(boundMethod)..'='..tostring(boundMethod ~= nil))
     if boundMethod ~= nil then
       if type(boundMethod) ~= 'function' and boundMethod.__CallImpl then
-        print('cm4')
+   --    print('cm4')
         return boundMethod.__CallImpl(table, ...) -- wrapped
       else 
-        print('cm5')
+   --    print('cm5')
         return boundMethod(table, ...) -- builtin
       end
     end
@@ -240,7 +240,7 @@ __Helpers.__CallMember = __CallMember
 local function __Call(table, ...)
   local ci = table.__CallImpl
   if not ci then error("TypeError: Tried to call "..__ToString(table).." which is not callable") end
-  return ci(_G, ...) -- CurrentThis
+  return ci(...) -- CurrentThis
 end
 
 local function __Put(table, k, v)
@@ -404,7 +404,7 @@ local Math = __MathProto
 
 -- Object
 local Object = { ["prototype"] = {} }
-Object.getOwnPropertyDescriptor = function(x,object, key)
+Object.getOwnPropertyDescriptor = function(self_o,object, key)
   -- print(tostring(self).."/"..tostring(object).."/"..tostring(key))
   local length_hack = (key ~= "length")
   local val = 0
@@ -438,7 +438,7 @@ Object.defineProperty = function(self, key, descriptor)
   rawset(self, key, descriptor.value)
   if descriptor.enumerable then rawset(self, '__propEnumerable_'..key, value) end
 end
-Object.create = (function(proto, ...) 
+Object.create = (function(self_o, proto, ...) 
     if __Typeof(proto) == 'function' then
       return __New(proto, ...)
     else
@@ -492,7 +492,7 @@ Number.prototype.toString = __DefineFunction(function(self)
   end)
 
 
-local isNaN = function(v) return v ~= v end
+local isNaN = function(self,v) return v ~= v end
 __JsGlobalObjects.Number = Number
 __JsGlobalObjects.isNaN = isNaN
 
@@ -516,14 +516,14 @@ Array.__CallImpl = function(self, ...) -- number or varargs...
   end
   return self
 end
-Array.isArray = function(arr)
+Array.isArray = function(self,arr)
   return arr.__Prototype == Array.prototype
 end
 Array.prototype.forEach = function(self, cb, otherSelf)
   local sl = bit32.arshift(self.length,0)
   local os = otherSelf or self -- NOPE, should inherit this
   for i=0,sl-1 do
-    cb(self[i], i)
+    cb(os, self[i], i)
   end
 end
 Array.prototype.indexOf = function(self, item, fromIndex)
@@ -667,7 +667,7 @@ String.__CallImpl = function(self, val)
   ns.length = #uni
   return ns
 end
-String.fromCharCode = function(...)
+String.fromCharCode = function(self, ...)
     return string.char(...)
 end
 String.prototype.charCodeAt = function(self, idx)

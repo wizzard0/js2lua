@@ -919,14 +919,20 @@ function EmitCall(ast: esprima.Syntax.CallExpression, emit: (s: string) => void,
     } else if (ast.callee.type == 'FunctionExpression') { // IIFE pattern
         emit(StatementContext ? " do end (" : "(");
         EmitExpression(ast.callee, emit, alloc, scope, 0, false);
-        emit(")("); // avoid "ambiguous syntax" 
-    } else {
+        emit(")(self"); // avoid "ambiguous syntax" 
+        if (ast.arguments.length) emit(",");
+    } else if (ast.callee.type == 'Identifier') {
+        var act = <esprima.Syntax.Identifier>ast.callee;
+        var nameIsBuiltin = (BinaryOpRemapValues.indexOf(act.name) != -1) || (Intrinsics.indexOf(act.name) != -1);
         EmitExpression(ast.callee, emit, alloc, scope, 0, false);
-        emit("(self");
+        emit(nameIsBuiltin ? "(" : "(self");
+        if (!nameIsBuiltin && ast.arguments.length) emit(",");
+    } else {
+        emit("--[[WTF Call " + util.inspect(ast) + " --]]");
     }
     for (var si = 0; si < ast.arguments.length; si++) {
         var arg = ast.arguments[si];
-        emit(",");
+        if (si) emit(",");
         EmitExpression(arg, emit, alloc, scope, 0, false);
     }
     emit(")");
