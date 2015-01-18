@@ -42,7 +42,7 @@ function ComparePrograms(fn: string): any {
     var expectErrors = false;
     var polyfillSrc = emitter.convertFile(polyfills, "polyfills.js", false);
     var jsVersionFailureDict = {};
-
+//    console.log("AfterPF");
     if (
         false
       //  || hasEval || hasWith

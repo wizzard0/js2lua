@@ -653,6 +653,9 @@ String.__CallImpl = function(self, val)
   ns.length = #uni
   return ns
 end
+String.fromCharCode = function(...)
+    return string.char(...)
+end
 String.prototype.charCodeAt = function(self, idx)
   return self.__Unicode[idx] -- TODO unicode!
 end

@@ -38,6 +38,7 @@ function ComparePrograms(fn) {
     var expectErrors = false;
     var polyfillSrc = emitter.convertFile(polyfills, "polyfills.js", false);
     var jsVersionFailureDict = {};
+    //    console.log("AfterPF");
     if (false || hasOther) {
         //console.log(" [SKIP]");
         return "skip";

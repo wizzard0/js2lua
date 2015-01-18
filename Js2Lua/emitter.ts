@@ -106,7 +106,6 @@ function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void
         emit('nil');
         return;
     }
-    //console.warn(ex.type);
     switch (ex.type) {
         case "CallExpression":
             EmitCall(<esprima.Syntax.CallExpression>ex, emit, alloc, scope, statementContext != 0);
@@ -570,7 +569,7 @@ function EmitDelete(ast: esprima.Syntax.UnaryExpression, emit: (s: string) => vo
 
 function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void, alloc: () => number,
     scope: scoping.ScopeStack, pendingContinueInThisBlock: boolean, defaultBreakTarget?: string) {
-    //console.warn(ex.type);
+    //console.warn(stmt.type);
     switch (stmt.type) {
         case "ReturnStatement":
             EmitReturn(<esprima.Syntax.ReturnStatement>stmt, emit, alloc, scope);
@@ -757,6 +756,7 @@ function EmitWith(ast: esprima.Syntax.WithStatement, emit: (s: string) => void, 
     scope.pushObjectIdent(scopeHolder, "with");
     scope.pushLexical(['__JsGlobalObjects', '__Singletons', 'undefined'],
         ['eval'].concat(BinaryOpRemapValues, Intrinsics), [], 'builtins-and-toplevels');
+    //console.log("EE");
     EmitStatement(ast.body, emit, alloc, scope, false);
     scope.popScope();
     scope.popScope();
