@@ -58,7 +58,7 @@ var Intrinsics = [
     'fnExists',
     'Infinity',
     'NaN',
-    '',
+    'print',
     '',
     '',
 ];
@@ -195,7 +195,7 @@ function EmitTryStatement(ast, emit, alloc, scope) {
     // Catch
     if (ah.length) {
         emit("--CheckCatch\r\n if not " + statusName + " then " + catchReturnValue + "=" + handler + "(" + returnValue + ".data or " + returnValue + ") end;\r\n");
-        emit("--CheckCatchValue\r\n if true or nil~=" + catchReturnValue + " then return " + catchReturnValue + " end;");
+        emit("--CheckCatchValue\r\n if nil~=" + catchReturnValue + " then return " + catchReturnValue + " end;");
     }
     // Just Finally
     if (ast.finalizer) {

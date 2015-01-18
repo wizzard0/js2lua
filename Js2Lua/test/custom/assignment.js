@@ -6,6 +6,13 @@ var d=++a;
 var h=a++;
 var e,f;
 e=f=d;
+a='aaa';
+try{
+a+='bbb';
+}catch(e){}
+((function(){print(arguments.length);print(arguments[1])})(4,5));
+
+print(a);
 console.log('a',e,f,h,d,'b');
 var arr1=[1,2,3];
 var _2=2;
