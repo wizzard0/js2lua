@@ -195,11 +195,49 @@ local function __Put(table, k, v)
   rawset(table, '__propEnumerable_'..k, true)
 end
 
+local function __ArrayPut(table, k, v)
+    local oi = bit32.tobit(tonumber(k))
+    if k=='length' then
+        local ol = tonumber(table.__BackingStore.length)
+        local nl = tonumber(v)
+        if nl < ol then
+            for i=nl,ol do table.__BackingStore[i]=nil end
+        end
+        table.__BackingStore.length = nl
+    else if oi~=nil
+        local ol = tonumber(table.__BackingStore.length)
+        table.__BackingStore[oi]=v
+        if oi>=ol then
+            table.__BackingStore.length = oi+1
+        end
+    else -- non-numeric property
+        rawset(table, k, v)
+    end
+end
+
+local function __ArrayGet(table, k)
+    local oi = bit32.tobit(tonumber(k))
+    if k=='length' then
+        local ol = tonumber(table.__BackingStore.length)
+        return table.__BackingStore.length
+    else if oi~=nil
+        local ol = tonumber(table.__BackingStore.length)
+        return table.__BackingStore[oi]
+    else -- non-numeric property
+        return rawget(table, k)
+    end
+end
+
 local __ObjectMetatable = {
   __index = __Get,
   __call = __Call,
   __newindex = __Put,
-  -- __tostring = __ToString, - VERY dangerous
+}
+
+local __ArrayMetatable = {
+  __index = __ArrayGet,
+  __call = __Call,
+  __newindex = __ArrayPut,
 }
 
 -- wrap Lua function as js function
@@ -401,6 +439,7 @@ local Array = __New(Function)
 __JsGlobalObjects.Array = Array
 Array.__CallImpl = function(self, ...) -- number or varargs...
   self = self or __New(Array)
+  setmetatable(self, __ArrayMetatable)
   local orig = {...}
   -- print('array with ' .. #orig .. ' args')
   local idx = 0
