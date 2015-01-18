@@ -66,6 +66,16 @@ var Intrinsics = [
     '',
     '',
 ];
+function unique(arr) {
+    var u = {}, a = [];
+    for (var i = 0, l = arr.length; i < l; ++i) {
+        if (!u.hasOwnProperty(arr[i])) {
+            a.push(arr[i]);
+            u[arr[i]] = 1;
+        }
+    }
+    return a;
+}
 function EmitProgram(ast, emit, alloc) {
     // hack
     var scope = new scoping.ScopeStack();
@@ -73,6 +83,10 @@ function EmitProgram(ast, emit, alloc) {
     var identList = argfinder.analyze(ast.body);
     //console.log(util.inspect(identList));
     scope.pushLexical(['__JsGlobalObjects', '__Singletons', 'undefined'].concat(identList.vars), ['eval'].concat(identList.funcs, BinaryOpRemapValues, Intrinsics), [], 'builtins-and-toplevels');
+    var fPredeclare = unique(identList.funcs);
+    fPredeclare.forEach(function (f) {
+        emit("local " + f + "\r\n");
+    });
     emit("\r\n-- BEGIN\r\n");
     EmitBlock(ast, emit, alloc, scope, false);
     emit("\r\n-- END\r\n");
@@ -365,6 +379,10 @@ function EmitFunctionExpr(ast, emit, alloc, scope) {
     else {
         emit(")\r\n"); // arglist close
     }
+    var fPredeclare = unique(identList.funcs);
+    fPredeclare.forEach(function (f) {
+        emit("local " + f + "\r\n");
+    });
     scope.pushLexical(identList.vars, identList.funcs, arglist, 'function');
     EmitStatement(ast.body, emit, alloc, scope, false);
     scope.popScope();
@@ -430,10 +448,10 @@ function EmitObject(ast, emit, alloc, scope) {
     emit("})");
 }
 function EmitFunctionDeclaration(ast, emit, alloc, scope) {
-    emit("local ");
+    //emit("local ");
     //console.log(scope.currentScope());
-    EmitExpression(ast.id, emit, alloc, scope, 0, true);
-    emit(";");
+    //EmitExpression(ast.id, emit, alloc, scope, 0, true);
+    //emit(";");
     EmitExpression(ast.id, emit, alloc, scope, 0, true);
     emit(" = ");
     EmitFunctionExpr(ast, emit, alloc, scope);

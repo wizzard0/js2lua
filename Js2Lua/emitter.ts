@@ -70,6 +70,17 @@ var Intrinsics = [
     '',
 ];
 
+function unique(arr) {
+    var u = {}, a = [];
+    for (var i = 0, l = arr.length; i < l; ++i) {
+        if (!u.hasOwnProperty(arr[i])) {
+            a.push(arr[i]);
+            u[arr[i]] = 1;
+        }
+    }
+    return a;
+}
+
 function EmitProgram(ast: esprima.Syntax.Program, emit: (s: string) => void, alloc: () => number) {
     // hack
     var scope = new scoping.ScopeStack();
@@ -78,7 +89,10 @@ function EmitProgram(ast: esprima.Syntax.Program, emit: (s: string) => void, all
     //console.log(util.inspect(identList));
     scope.pushLexical(['__JsGlobalObjects', '__Singletons', 'undefined'].concat(identList.vars), ['eval'].concat(identList
         .funcs, BinaryOpRemapValues, Intrinsics), [], 'builtins-and-toplevels');
-
+    var fPredeclare = unique(identList.funcs);
+    fPredeclare.forEach(function (f) {
+        emit("local " + f + "\r\n");
+    });
     emit("\r\n-- BEGIN\r\n");
     EmitBlock(ast, emit, alloc, scope, false);
     emit("\r\n-- END\r\n");
@@ -366,6 +380,11 @@ function EmitFunctionExpr(ast: esprima.Syntax.FunctionExpression, emit: (s: stri
     } else {
         emit(")\r\n"); // arglist close
     }
+    var fPredeclare = unique(identList.funcs);
+    fPredeclare.forEach(function (f) {
+        emit("local " + f + "\r\n");
+    });
+
     scope.pushLexical(identList.vars, identList.funcs, arglist, 'function');
     EmitStatement(ast.body, emit, alloc, scope, false);
     scope.popScope();
@@ -429,10 +448,10 @@ function EmitObject(ast: esprima.Syntax.ObjectExpression, emit: (s: string) => v
 }
 
 function EmitFunctionDeclaration(ast: esprima.Syntax.FunctionDeclaration, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack) {
-    emit("local ");
+    //emit("local ");
     //console.log(scope.currentScope());
-    EmitExpression(ast.id, emit, alloc, scope, 0, true);
-    emit(";");
+    //EmitExpression(ast.id, emit, alloc, scope, 0, true);
+    //emit(";");
     EmitExpression(ast.id, emit, alloc, scope, 0, true);
     emit(" = ");
     EmitFunctionExpr(ast, emit, alloc, scope);
