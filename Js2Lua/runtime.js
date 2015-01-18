@@ -368,3 +368,24 @@ function testBuiltInObject(obj, isFunction, isConstructor, properties, length) {
     return true;
 }
 
+
+console = {
+    log: function () {
+        var s = '', i, q;
+        for (i = 0; i < arguments.length; i++) {
+            try {
+                q = arguments[i];
+                if (undefined === q) {
+                    s += 'undefined ';
+                } else if (null === q) {
+                    s += 'null ';
+                } else {
+                    s += q.toString() + ' ';
+                }
+            } catch (e) {
+                s += '???:' + e + " ";
+            }
+        }
+        print(s);
+    }
+};

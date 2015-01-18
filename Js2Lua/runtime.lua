@@ -677,14 +677,6 @@ __JsGlobalObjects.parseInt = parseInt
 local parseFloat = __DefineFunction(function(self, str) return tonumber(str) end) -- TODO int
 __JsGlobalObjects.parseFloat = parseFloat
 
-local console = {
-  ["log"] = function(...)
-    local table={...} 
-    succ, val = pcall(function() return __ToString(table[1]) end)
-    if(succ) then print(val) else print('???:'..val) end
-  end
-}
-__JsGlobalObjects.console = console
 --[[
 JSON = assert(loadfile "JSON.lua")()
 function JSON:onEncodeError(message, etc) return 'null' end

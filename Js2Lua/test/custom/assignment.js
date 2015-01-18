@@ -6,10 +6,7 @@ var d=++a;
 var h=a++;
 var e,f;
 e=f=d;
-console.log(e)
-console.log(f)
-console.log(h)
-console.log(d)
+console.log('a',e,f,h,d,'b');
 var arr1=[1,2,3];
 var _2=2;
 console.log(arr1[0])
@@ -29,4 +26,5 @@ arr2[2] = arr1[2]
 console.log("after assign");
 console.log(arr1.length);
 console.log(arr2.length);
+console.log(arr1);
 console.log(arr2);

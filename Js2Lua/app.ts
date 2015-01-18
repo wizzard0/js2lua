@@ -62,7 +62,7 @@ function ComparePrograms(fn: string): any {
     if (expectErrors) {
         try {
             var luasrc = emitter.convertFile(source, fn, false);
-            vm.runInNewContext(jsRT + source, { print: print, console: { log: print } }, fn);
+            vm.runInNewContext(jsRT + source, { print: print }, fn);
             var lua_stdout = RunProgram(luaRT + polyfillSrc + luasrc, flua);
             if (js_stdout.trim().length == 0 || lua_stdout.trim().length == 0) {
                 console.log(" NEG FAIL! == " + fn);
@@ -84,7 +84,7 @@ function ComparePrograms(fn: string): any {
         }
         var time1 = +new Date();
         try {
-            vm.runInNewContext(jsRT + source, { print: print, console: { log: print } }, fn);
+           vm.runInNewContext(jsRT + source, { print: print }, fn);
         } catch (e) {
             var jfs = e.toString();
             if (!(jfs in jsVersionFailureDict)) {
