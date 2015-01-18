@@ -922,14 +922,12 @@ function EmitCall(ast: esprima.Syntax.CallExpression, emit: (s: string) => void,
         emit(")("); // avoid "ambiguous syntax" 
     } else {
         EmitExpression(ast.callee, emit, alloc, scope, 0, false);
-        emit("(");
+        emit("(self");
     }
     for (var si = 0; si < ast.arguments.length; si++) {
         var arg = ast.arguments[si];
+        emit(",");
         EmitExpression(arg, emit, alloc, scope, 0, false);
-        if (si != ast.arguments.length - 1) {
-            emit(", ");
-        }
     }
     emit(")");
 }
