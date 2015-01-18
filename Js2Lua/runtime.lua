@@ -488,12 +488,10 @@ end
 Array.prototype.push = function(self, element)
   if not self.length then error("Malformed array without length") end
   self[self.length] = element
-  self.length = self.length + 1
 end
 Array.prototype.pop = function(self)
   if not self.length then error("Malformed array without length") end
   local rv = self[self.length - 1]
-  self[self.length - 1] = nil
   self.length = self.length - 1
   return rv
 end
