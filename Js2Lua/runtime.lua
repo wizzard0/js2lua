@@ -113,9 +113,6 @@ local function __ToNumber(val)
   if type(val) == 'number' then return val end
   if type(val) == 'function' then error("TypeError: valueof function") end
   if type(val) == 'string' then return tonumber(val) end
-  -- String()
-  if type(val) == 'table' and val.__ToStringValue then return (tonumber(val.__ToStringValue) or 0/0) end
-  -- Number()
   if type(val) == 'table' and val.__Value then return val.__Value end
   if type(val) == 'table' and val.__Prototype then return __Helpers.__CallMember(val, 'valueOf') end
   local jsType = __Typeof(val)
@@ -144,7 +141,6 @@ local function __CmpLess(x, y) -- not really compliant?
 end
 
 local function __CmpGreater(x, y) -- not really compliant?
-    
     if type(x)=='string' and type(y)=='string' then
         return x>y
     else
@@ -178,7 +174,6 @@ local function __CmpGreaterEqual(x, y) -- not really compliant?
 end
 
 local function __Get(table, key, inGetter)
-  key=__ToString(key)
   if type(table) ~= 'table' then
     error("Tried to access member " .. __ToString(key) .. " of non-table: " .. to_string(table))
   end
@@ -219,9 +214,8 @@ end
 
 local function __CallMember(table, key, ...)
   -- print("calling " .. __ToString(key))
-  key=__ToString(key)
   if table == nil then
-    error("Tried to call member " .. key .. " of undefined")
+    error("Tried to call member " .. __ToString(key) .. " of undefined")
   end
   if type(table) ~= 'table' then
     table = __ToObject(table)
@@ -422,7 +416,6 @@ local Math = __MathProto
 -- Object
 local Object = { ["prototype"] = {} }
 Object.getOwnPropertyDescriptor = function(self_o,object, key)
-  key=__ToString(key)
   local isAccessorDescriptor = __Get(object, '__Put_'..key, true) -- put is Sink or func
   local isEnumerable = __Get(object, '__propEnumerable_'..key, true) -- put is Sink or func
   if isAccessorDescriptor then
@@ -450,7 +443,7 @@ Object.prototype.hasOwnProperty = function(self, key)
   return nil ~= rawget(self, key)
 end
 Object.prototype.propertyIsEnumerable = function(self, key)
-  return true == rawget(self, '__propEnumerable_'..__ToString(key))
+  return true == rawget(self, '__propEnumerable_'..key)
 end
 Object.prototype.toString = function(self)
   local t = __Typeof(self)
@@ -459,7 +452,6 @@ Object.prototype.toString = function(self)
 end
 Object.defineProperty = function(o, self, key, descriptor)
 --print(to_string(key))
-key=__ToString(key)
     if not descriptor.configurable then
     print('DC:', tostring(__Get(descriptor,'configurable')))
     print(to_string(key))

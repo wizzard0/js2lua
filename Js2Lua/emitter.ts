@@ -945,7 +945,7 @@ function EmitCall(ast: esprima.Syntax.CallExpression, emit: (s: string) => void,
         emit("--[[WTF Call " + util.inspect(ast) + " --]]");
     }
     for (var si = 0; si < ast.arguments.length; si++) {
-        var arg = ast.arguments[si];
+        var arg = ast.arguments[si]; 
         if (si) emit(",");
         EmitExpression(arg, emit, alloc, scope, 0, false);
     }
@@ -971,14 +971,8 @@ function EmitLiteral(ex: esprima.Syntax.Literal, emit: (s: string) => void, allo
         emit(JSON.stringify((<any>ex).raw)); // TODO https://github.com/o080o/reLua!
         emit(")");
     } else {
-    //console.log(ex.raw);
-    if (typeof ex.value == 'string') {
-        emit("__New(String, "); // make string a reference type... oooh
-    }
-    emit(JSON.stringify(ex.value)); // TODO
-    if (typeof ex.value == 'string') {
-            emit(")"); // make string a reference type...
-        }
+        //console.log(ex.raw);
+        emit(JSON.stringify(ex.value)); // TODO
     }
 }
 
