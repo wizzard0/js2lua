@@ -174,6 +174,7 @@ function EmitExpression(ex: esprima.Syntax.Expression, emit: (s: string) => void
             console.log(util.inspect(ex, false, 999, true));
             break;
     }
+    emit(" ");
 }
 
 function EmitTryStatement(ast: esprima.Syntax.TryStatement, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack) {
@@ -651,6 +652,7 @@ function EmitStatement(stmt: esprima.Syntax.Statement, emit: (s: string) => void
             console.log(util.inspect(stmt, false, 999, true));
             break;
     }
+    emit("\r\n");
 }
 // HACK
 

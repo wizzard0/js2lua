@@ -168,6 +168,7 @@ function EmitExpression(ex, emit, alloc, scope, statementContext, isRef) {
             console.log(util.inspect(ex, false, 999, true));
             break;
     }
+    emit(" ");
 }
 function EmitTryStatement(ast, emit, alloc, scope) {
     //console.log(util.inspect(ast, false, 999, true));
@@ -669,6 +670,7 @@ function EmitStatement(stmt, emit, alloc, scope, pendingContinueInThisBlock, def
             console.log(util.inspect(stmt, false, 999, true));
             break;
     }
+    emit("\r\n");
 }
 // HACK
 var topContinueTargetLabelId = null;
