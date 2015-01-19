@@ -717,7 +717,7 @@ function EmitWhileStatement(ast, emit, alloc, scope) {
 function EmitIf(ast, emit, alloc, scope) {
     emit("if __ToBoolean(");
     EmitExpression(ast.test, emit, alloc, scope, 0, false);
-    emit(") then\r\n");
+    emit(" ) then\r\n");
     EmitStatement(ast.consequent, emit, alloc, scope, false);
     if (ast.alternate) {
         emit(" else\r\n");
@@ -856,12 +856,12 @@ function EmitLogical(ast, emit, alloc, scope) {
     emit(aop);
     emit("__TernaryReplace(");
     EmitExpression(ast.right, emit, alloc, scope, 0, false);
-    emit("))");
+    emit(")))");
 }
 function EmitConditional(ast, emit, alloc, scope) {
-    emit("(__TernaryRestore(__ToBoolean(");
+    emit("(__TernaryRestore(__TernarySave(");
     EmitExpression(ast.test, emit, alloc, scope, 0, false);
-    emit(") and __TernarySaveTrue(");
+    emit(") and __TernaryReplace(");
     EmitExpression(ast.consequent, emit, alloc, scope, 0, false);
     emit(") or __TernaryReplace(");
     EmitExpression(ast.alternate, emit, alloc, scope, 0, false);

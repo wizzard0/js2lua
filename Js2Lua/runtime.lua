@@ -371,7 +371,6 @@ local __TernaryStack={} -- HOLY FUCK
 -- Ternary via stack!
 local __TernarySave,__TernaryReplace, __TernaryRestore do
   -- local o_saved -- nope, wont work with nested
-  __TernarySaveTrue = function(o) table.insert(__TernaryStack, o); return true end
   __TernarySave = function(o) table.insert(__TernaryStack, o); return __ToBoolean(o) end
   __TernaryReplace = function(o) __TernaryStack[#__TernaryStack]=o; return true end
   __TernaryRestore = function() return table.remove(__TernaryStack) end

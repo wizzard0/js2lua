@@ -702,7 +702,7 @@ function EmitWhileStatement(ast: esprima.Syntax.WhileStatement, emit: (s: string
 function EmitIf(ast: esprima.Syntax.IfStatement, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack) {
     emit("if __ToBoolean(");
     EmitExpression(ast.test, emit, alloc, scope, 0, false);
-    emit(") then\r\n");
+    emit(" ) then\r\n");
     EmitStatement(ast.consequent, emit, alloc, scope, false);
     if (ast.alternate) {
         emit(" else\r\n");
@@ -848,13 +848,13 @@ function EmitLogical(ast: esprima.Syntax.BinaryExpression, emit: (s: string) => 
     emit(aop);
     emit("__TernaryReplace(");
     EmitExpression(ast.right, emit, alloc, scope, 0, false);
-    emit("))");
+    emit(")))");
 }
 
 function EmitConditional(ast: esprima.Syntax.ConditionalExpression, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack) {
-    emit("(__TernaryRestore(__ToBoolean(");
+    emit("(__TernaryRestore(__TernarySave(");
     EmitExpression(ast.test, emit, alloc, scope, 0, false);
-    emit(") and __TernarySaveTrue(");
+    emit(") and __TernaryReplace(");
     EmitExpression(ast.consequent, emit, alloc, scope, 0, false);
     emit(") or __TernaryReplace(");
     EmitExpression(ast.alternate, emit, alloc, scope, 0, false);
