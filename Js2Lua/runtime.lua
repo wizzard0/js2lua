@@ -495,8 +495,10 @@ Function.prototype.call = function(self, ...)
 end
 Function.prototype.apply = function(self, self2, argArray)
    local narg={}
-   local i
-   for i=0,argArray.length-1 do table.insert(narg, argArray[i]) end
+   if argArray then
+       local i
+       for i=0,argArray.length-1 do table.insert(narg, argArray[i]) end
+   end
   return self.__CallImpl(self2, unpack(narg))
 end
 Object.__Prototype = Function.prototype -- maybe wrong
