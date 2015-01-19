@@ -641,3 +641,4 @@ Object.isFrozen = Object.isSealed = function (obj) {
 // non extensible = no newindex
 // sealed = no newindex, all props nonconfigurable, but writable
 // frozen = props nonconfigurable and readonly
+

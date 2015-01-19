@@ -80,7 +80,9 @@ function EmitProgram(ast: esprima.Syntax.Program, emit: (s: string) => void, all
         .funcs, BinaryOpRemapValues, Intrinsics), [], 'builtins-and-toplevels');
     var fPredeclare = unique(identList.funcs);
     fPredeclare.forEach(function (f) {
-        emit("local " + f + "\r\n");
+        emit("local ");
+        EmitName({ type: 'Identifier', name: f }, emit, alloc);
+        emit("\r\n");
     });
     emit("\r\n-- BEGIN\r\n");
     EmitBlock(ast, emit, alloc, scope, false);
@@ -371,7 +373,9 @@ function EmitFunctionExpr(ast: esprima.Syntax.FunctionExpression, emit: (s: stri
     }
     var fPredeclare = unique(identList.funcs);
     fPredeclare.forEach(function (f) {
-        emit("local " + f + "\r\n");
+        emit("local ");
+        EmitName({ type: 'Identifier', name: f }, emit, alloc);
+        emit("\r\n");
     });
 
     scope.pushLexical(identList.vars, identList.funcs, arglist, 'function');

@@ -75,7 +75,9 @@ function EmitProgram(ast, emit, alloc) {
     scope.pushLexical(['__JsGlobalObjects', '__Singletons', 'undefined'].concat(identList.vars), ['eval'].concat(identList.funcs, BinaryOpRemapValues, Intrinsics), [], 'builtins-and-toplevels');
     var fPredeclare = unique(identList.funcs);
     fPredeclare.forEach(function (f) {
-        emit("local " + f + "\r\n");
+        emit("local ");
+        EmitName({ type: 'Identifier', name: f }, emit, alloc);
+        emit("\r\n");
     });
     emit("\r\n-- BEGIN\r\n");
     EmitBlock(ast, emit, alloc, scope, false);
@@ -371,7 +373,9 @@ function EmitFunctionExpr(ast, emit, alloc, scope) {
     }
     var fPredeclare = unique(identList.funcs);
     fPredeclare.forEach(function (f) {
-        emit("local " + f + "\r\n");
+        emit("local ");
+        EmitName({ type: 'Identifier', name: f }, emit, alloc);
+        emit("\r\n");
     });
     scope.pushLexical(identList.vars, identList.funcs, arglist, 'function');
     EmitStatement(ast.body, emit, alloc, scope, false);
