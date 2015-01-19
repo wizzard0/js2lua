@@ -48,8 +48,9 @@ local __Helpers = {}
 local function __id() end
 
 local function __XpCall(err)
-    print(to_string(err))
-    print(debug.traceback())
+-- this is 'first chance exception handler'
+    -- print(to_string(err))
+    -- print(debug.traceback())
     return err
 end
 
