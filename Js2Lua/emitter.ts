@@ -422,16 +422,18 @@ function EmitObject(ast: esprima.Syntax.ObjectExpression, emit: (s: string) => v
     emit("__MakeObject({");
     for (var si = 0; si < ast.properties.length; si++) {
         var arg = ast.properties[si];
-        emit("[\"");
+        emit("[");
         // always coerced to string, as per js spec
         if (arg.key.type == 'Literal') {
-            emit(arg.key.value);
+            emit(JSON.stringify(arg.key.value));
         } else if (arg.key.type == 'Identifier') { // identifiers already ok
+            emit("\"");
             EmitName(arg.key, emit, alloc)
+            emit("\"");
         } else {
             emit("--[[ EmitObject invalid key " + util.inspect(arg.key) + " ]]");
         }
-        emit("\"]=");
+        emit("]=");
         EmitExpression(arg.value, emit, alloc, scope, 0, false);
         if (si != ast.properties.length - 1) {
             emit(", ");
@@ -706,7 +708,7 @@ function EmitIf(ast: esprima.Syntax.IfStatement, emit: (s: string) => void, allo
         emit(" else\r\n");
         EmitStatement(ast.alternate, emit, alloc, scope, false);
     }
-    emit(" end");
+    emit(" end\r\n");
 }
 
 function EmitSwitch(ast: esprima.Syntax.SwitchStatement, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack) {
@@ -776,7 +778,7 @@ function EmitWith(ast: esprima.Syntax.WithStatement, emit: (s: string) => void, 
 }
 
 function EmitReturn(ast: esprima.Syntax.ReturnStatement, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack) {
-    emit("return ");
+    emit("\r\nreturn ");
     EmitExpression(ast.argument, emit, alloc, scope, 0, false);
 }
 

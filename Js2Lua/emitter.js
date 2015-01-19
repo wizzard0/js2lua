@@ -422,18 +422,20 @@ function EmitObject(ast, emit, alloc, scope) {
     emit("__MakeObject({");
     for (var si = 0; si < ast.properties.length; si++) {
         var arg = ast.properties[si];
-        emit("[\"");
+        emit("[");
         // always coerced to string, as per js spec
         if (arg.key.type == 'Literal') {
-            emit(arg.key.value);
+            emit(JSON.stringify(arg.key.value));
         }
         else if (arg.key.type == 'Identifier') {
+            emit("\"");
             EmitName(arg.key, emit, alloc);
+            emit("\"");
         }
         else {
             emit("--[[ EmitObject invalid key " + util.inspect(arg.key) + " ]]");
         }
-        emit("\"]=");
+        emit("]=");
         EmitExpression(arg.value, emit, alloc, scope, 0, false);
         if (si != ast.properties.length - 1) {
             emit(", ");
@@ -721,7 +723,7 @@ function EmitIf(ast, emit, alloc, scope) {
         emit(" else\r\n");
         EmitStatement(ast.alternate, emit, alloc, scope, false);
     }
-    emit(" end");
+    emit(" end\r\n");
 }
 function EmitSwitch(ast, emit, alloc, scope) {
     var testHolder = "__tmp" + alloc();
@@ -788,7 +790,7 @@ function EmitWith(ast, emit, alloc, scope) {
     emit("\r\n -- WithStmtEnd\r\n");
 }
 function EmitReturn(ast, emit, alloc, scope) {
-    emit("return ");
+    emit("\r\nreturn ");
     EmitExpression(ast.argument, emit, alloc, scope, 0, false);
 }
 function EmitThrow(ast, emit, alloc, scope) {

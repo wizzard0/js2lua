@@ -79,7 +79,9 @@ function ComparePrograms(fn: string, profile: boolean): any {
         var luasrc = emitter.convertFile(polyfills + source, fn, false);
         if (/--\[\[/.exec(luasrc)) {
             console.log(" [FAIL] NO CODE GENERATED " + fn);
-            console.log("PARTIAL: ", luasrc);
+            //console.log("PARTIAL: ", luasrc);
+            fs.writeFileSync(flua, luasrc);
+    
             return "nocode";
         }
         var time1 = +new Date();
@@ -108,7 +110,7 @@ function ComparePrograms(fn: string, profile: boolean): any {
                 && !/number expected, got/.exec(lua_stdout)) {
                 console.log(" [SYNTAX] FAIL == " + fn);
                 console.log("JS:", js_stdout);
-                console.log("\r\nLua SRC:", luasrc);
+                //console.log("\r\nLua SRC:", luasrc); // too much code to digest :(
                 console.log("\r\nLua:", lua_stdout);
                 return "nocode"; // generated invalid Lua code
             } else {

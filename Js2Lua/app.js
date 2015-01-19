@@ -69,7 +69,8 @@ function ComparePrograms(fn, profile) {
         var luasrc = emitter.convertFile(polyfills + source, fn, false);
         if (/--\[\[/.exec(luasrc)) {
             console.log(" [FAIL] NO CODE GENERATED " + fn);
-            console.log("PARTIAL: ", luasrc);
+            //console.log("PARTIAL: ", luasrc);
+            fs.writeFileSync(flua, luasrc);
             return "nocode";
         }
         var time1 = +new Date();
@@ -93,7 +94,7 @@ function ComparePrograms(fn, profile) {
             if (/expected|outside a vararg|undefined label/.exec(lua_stdout) && !/table expected, got/.exec(lua_stdout) && !/value expected/.exec(lua_stdout) && !/undefined label '__Continue6'/.exec(lua_stdout) && !/string expected, got/.exec(lua_stdout) && !/number expected, got/.exec(lua_stdout)) {
                 console.log(" [SYNTAX] FAIL == " + fn);
                 console.log("JS:", js_stdout);
-                console.log("\r\nLua SRC:", luasrc);
+                //console.log("\r\nLua SRC:", luasrc); // too much code to digest :(
                 console.log("\r\nLua:", lua_stdout);
                 return "nocode"; // generated invalid Lua code
             }

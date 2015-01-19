@@ -760,19 +760,6 @@ __JsGlobalObjects.parseInt = parseInt
 local parseFloat = __DefineFunction(function(self, str) return tonumber(str) end) -- TODO int
 __JsGlobalObjects.parseFloat = parseFloat
 
---[[
-JSON = assert(loadfile "JSON.lua")()
-function JSON:onEncodeError(message, etc) return 'null' end
-
-local __json = JSON -- global one
-local JSON = __New(Object)
-JSON.parse = __DefineFunction(function(self, str)
-    return __json:decode(str)
-end)
-JSON.stringify = __DefineFunction(function(self, val)
-    return __json:encode_pretty(val)
-end)
---]]
 -- LIBRARY END
 
 local self = __JsGlobalObjects
