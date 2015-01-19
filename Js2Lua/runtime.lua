@@ -171,10 +171,16 @@ local function __CmpGreaterEqual(x, y) -- not really compliant?
     end
 end
 
-local function __Get(table, key)
+local function __Get(table, key, inGetter)
   if type(table) ~= 'table' then
     error("Tried to access member " .. __ToString(key) .. " of non-table: " .. to_string(table))
   end
+  if not inGetter then
+      local getter = __Get(table, '__Get_'..key,true)
+    if getter then
+        return getter(table,key,v)
+    end
+end
   local result
   local iter = table
   repeat
@@ -241,6 +247,10 @@ local function __Call(table, ...)
 end
 
 local function __Put(table, k, v)
+    local putter = __Get(table, '__Put_'..k, true)
+    if putter then
+        putter(table,k,v)
+    end
   rawset(table, k, v)
   if type(k)=='number' then
     rawset(table, tostring(k), v)
@@ -402,16 +412,25 @@ local Math = __MathProto
 -- Object
 local Object = { ["prototype"] = {} }
 Object.getOwnPropertyDescriptor = function(self_o,object, key)
-  -- print(tostring(self).."/"..tostring(object).."/"..tostring(key))
-  local length_hack = (key ~= "length")
-  local val = 0
-  if not length_hack then val = __Get(object, key) end
-  return {
-    ["value"] = val,
-    ["writable"] = length_hack,
-    ["enumerable"] = length_hack,
-    ["configurable"] = length_hack
-  }
+  local isAccessorDescriptor = __Get(object, '__Put_'..key, true) -- put is Sink or func
+  local isEnumerable = __Get(object, '__propEnumerable_'..key, true) -- put is Sink or func
+  if isAccessorDescriptor then
+    if rawequal(isAccessorDescriptor, __Sink) then isAccessorDescriptor = nil end
+    return {
+        ["get"]=__Get(object, '__Get_'..key,true),
+        ["put"]=isAccessorDescriptor,
+        ["writable"]=true,
+        ["enumerable"] = isEnumerable,
+        ["configurable"] = true
+    }
+  else
+      return {
+        ["value"] = object[key],
+        ["writable"] = true,
+        ["enumerable"] = isEnumerable,
+        ["configurable"] = true
+      }
+  end
 end
 Object.getPrototypeOf = function(x,obj) return obj.__Prototype end
 Object.isExtensible = function(x,obj) return true end
@@ -430,10 +449,14 @@ Object.prototype.toString = function(self)
   -- return __ToString(self)
 end
 Object.defineProperty = function(self, key, descriptor)
-  if descriptor.get or descriptor.set then error("getters/setters NYI") end
   if not descriptor.writable or not descriptor.configurable then error("Error: readonly/unconf props NYI") end
-  rawset(self, key, descriptor.value)
-  if descriptor.enumerable then rawset(self, '__propEnumerable_'..key, value) end
+  if descriptor.enumerable then rawset(self, '__propEnumerable_'..key, true) end
+  if descriptor.get or descriptor.set then
+    rawset(self,'__Get_'..key, descriptor.get)
+    rawset(self,'__Put_'..key, descriptor.set or __Sink) -- so put is always set, we'll use this
+  else
+    rawset(self, key, descriptor.value)
+  end
 end
 Object.create = (function(self_o, proto, ...) 
     if __Typeof(proto) == 'function' then
