@@ -1234,7 +1234,7 @@ JSON.parse = json_parse;
     
     
     function str(key, holder) {
-        console.log('stringifying ' + key);
+        //console.log('stringifying ' + key);
         // Produce a string from holder[key].
         
         var i,          // The loop counter.
@@ -1312,6 +1312,7 @@ JSON.parse = json_parse;
                     // Join all of the elements together, separated with commas, and wrap them in
                     // brackets.
                     
+                    if (!partial.length) return '[]';
                     v = partial.length === 0
                     ? '[]'
                     : gap
@@ -1350,14 +1351,16 @@ JSON.parse = json_parse;
                 
                 // Join all of the member texts together, separated with commas,
                 // and wrap them in braces.
-                console.log('joining...')
+                //console.log('joining...',typeof gap,gap,typeof mind, mind,typeof partial, partial)
+              //  if (!partial.length) return '{}';
                 v = partial.length === 0
                 ? '{}'
-                : gap
+                : 
+                gap
                 ? '{\n' + gap + partial.join(',\n' + gap) + '\n' + mind + '}'
                 : '{' + partial.join(',') + '}';
                 gap = mind;
-                console.log('Ajoining...')
+                //console.log('Ajoining...')
                 return v;
         }
     }
