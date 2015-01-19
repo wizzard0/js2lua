@@ -360,11 +360,12 @@ Array.prototype.toLocaleString = Array.prototype.toString; // TODO
 
 Array.prototype.join = function (sep) {
     var s = '';
-    sep = sep || ',';
+    if (!arguments.length) sep = ',';
     for (var i = 0; i < this.length; i++) {
         if (i) s += sep;
         s += this[i];
     }
+    return s;
 }
 
 if (!Array.prototype.splice) {
@@ -1349,13 +1350,14 @@ JSON.parse = json_parse;
                 
                 // Join all of the member texts together, separated with commas,
                 // and wrap them in braces.
-                
+                console.log('joining...')
                 v = partial.length === 0
                 ? '{}'
                 : gap
                 ? '{\n' + gap + partial.join(',\n' + gap) + '\n' + mind + '}'
                 : '{' + partial.join(',') + '}';
                 gap = mind;
+                console.log('Ajoining...')
                 return v;
         }
     }
