@@ -5,18 +5,20 @@ function table_print (tt, indent, done)
   if type(tt) == "table" then
     local sb = {}
     for key, value in pairs (tt) do
-      table.insert(sb, string.rep (" ", indent)) -- indent it
-      if type (value) == "table" and not done [value] then
-        done [value] = true
-        table.insert(sb, "{\n");
-        table.insert(sb, table_print (value, indent + 2, done))
-        table.insert(sb, string.rep (" ", indent)) -- indent it
-        table.insert(sb, "}\n");
-      elseif "number" == type(key) then
-        table.insert(sb, string.format("\"%s\"\n", tostring(value)))
-      else
-        table.insert(sb, string.format(
-            "%s = \"%s\"\n", tostring (key), tostring(value)))
+      if string.sub(key, 1,2)~='__' then -- ignore impl
+          table.insert(sb, string.rep (" ", indent)) -- indent it
+          if type (value) == "table" and not done [value] then
+            done [value] = true
+            table.insert(sb, string.format("%s = {\n", tostring(key)));
+            table.insert(sb, table_print (value, indent + 2, done))
+            table.insert(sb, string.rep (" ", indent)) -- indent it
+            table.insert(sb, "}\n");
+          elseif "number" == type(key) then
+            table.insert(sb, string.format("\"%s\"\n", tostring(value)))
+          else
+            table.insert(sb, string.format(
+                "%s = \"%s\"\n", tostring (key), tostring(value)))
+          end
       end
     end
     return table.concat(sb)
@@ -178,7 +180,7 @@ local function __Get(table, key, inGetter)
   if not inGetter then
       local getter = __Get(table, '__Get_'..key,true)
     if getter then
-        return getter(table,key,v)
+        return getter(table,key)
     end
 end
   local result
@@ -249,13 +251,15 @@ end
 local function __Put(table, k, v)
     local putter = __Get(table, '__Put_'..k, true)
     if putter then
-        putter(table,k,v)
+        putter(table,v)
     end
   rawset(table, k, v)
   if type(k)=='number' then
     rawset(table, tostring(k), v)
   end
-  rawset(table, '__propEnumerable_'..k, true)
+  if(string.sub(k,1,2)~='__')then
+    rawset(table, '__propEnumerable_'..k, true)
+  end
 end
 
 local function __ArrayPut(table, k, v)
@@ -333,7 +337,7 @@ local function __New(ctor, ...)
     local obj = {}
     setmetatable(obj, __ObjectMetatable)
     obj.__Prototype = ctor.prototype
-    __JsGlobalObjects.Object.defineProperty(obj,'constructor',{["value"]=ctor,["writable"]=true,["configurable"]=true})
+    __JsGlobalObjects.Object.defineProperty(__JsGlobalObjects.Object, obj,'constructor',{["value"]=ctor,["writable"]=true,["configurable"]=true})
     obj.__TypeofValue = "object"
     -- print('new:[' .. to_string{...} .. ']')
     local rv2 = ctor.__CallImpl(obj, ...)
@@ -419,7 +423,6 @@ Object.getOwnPropertyDescriptor = function(self_o,object, key)
     return {
         ["get"]=__Get(object, '__Get_'..key,true),
         ["put"]=isAccessorDescriptor,
-        ["writable"]=true,
         ["enumerable"] = isEnumerable,
         ["configurable"] = true
     }
@@ -433,7 +436,6 @@ Object.getOwnPropertyDescriptor = function(self_o,object, key)
   end
 end
 Object.getPrototypeOf = function(x,obj) return obj.__Prototype end
-Object.isExtensible = function(x,obj) return true end
 Object.getOwnPropertyNames = function(x,obj)
   return pairs(obj)
 end
@@ -448,13 +450,18 @@ Object.prototype.toString = function(self)
   return "[object " .. string.upper(string.sub(t, 1, 1)) .. string.sub(t, 2) .. "]"
   -- return __ToString(self)
 end
-Object.defineProperty = function(self, key, descriptor)
-  if not descriptor.writable or not descriptor.configurable then error("Error: readonly/unconf props NYI") end
+Object.defineProperty = function(o, self, key, descriptor)
+--print(to_string(key))
+    if not descriptor.configurable then
+    print('DC:', tostring(__Get(descriptor,'configurable')))
+    print(to_string(key))
+     error("Error: unconf props NYI") end
   if descriptor.enumerable then rawset(self, '__propEnumerable_'..key, true) end
   if descriptor.get or descriptor.set then
     rawset(self,'__Get_'..key, descriptor.get)
     rawset(self,'__Put_'..key, descriptor.set or __Sink) -- so put is always set, we'll use this
   else
+    if not descriptor.writable then error("Error: readonly props NYI") end
     rawset(self, key, descriptor.value)
   end
 end
@@ -587,7 +594,7 @@ Array.prototype.toString = __DefineFunction(function(self)
 local __MakeArray = function(rawArray)
     local front = {["__BackingStore"]=rawArray}
     front.__Prototype = Array.prototype
-    Object.defineProperty(front, 'constructor',{["value"]=Array,["writable"]=true,["configurable"]=true})
+    Object.defineProperty(Object, front, 'constructor',{["value"]=Array,["writable"]=true,["configurable"]=true})
     setmetatable(front, __ArrayMetatable)
     return front
 end
@@ -599,7 +606,7 @@ local __MakeArguments = function(n, rawArray)
     end
     rawArray.length = n
     front.__Prototype = Array.prototype
-    Object.defineProperty(front, 'constructor',{["value"]=Array,["writable"]=true,["configurable"]=true})
+    Object.defineProperty(Object, front, 'constructor',{["value"]=Array,["writable"]=true,["configurable"]=true})
     setmetatable(front, __ArrayMetatable)
     return front
 end
@@ -609,7 +616,7 @@ local __MakeObject = function(raw)
   for k,v in pairs(raw) do
     rawset(raw, '__propEnumerable_'..k, true)
   end
-  Object.defineProperty(raw, 'constructor',{["value"]=Object,["writable"]=true,["configurable"]=true})
+  Object.defineProperty(Object, raw, 'constructor',{["value"]=Object,["writable"]=true,["configurable"]=true})
   return raw
 end
 -- Boolean
