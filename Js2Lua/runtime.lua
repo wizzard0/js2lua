@@ -319,6 +319,7 @@ local function __DefineFunction(definition)
   obj.__TypeofValue = "function"
   obj.prototype = __Helpers.__New(__JsGlobalObjects.Object)
   obj.__Prototype = __JsGlobalObjects.Function.prototype
+  __JsGlobalObjects.Object.defineProperty(__JsGlobalObjects.Object, obj.prototype,'constructor',{["value"]=obj,["writable"]=true,["configurable"]=true})
   return obj
 end
 __Helpers.__DefineFunction = __DefineFunction
@@ -335,8 +336,7 @@ local function __New(ctor, ...)
     end
     local obj = {}
     setmetatable(obj, __ObjectMetatable)
-    obj.__Prototype = ctor.prototype
-    __JsGlobalObjects.Object.defineProperty(__JsGlobalObjects.Object, obj,'constructor',{["value"]=ctor,["writable"]=true,["configurable"]=true})
+    obj.__Prototype = ctor.prototype    
     obj.__TypeofValue = "object"
     -- print('new:[' .. to_string{...} .. ']')
     local rv2 = ctor.__CallImpl(obj, ...)
@@ -472,7 +472,7 @@ Object.create = (function(self_o, proto, ...)
       return __New(Object)
     end
   end)
-Object.__CallImpl = function(self) end -- function Empty() {}, aka Object.__Prototype
+Object.__CallImpl = function(self) return self end -- function Empty() {}, aka Object.__Prototype
 setmetatable(Object, __ObjectMetatable)
 setmetatable(Object.prototype, __ObjectMetatable)
 Object.__ToStringValue = 'function Object() { [builtin] }'
@@ -503,7 +503,7 @@ Function.prototype.apply = function(self, self2, argArray)
 end
 Object.__Prototype = Function.prototype -- maybe wrong
 Function.__Prototype = Function.prototype
-Function.prototype.constructor = Function
+Object.defineProperty(Object, Function.prototype, 'constructor',{["value"]=Function,["writable"]=true,["configurable"]=true})
 __JsGlobalObjects.Function = Function
 
 -- Number
@@ -597,10 +597,10 @@ Array.prototype.toString = __DefineFunction(function(self)
     end
     return str
   end)
+Object.defineProperty(Object, Array.prototype, 'constructor',{["value"]=Array,["writable"]=true,["configurable"]=true})
 local __MakeArray = function(rawArray)
     local front = {["__BackingStore"]=rawArray}
     front.__Prototype = Array.prototype
-    Object.defineProperty(Object, front, 'constructor',{["value"]=Array,["writable"]=true,["configurable"]=true})
     setmetatable(front, __ArrayMetatable)
     return front
 end
@@ -612,7 +612,6 @@ local __MakeArguments = function(n, rawArray)
     end
     rawArray.length = n
     front.__Prototype = Array.prototype
-    Object.defineProperty(Object, front, 'constructor',{["value"]=Array,["writable"]=true,["configurable"]=true})
     setmetatable(front, __ArrayMetatable)
     return front
 end
@@ -622,7 +621,6 @@ local __MakeObject = function(raw)
   for k,v in pairs(raw) do
     rawset(raw, '__propEnumerable_'..k, true)
   end
-  Object.defineProperty(Object, raw, 'constructor',{["value"]=Object,["writable"]=true,["configurable"]=true})
   return raw
 end
 -- Boolean
@@ -636,6 +634,7 @@ end
 Boolean.prototype.toString = __DefineFunction(function(self)
     return tostring(self.__Value)
   end)
+Object.defineProperty(Object, Boolean.prototype, 'constructor',{["value"]=Boolean,["writable"]=true,["configurable"]=true})
 __JsGlobalObjects.Boolean = Boolean
 
 
@@ -713,7 +712,7 @@ String.prototype.valueOf = String.prototype.toString
 String.prototype.split = __DefineFunction(function(self, pat)
     return __MakeArray(__split(self.__ToStringValue, pat))
   end)
-String.prototype.constructor = String
+Object.defineProperty(Object, String.prototype, 'constructor',{["value"]=String,["writable"]=true,["configurable"]=true})
 __JsGlobalObjects.String = String
 
 -- Date
@@ -727,14 +726,13 @@ Date.prototype.getTime = function(self)
   return self.__Value
 end
 Date.prototype.toLocaleTimeString = __DefineFunction(__id)
+Object.defineProperty(Object, Date.prototype, 'constructor',{["value"]=Date,["writable"]=true,["configurable"]=true})
 __JsGlobalObjects.Date = Date
 
--- JSON
-local JSON = __New(Function)
-__JsGlobalObjects.JSON = JSON
 
 -- RegExp
 local RegExp = __New(Function)
+Object.defineProperty(Object, RegExp.prototype, 'constructor',{["value"]=RegExp,["writable"]=true,["configurable"]=true})
 __JsGlobalObjects.RegExp = RegExp
 RegExp.__CallImpl = function(self, val) 
   -- print ('RegExp ctor: ' .. val)
@@ -748,6 +746,7 @@ Error.__CallImpl = function(self, ...)
   -- print ('Error ctor: ')
   self.__Args = {...}
 end
+Object.defineProperty(Object, Error.prototype, 'constructor',{["value"]=Error,["writable"]=true,["configurable"]=true})
 __JsGlobalObjects.Error = Error
 local EvalError = __New(Function)
 local RangeError = __New(Function)
