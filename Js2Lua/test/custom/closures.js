@@ -124,5 +124,5 @@ var json_parse2 = (function () {
 }());
 
 
-ar f=json_parse2('"a"');
+var f=json_parse2('"a"');
 console.log(f);
