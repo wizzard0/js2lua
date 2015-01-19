@@ -319,7 +319,6 @@ local function __DefineFunction(definition)
   obj.__TypeofValue = "function"
   obj.prototype = __Helpers.__New(__JsGlobalObjects.Object)
   obj.__Prototype = __JsGlobalObjects.Function.prototype
-  obj.constructor = __JsGlobalObjects.Function
   return obj
 end
 __Helpers.__DefineFunction = __DefineFunction
@@ -440,6 +439,7 @@ Object.getOwnPropertyNames = function(x,obj)
   return pairs(obj)
 end
 Object.prototype.hasOwnProperty = function(self, key)
+  if(string.sub(key, 1, 2)=='__') then return false end -- __Prototype, whoops
   return nil ~= rawget(self, key)
 end
 Object.prototype.propertyIsEnumerable = function(self, key)
@@ -503,6 +503,7 @@ Function.prototype.apply = function(self, self2, argArray)
 end
 Object.__Prototype = Function.prototype -- maybe wrong
 Function.__Prototype = Function.prototype
+Function.prototype.constructor = Function
 __JsGlobalObjects.Function = Function
 
 -- Number

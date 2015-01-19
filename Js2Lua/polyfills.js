@@ -356,7 +356,16 @@ if (!Array.prototype.some) {
     };
 }
 
-Array.prototype.toLocaleString = Array.prototype.toString
+Array.prototype.toLocaleString = Array.prototype.toString; // TODO
+
+Array.prototype.join = function (sep) {
+    var s = '';
+    sep = sep || ',';
+    for (var i = 0; i < this.length; i++) {
+        if (i) s += sep;
+        s += this[i];
+    }
+}
 
 if (!Array.prototype.splice) {
     Array.prototype.splice = function (index, howmany) {
@@ -1224,7 +1233,7 @@ JSON.parse = json_parse;
     
     
     function str(key, holder) {
-        
+        console.log('stringifying ' + key);
         // Produce a string from holder[key].
         
         var i,          // The loop counter.
