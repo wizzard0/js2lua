@@ -718,6 +718,7 @@ function EmitSwitch(ast: esprima.Syntax.SwitchStatement, emit: (s: string) => vo
     emit("\r\nlocal " + testHolder + " = (");
     EmitExpression(ast.discriminant, emit, alloc, scope, 0, false);
     emit(") -- SwitchStmt\r\n");
+    scope.pushLexical([testHolder], [], [], 'switch');
     var defaultCase: esprima.Syntax.SwitchCase = null;
     var dci: string;
 
@@ -756,6 +757,7 @@ function EmitSwitch(ast: esprima.Syntax.SwitchStatement, emit: (s: string) => vo
 
     emit("::" + labelPrefix + "_End::");
     emit("\r\n -- SwitchStmtEnd\r\n");
+    scope.popScope();
 }
 
 
@@ -840,11 +842,13 @@ function EmitLogical(ast: esprima.Syntax.BinaryExpression, emit: (s: string) => 
     if (aop == '&&') {
         aop = ' and ';
     }
-    emit("(");
+    emit("(__ToBoolean(");
     EmitExpression(ast.left, emit, alloc, scope, 0, false);
-    emit(aop);
-    EmitExpression(ast.right, emit, alloc, scope, 0, false);
     emit(")");
+    emit(aop);
+    emit("__ToBoolean(");
+    EmitExpression(ast.right, emit, alloc, scope, 0, false);
+    emit("))");
 }
 
 function EmitConditional(ast: esprima.Syntax.ConditionalExpression, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack) {

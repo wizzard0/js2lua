@@ -91,7 +91,7 @@ var json_parse2 = (function () {
     
     value = function () {
         white();
-        console.log(ch);
+        console.log(at, ch);
         switch (ch) {
             case '{':
                 return object();
@@ -114,6 +114,7 @@ var json_parse2 = (function () {
         ch = ' ';
         result = value();
         white();
+        console.log(at, ch);
         if (ch) {
             error("Syntax error");
         }
@@ -123,5 +124,6 @@ var json_parse2 = (function () {
 }());
 
 
-var f=json_parse2('{"1":"2"}');
+//var f=json_parse2('{"1":"2"}');
+var f=json_parse2('"a"');
 console.log(f);

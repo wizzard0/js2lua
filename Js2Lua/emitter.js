@@ -731,6 +731,7 @@ function EmitSwitch(ast, emit, alloc, scope) {
     emit("\r\nlocal " + testHolder + " = (");
     EmitExpression(ast.discriminant, emit, alloc, scope, 0, false);
     emit(") -- SwitchStmt\r\n");
+    scope.pushLexical([testHolder], [], [], 'switch');
     var defaultCase = null;
     var dci;
     var emitTest = function (test, i) {
@@ -773,6 +774,7 @@ function EmitSwitch(ast, emit, alloc, scope) {
     }
     emit("::" + labelPrefix + "_End::");
     emit("\r\n -- SwitchStmtEnd\r\n");
+    scope.popScope();
 }
 function EmitWith(ast, emit, alloc, scope) {
     // todo strict mode
@@ -848,11 +850,13 @@ function EmitLogical(ast, emit, alloc, scope) {
     if (aop == '&&') {
         aop = ' and ';
     }
-    emit("(");
+    emit("(__ToBoolean(");
     EmitExpression(ast.left, emit, alloc, scope, 0, false);
-    emit(aop);
-    EmitExpression(ast.right, emit, alloc, scope, 0, false);
     emit(")");
+    emit(aop);
+    emit("__ToBoolean(");
+    EmitExpression(ast.right, emit, alloc, scope, 0, false);
+    emit("))");
 }
 function EmitConditional(ast, emit, alloc, scope) {
     emit("(((");
