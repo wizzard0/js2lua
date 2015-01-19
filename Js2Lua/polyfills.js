@@ -624,3 +624,20 @@ function fnExists(/*arguments*/) {
     }
     return true;
 }
+
+Object.isExtensible = function (obj) {
+    return !obj.__NonExtensible;
+}
+
+Object.preventExtensions = function (obj) {
+    obj.__NonExtensible = true;
+}
+
+Object.seal = Object.freeze = Object.preventExtensions; // TODO proper implementation
+
+Object.isFrozen = Object.isSealed = function (obj) {
+    return !Object.isExtensible(obj);
+}; // TODO proper implementation
+// non extensible = no newindex
+// sealed = no newindex, all props nonconfigurable, but writable
+// frozen = props nonconfigurable and readonly
