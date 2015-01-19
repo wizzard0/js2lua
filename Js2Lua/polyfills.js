@@ -802,7 +802,7 @@ var json_parse = (function () {
             // If a c parameter is provided, verify that it matches the current character.
             
             if (c && c !== ch) {
-                error("Expected '" + c + "' instead of '" + ch + "'");
+                error("Expected '" + !!c + c + "' instead of '" + ch + "'");
             }
             
             // Get the next character. When there are no more characters,

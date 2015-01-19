@@ -185,9 +185,9 @@ function EmitTryStatement(ast: esprima.Syntax.TryStatement, emit: (s: string) =>
     var catchReturnValue = "__CatchReturnValue" + alloc();
     var finalizer = "__TryFinalizer" + alloc();
     var handler = "__TryHandler" + alloc();
-    emit("--TryBody\r\nlocal " + statusName + "," + returnValue + " = pcall(function ()\r\n");
+    emit("--TryBody\r\nlocal " + statusName + "," + returnValue + " = xpcall(function ()\r\n");
     EmitStatement(ast.block, emit, alloc, scope, false);
-    emit(" end)\r\n");
+    emit(" end, __XpCall)\r\n");
     //emit("print( " + statusName + "," + returnValue + ")\r\n");
     if (ast.finalizer) {
         emit("--Finally\r\nlocal " + finalizer + "=(function() ");

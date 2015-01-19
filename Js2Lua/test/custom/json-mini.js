@@ -9,7 +9,7 @@ var z = JSON.parse(y);
 var w = JSON.stringify(z);
 console.log(w);
 }catch(e){
-	console.log("ERROR:"+e);
+	console.log("ERROR: X"+e);
 }
 }
 console.log(Object.prototype.toString.apply([]))

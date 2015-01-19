@@ -47,6 +47,11 @@ local __Helpers = {}
 
 local function __id() end
 
+local function __XpCall(err)
+    print(to_string(err))
+    print(debug.traceback())
+end
+
 local function __Typeof(value)
   if type(value) == 'boolean' or type(value) == 'number' or type(value) == 'string' then
     return type(value)
@@ -368,12 +373,23 @@ local function __Sink()
 end
 
 local __TernaryStack={} -- HOLY FUCK
+local __TernaryUndefined={}
 -- Ternary via stack!
 local __TernarySave,__TernaryReplace, __TernaryRestore do
   -- local o_saved -- nope, wont work with nested
-  __TernarySave = function(o) table.insert(__TernaryStack, o); return __ToBoolean(o) end
+  __TernarySave = function(o)
+  if(o==nil)then 
+    table.insert(__TernaryStack,__TernaryUndefined) 
+    else 
+   table.insert(__TernaryStack, o) 
+   end
+   return __ToBoolean(o) end
   __TernaryReplace = function(o) __TernaryStack[#__TernaryStack]=o; return true end
-  __TernaryRestore = function() return table.remove(__TernaryStack) end
+  __TernaryRestore = function() 
+  local a =table.remove(__TernaryStack)
+  if a==__TernaryUndefined then a=nil end
+  return a
+   end
 end
 
 -- Null

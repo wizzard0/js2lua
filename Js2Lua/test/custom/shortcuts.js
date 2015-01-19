@@ -1,12 +1,12 @@
 console.log(1?2:3);
-console.log(0?0:3);
+console.log(undefined?0:3);
 console.log(true?2:3);
 console.log(false?0:3);
 
 console.log(1||2)
-console.log(0||2)
+console.log(undefined||2)
 console.log(1||false)
-console.log(0||false)
+console.log(undefined||false)
 
 console.log(1&&2)
 console.log(0&&2)
