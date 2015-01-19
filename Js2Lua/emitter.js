@@ -993,7 +993,13 @@ function EmitLiteral(ex, emit, alloc, scope) {
     }
     else {
         //console.log(ex.raw);
+        if (typeof ex.value == 'string') {
+            emit("__New(String, "); // make string a reference type... oooh
+        }
         emit(JSON.stringify(ex.value)); // TODO
+        if (typeof ex.value == 'string') {
+            emit(")"); // make string a reference type...
+        }
     }
 }
 function convertFile(source, fn, printCode) {

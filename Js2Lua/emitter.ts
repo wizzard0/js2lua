@@ -971,8 +971,14 @@ function EmitLiteral(ex: esprima.Syntax.Literal, emit: (s: string) => void, allo
         emit(JSON.stringify((<any>ex).raw)); // TODO https://github.com/o080o/reLua!
         emit(")");
     } else {
-        //console.log(ex.raw);
-        emit(JSON.stringify(ex.value)); // TODO
+    //console.log(ex.raw);
+    if (typeof ex.value == 'string') {
+        emit("__New(String, "); // make string a reference type... oooh
+    }
+    emit(JSON.stringify(ex.value)); // TODO
+    if (typeof ex.value == 'string') {
+            emit(")"); // make string a reference type...
+        }
     }
 }
 
