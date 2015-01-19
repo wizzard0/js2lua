@@ -449,6 +449,9 @@ Object.prototype.propertyIsEnumerable = function(self, key)
 end
 Object.prototype.toString = function(self)
   local t = __Typeof(self)
+  -- why doesnt this wopk?
+  -- if self.constructor==__JsGlobalObjects.Array then t='array' end
+  if self.__BackingStore then t='array' end
   return "[object " .. string.upper(string.sub(t, 1, 1)) .. string.sub(t, 2) .. "]"
   -- return __ToString(self)
 end

@@ -12,7 +12,8 @@ console.log(w);
 	console.log("ERROR:"+e);
 }
 }
-
+console.log(Object.prototype.toString.apply([]))
+test([]);
 test({});
 test({a:1});
 test({a:1,b:[1,2,3]});
