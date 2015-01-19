@@ -425,7 +425,7 @@ function EmitObject(ast, emit, alloc, scope) {
         emit("[");
         // always coerced to string, as per js spec
         if (arg.key.type == 'Literal') {
-            emit(JSON.stringify(arg.key.value));
+            emit(JSON.stringify('' + arg.key.value));
         }
         else if (arg.key.type == 'Identifier') {
             emit("\"");

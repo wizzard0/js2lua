@@ -425,7 +425,7 @@ function EmitObject(ast: esprima.Syntax.ObjectExpression, emit: (s: string) => v
         emit("[");
         // always coerced to string, as per js spec
         if (arg.key.type == 'Literal') {
-            emit(JSON.stringify(arg.key.value));
+            emit(JSON.stringify('' + arg.key.value));
         } else if (arg.key.type == 'Identifier') { // identifiers already ok
             emit("\"");
             EmitName(arg.key, emit, alloc)
@@ -945,7 +945,7 @@ function EmitCall(ast: esprima.Syntax.CallExpression, emit: (s: string) => void,
         emit("--[[WTF Call " + util.inspect(ast) + " --]]");
     }
     for (var si = 0; si < ast.arguments.length; si++) {
-        var arg = ast.arguments[si]; 
+        var arg = ast.arguments[si];
         if (si) emit(",");
         EmitExpression(arg, emit, alloc, scope, 0, false);
     }
