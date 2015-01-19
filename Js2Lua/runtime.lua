@@ -142,7 +142,7 @@ end
 
 local function __CmpGreater(x, y) -- not really compliant?
     if type(x)=='string' and type(y)=='string' then
-        return x<y
+        return x>y
     else
         local nx=__ToNumber(x)
         local ny=__ToNumber(y)
@@ -153,7 +153,7 @@ end
 
 local function __CmpLessEqual(x, y) -- not really compliant?
     if type(x)=='string' and type(y)=='string' then
-        return x<y
+        return x<=y
     else
         local nx=__ToNumber(x)
         local ny=__ToNumber(y)
@@ -164,7 +164,7 @@ end
 
 local function __CmpGreaterEqual(x, y) -- not really compliant?
     if type(x)=='string' and type(y)=='string' then
-        return x<y
+        return x>=y
     else
         local nx=__ToNumber(x)
         local ny=__ToNumber(y)
