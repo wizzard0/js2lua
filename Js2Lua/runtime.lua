@@ -50,6 +50,7 @@ local function __id() end
 local function __XpCall(err)
     print(to_string(err))
     print(debug.traceback())
+    return err
 end
 
 local function __Typeof(value)
