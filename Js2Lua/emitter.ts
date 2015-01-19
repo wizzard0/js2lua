@@ -842,23 +842,23 @@ function EmitLogical(ast: esprima.Syntax.BinaryExpression, emit: (s: string) => 
     if (aop == '&&') {
         aop = ' and ';
     }
-    emit("(__ToBoolean(");
+    emit("(__TernaryRestore(__TernarySave(");
     EmitExpression(ast.left, emit, alloc, scope, 0, false);
     emit(")");
     emit(aop);
-    emit("__ToBoolean(");
+    emit("__TernaryReplace(");
     EmitExpression(ast.right, emit, alloc, scope, 0, false);
     emit("))");
 }
 
 function EmitConditional(ast: esprima.Syntax.ConditionalExpression, emit: (s: string) => void, alloc: () => number, scope: scoping.ScopeStack) {
-    emit("(((");
+    emit("(__TernaryRestore(__ToBoolean(");
     EmitExpression(ast.test, emit, alloc, scope, 0, false);
-    emit(") and __TernarySave(");
+    emit(") and __TernarySaveTrue(");
     EmitExpression(ast.consequent, emit, alloc, scope, 0, false);
-    emit(") or __TernarySave(");
+    emit(") or __TernaryReplace(");
     EmitExpression(ast.alternate, emit, alloc, scope, 0, false);
-    emit(")) and __TernaryRestore())");
+    emit(")))");
 }
 
 var reservedLuaKeys = {

@@ -850,22 +850,22 @@ function EmitLogical(ast, emit, alloc, scope) {
     if (aop == '&&') {
         aop = ' and ';
     }
-    emit("(__ToBoolean(");
+    emit("(__TernaryRestore(__TernarySave(");
     EmitExpression(ast.left, emit, alloc, scope, 0, false);
     emit(")");
     emit(aop);
-    emit("__ToBoolean(");
+    emit("__TernaryReplace(");
     EmitExpression(ast.right, emit, alloc, scope, 0, false);
     emit("))");
 }
 function EmitConditional(ast, emit, alloc, scope) {
-    emit("(((");
+    emit("(__TernaryRestore(__ToBoolean(");
     EmitExpression(ast.test, emit, alloc, scope, 0, false);
-    emit(") and __TernarySave(");
+    emit(") and __TernarySaveTrue(");
     EmitExpression(ast.consequent, emit, alloc, scope, 0, false);
-    emit(") or __TernarySave(");
+    emit(") or __TernaryReplace(");
     EmitExpression(ast.alternate, emit, alloc, scope, 0, false);
-    emit(")) and __TernaryRestore())");
+    emit(")))");
 }
 var reservedLuaKeys = {
     'true': true,
