@@ -1,4 +1,4 @@
-
+// stripped, still causes a lot of grief with switches and comparisons
 var json_parse2 = (function () {
     var at,        ch,          escapee = {
             '"': '"',
@@ -124,6 +124,5 @@ var json_parse2 = (function () {
 }());
 
 
-//var f=json_parse2('{"1":"2"}');
-var f=json_parse2('"a"');
+ar f=json_parse2('"a"');
 console.log(f);
