@@ -1232,7 +1232,6 @@ JSON.parse = json_parse;
         return '"' + string + '"';
     }
     
-    
     function str(key, holder) {
         //console.log('stringifying ' + key);
         // Produce a string from holder[key].

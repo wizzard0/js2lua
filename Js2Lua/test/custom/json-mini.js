@@ -13,7 +13,10 @@ console.log(w);
 }
 }
 console.log(Object.prototype.toString.apply([]))
+console.log(undefined||null)
+test(null);
 test([]);
 test({});
 test({a:1});
-test({a:1,b:[1,2,3]});
+//test({a:1,b:[1,2,3]});// fails because key ordering
+test({b:[1,2,3,null,true,false]});// fails because no roundtrip
