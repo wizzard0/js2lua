@@ -698,7 +698,7 @@ String.fromCharCode = function(self, ...)
     return string.char(...)
 end
 String.prototype.charCodeAt = function(self, idx)
-  return self.__Unicode[idx] -- TODO unicode!
+  return self.__Unicode[idx+1] -- TODO unicode!
 end
 String.prototype.toString = __DefineFunction(function(self)
     return self.__ToStringValue
