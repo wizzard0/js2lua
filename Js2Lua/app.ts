@@ -50,7 +50,7 @@ function ComparePrograms(fn: string, profile: boolean): any {
         //|| hasTry
         //|| hasSwitch
         || hasOther
-        ||isTmpFile
+        || isTmpFile
     //  || weirdTests
     // || hasAnythingToDoWithDate
     //  || hasGlobalDeleteTest || hasIntl || onlyStrict
@@ -78,12 +78,14 @@ function ComparePrograms(fn: string, profile: boolean): any {
             return true;
         }
     } else {
-        var luasrc = emitter.convertFile(polyfills + source, fn, false);
+        var pref = 'try{\r\n';
+        var postf = '\r\n} catch(e){ __LastXpCall(e) }\r\n';
+        var luasrc = emitter.convertFile(polyfills + pref + source + postf, fn, false);
         if (/--\[\[/.exec(luasrc)) {
             console.log(" [FAIL] NO CODE GENERATED " + fn);
             //console.log("PARTIAL: ", luasrc);
             fs.writeFileSync(flua, luasrc);
-    
+
             return "nocode";
         }
         var time1 = +new Date();

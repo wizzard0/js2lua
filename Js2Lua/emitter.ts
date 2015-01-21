@@ -54,6 +54,7 @@ var Intrinsics = [ // NOTE needs to be somehow duplicated in the runtime.eval
     '__MakeArguments',
     '__MakeArray',
     '__MakeObject',
+    '__LastXpCall',
     'rawset',
     'rawget',
     'Infinity',
@@ -204,8 +205,8 @@ function EmitTryStatement(ast: esprima.Syntax.TryStatement, emit: (s: string) =>
         var h = ah[0];
         var paramName = h.param.name;
         emit("--Catch\r\nlocal " + handler + "=(function(" + paramName + ") ");
-        scope.pushLexical([paramName],[], [], 'catch');
-    
+        scope.pushLexical([paramName], [], [], 'catch');
+
         EmitStatement(h.body, emit, alloc, scope, false);
         scope.popScope();
         emit(" end)");
@@ -322,6 +323,7 @@ function EmitIdentifier(ast: esprima.Syntax.Identifier, emit: (s: string) => voi
         EmitName(ast, emit, alloc);
     } else if (r.type == 'Object') {
         if (!isRef) {
+            var rcIndex = alloc();
             emit("__RefCheck(");
             EmitMember({
                 type: 'MemberExpression',
@@ -329,7 +331,7 @@ function EmitIdentifier(ast: esprima.Syntax.Identifier, emit: (s: string) => voi
                 object: { type: 'Identifier', name: r.ident },
                 property: ast
             }, emit, alloc, scope, false, isRef);
-            emit(")");
+            emit("," + rcIndex + ")");
         } else {
             // set non-local prop
             EmitMember({

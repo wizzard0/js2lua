@@ -52,6 +52,7 @@ var Intrinsics = [
     '__MakeArguments',
     '__MakeArray',
     '__MakeObject',
+    '__LastXpCall',
     'rawset',
     'rawget',
     'Infinity',
@@ -320,6 +321,7 @@ function EmitIdentifier(ast, emit, alloc, scope, isRef) {
     }
     else if (r.type == 'Object') {
         if (!isRef) {
+            var rcIndex = alloc();
             emit("__RefCheck(");
             EmitMember({
                 type: 'MemberExpression',
@@ -327,7 +329,7 @@ function EmitIdentifier(ast, emit, alloc, scope, isRef) {
                 object: { type: 'Identifier', name: r.ident },
                 property: ast
             }, emit, alloc, scope, false, isRef);
-            emit(")");
+            emit("," + rcIndex + ")");
         }
         else {
             // set non-local prop

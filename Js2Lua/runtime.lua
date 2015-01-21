@@ -49,10 +49,23 @@ local function __id() end
 
 local function __XpCall(err)
 -- this is 'first chance exception handler'
-    --print('FCE:'..to_string(err))
+    -- print('FCE:'..to_string(err))
     -- print(debug.traceback())
-    -- error(err)
+    if err and err.__Args then
+        table.insert(err.__Args, debug.traceback())
+    end
     return err
+end
+
+local function __LastXpCall(err)
+-- this is 'panic handler'
+    if err then
+        print('Unhandled Exception:'..type(err)..':'..to_string(err)..':'..to_string(err.__Args))
+    else
+        print('Unhandled Exception: <undefined>')
+    end
+    print(debug.traceback())
+    os.exit(1)
 end
 
 local function __Typeof(value)
@@ -334,10 +347,16 @@ local function __DefineFunction(definition)
 end
 __Helpers.__DefineFunction = __DefineFunction
 
-local function __RefCheck(val)
-  if nil == val then error(__Helpers.__New(__JsGlobalObjects.ReferenceError)) end
-  -- this is incorrect
+local function __RefCheck(val, place)
+  if nil == val then error(__Helpers.__New(__JsGlobalObjects.ReferenceError, place)) end
   return val
+end
+
+local function __MakeEvalRefCheck(code)
+    return function(val, place)
+      if nil == val then error(__Helpers.__New(__JsGlobalObjects.ReferenceError, place, code)) end
+      return val
+    end
 end
 
 local function __New(ctor, ...)
@@ -840,6 +859,7 @@ local __IntrinsicTable={
     __MakeArguments=__MakeArguments,
     __MakeArray=__MakeArray,
     __MakeObject=__MakeObject,
+    __LastXpCall=__LastXpCall,
     --
     bit32=bit32,
     -- in globalobj
@@ -866,6 +886,7 @@ local function eval(dummy, code) -- uses js translator currently
         error(__New(SyntaxError)) 
     else
         -- print( '<<'..output..'>>')
+        __IntrinsicTable.__RefCheck = __MakeEvalRefCheck(code)
         local func = load(output, '__evalcode__', nil, __IntrinsicTable)
         return func()
     end
