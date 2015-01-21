@@ -49,8 +49,9 @@ local function __id() end
 
 local function __XpCall(err)
 -- this is 'first chance exception handler'
-    -- print(to_string(err))
+    --print('FCE:'..to_string(err))
     -- print(debug.traceback())
+    -- error(err)
     return err
 end
 
@@ -207,7 +208,9 @@ local function __InstanceOf(table, ctor)
   local iter = table
   repeat
     local result = rawget(iter, 'constructor')
-    if result == ctor then return true end
+    if result ~= nil and result == ctor then
+        return true
+    end
     iter = rawget(iter, "__Prototype")
   until nil == iter
   return false
@@ -774,9 +777,24 @@ __JsGlobalObjects.Error = Error
 local EvalError = __New(Function)
 local RangeError = __New(Function)
 local ReferenceError = __New(Function)
+ReferenceError.__CallImpl = Error.__CallImpl -- TODO ctors should be inheritable?
+ReferenceError.prototype.toString = __DefineFunction(function(self) return '[object ReferenceError]' end)
+Object.defineProperty(Object, ReferenceError.prototype, 'constructor',{["value"]=ReferenceError,["writable"]=true,["configurable"]=true})
 local SyntaxError = __New(Function)
+SyntaxError.__CallImpl = Error.__CallImpl -- TODO ctors should be inheritable?
+SyntaxError.prototype.toString = __DefineFunction(function(self) return '[object SyntaxError]' end)
+Object.defineProperty(Object, SyntaxError.prototype, 'constructor',{["value"]=SyntaxError,["writable"]=true,["configurable"]=true})
 local TypeError = __New(Function)
+TypeError.__CallImpl = Error.__CallImpl -- TODO ctors should be inheritable?
+TypeError.prototype.toString = __DefineFunction(function(self) return '[object TypeError]' end)
+Object.defineProperty(Object, TypeError.prototype, 'constructor',{["value"]=TypeError,["writable"]=true,["configurable"]=true})
 local URIError = __New(Function)
+__JsGlobalObjects.EvalError = EvalError
+__JsGlobalObjects.RangeError = RangeError
+__JsGlobalObjects.ReferenceError = ReferenceError
+__JsGlobalObjects.SyntaxError = SyntaxError
+__JsGlobalObjects.TypeError = TypeError
+__JsGlobalObjects.URIError = URIError
 
 -- Global functions
 local escape = __DefineFunction(function(self, str) return str end) -- TODO actually escape :)
@@ -801,10 +819,11 @@ local function eval(dummy, code) -- uses js translator currently
     -- rc[3] will be the signal
     local rc = {file:close()}
     -- print('IN EV')
-    if output:sub(1,10)=='SyntaxError' then 
-        error("SyntaxError") 
+    if output:sub(1,11)=='SyntaxError' then 
+        -- print('SE')
+        error(__New(SyntaxError)) 
     else
-        -- print( '<<'..output..'>>')
+        print( '<<'..output..'>>')
         local func = load(output, '__evalcode__', nil, {__JsGlobalObjects=__JsGlobalObjects,__RefCheck=__RefCheck,__CallMember=__CallMember})
         return func()
     end

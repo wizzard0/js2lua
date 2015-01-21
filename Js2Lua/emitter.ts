@@ -200,7 +200,10 @@ function EmitTryStatement(ast: esprima.Syntax.TryStatement, emit: (s: string) =>
         var h = ah[0];
         var paramName = h.param.name;
         emit("--Catch\r\nlocal " + handler + "=(function(" + paramName + ") ");
+        scope.pushLexical([paramName],[], [], 'catch');
+    
         EmitStatement(h.body, emit, alloc, scope, false);
+        scope.popScope();
         emit(" end)");
     } else {
         emit("--[[MultipleCatchClauses]]");

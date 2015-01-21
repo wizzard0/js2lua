@@ -14,6 +14,7 @@ function testcase() {
             eval("var prop = \\u2029;");
             return false;
         } catch (e) {
+        	console.log(e instanceof SyntaxError);
             return e instanceof SyntaxError;
         }
     }
