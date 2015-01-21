@@ -40,7 +40,9 @@
     <TypeScriptCompile Include="argfinder.ts" />
     <TypeScriptCompile Include="ast-hoist.ts" />
     <TypeScriptCompile Include="emitter.ts" />
+    <TypeScriptCompile Include="just_translate.ts" />
     <TypeScriptCompile Include="lua-ast.ts" />
+    <TypeScriptCompile Include="run.ts" />
     <TypeScriptCompile Include="scoping.ts" />
     <TypeScriptCompile Include="Scripts\typings\esprima\esprima.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\node\node.d.ts" />
