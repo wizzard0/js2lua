@@ -10,7 +10,10 @@
 
 
 function testcase() {
+		console.log("BEFORE")
         eval("var test7_3_1\u2028prop = 66;");
+        console.log("AFTER")
+        console.log(prop)
         return (prop === 66) && ((typeof test7_3_1) === "undefined");
     }
 runTestCase(testcase);
