@@ -837,9 +837,12 @@ local __IntrinsicTable={
     __TernaryRestore=__TernaryRestore,
     __Iterate=__Iterate,
     __RefCheck=__RefCheck,
+    --
+    bit32=bit32,
     -- in globalobj
     -- Infinity=Infinity,
-    -- NaN=NaN
+    -- NaN=NaN,
+    __JsGlobalObjects=__JsGlobalObjects,
 }
 
 local function eval(dummy, code) -- uses js translator currently
