@@ -16,7 +16,7 @@ var BinaryOpRemap = {
     '&': 'bit32.band',
     '^': 'bit32.bxor',
     '|': 'bit32.bor',
-    '+': '__PlusOp',
+    '+': '__PlusOp',// NOTE needs to be somehow duplicated in the runtime.eval
     '<': '__CmpLess',
     '<=': '__CmpLessEqual',
     '>': '__CmpGreater',
@@ -28,7 +28,7 @@ var BinaryOpRemapValues = [];
 for (var x in BinaryOpRemap) {
     BinaryOpRemapValues.push(BinaryOpRemap[x]);
 }
-var Intrinsics = [
+var Intrinsics = [ // NOTE needs to be somehow duplicated in the runtime.eval
     '__ToString',
     '__ToBoolean',
     '__ToPrimitive',
@@ -47,6 +47,7 @@ var Intrinsics = [
     '__ContainsKey',
     '__Sink',
     '__TernarySave',
+    '__TernaryReplace',
     '__TernaryRestore',
     '__Iterate',
     '__RefCheck',

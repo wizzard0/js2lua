@@ -45,6 +45,7 @@ var Intrinsics = [
     '__ContainsKey',
     '__Sink',
     '__TernarySave',
+    '__TernaryReplace',
     '__TernaryRestore',
     '__Iterate',
     '__RefCheck',

@@ -42,6 +42,7 @@ function ComparePrograms(fn: string, profile: boolean): any {
     var expectErrors = false;
     //var polyfillSrc = emitter.convertFile(polyfills, "polyfills.js", false);
     var jsVersionFailureDict = {};
+    var isTmpFile = /\b__[.*]\.js/.exec(fn);
     //    console.log("AfterPF");
     if (
         false
@@ -49,6 +50,7 @@ function ComparePrograms(fn: string, profile: boolean): any {
         //|| hasTry
         //|| hasSwitch
         || hasOther
+        ||isTmpFile
     //  || weirdTests
     // || hasAnythingToDoWithDate
     //  || hasGlobalDeleteTest || hasIntl || onlyStrict

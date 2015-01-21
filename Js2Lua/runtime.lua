@@ -806,6 +806,42 @@ __JsGlobalObjects.parseInt = parseInt
 local parseFloat = __DefineFunction(function(self, str) return tonumber(str) end) -- TODO int
 __JsGlobalObjects.parseFloat = parseFloat
 
+local __IntrinsicTable={
+   __PlusOp=__PlusOp,
+    __CmpLess=__CmpLess,
+    __CmpLessEqual=__CmpLessEqual,
+    __CmpGreater=__CmpGreater,
+    __CmpGreaterEqual=__CmpGreaterEqual,
+    __ContainsKey=__ContainsKey,
+    __InstanceOf=__InstanceOf,
+
+     __ToString=__ToString,
+    __ToBoolean=__ToBoolean,
+    __ToPrimitive=__ToPrimitive,
+    __ToObject=__ToObject,
+    __ToNumber=__ToNumber,
+    --'__Get',
+    --'__Put',
+    --'__PlusOp',
+    __Delete=__Delete,
+    --'__InstanceOf',
+    __CallMember=__CallMember,
+    __Call=__Call,
+    __Typeof=__Typeof,
+    __DefineFunction=__DefineFunction,
+    __New=__New,
+    --'__ContainsKey',
+    __Sink=__Sink,
+    __TernarySave=__TernarySave,
+    __TernaryReplace=__TernaryReplace,
+    __TernaryRestore=__TernaryRestore,
+    __Iterate=__Iterate,
+    __RefCheck=__RefCheck,
+    -- in globalobj
+    -- Infinity=Infinity,
+    -- NaN=NaN
+}
+
 local function eval(dummy, code) -- uses js translator currently
     -- print('BEFORE EV')
     local tmpf = io.open('__eval.js','w')
@@ -824,7 +860,7 @@ local function eval(dummy, code) -- uses js translator currently
         error(__New(SyntaxError)) 
     else
         -- print( '<<'..output..'>>')
-        local func = load(output, '__evalcode__', nil, {__JsGlobalObjects=__JsGlobalObjects,__RefCheck=__RefCheck,__CallMember=__CallMember})
+        local func = load(output, '__evalcode__', nil, __IntrinsicTable)
         return func()
     end
 end
