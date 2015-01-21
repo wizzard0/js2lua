@@ -823,12 +823,13 @@ local function eval(dummy, code) -- uses js translator currently
         -- print('SE')
         error(__New(SyntaxError)) 
     else
-        print( '<<'..output..'>>')
+        -- print( '<<'..output..'>>')
         local func = load(output, '__evalcode__', nil, {__JsGlobalObjects=__JsGlobalObjects,__RefCheck=__RefCheck,__CallMember=__CallMember})
         return func()
     end
 end
-
+-- NOTE __JsGlobalObjects is not a proper object yet :(
+-- NOTE locals are not passed back and forth to eval code properly
 -- LIBRARY END
 
 local self = __JsGlobalObjects
