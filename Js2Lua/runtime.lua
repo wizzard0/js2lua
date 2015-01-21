@@ -335,7 +335,7 @@ end
 __Helpers.__DefineFunction = __DefineFunction
 
 local function __RefCheck(val)
-  -- if nil == val then error("ReferenceError") end
+  if nil == val then error(__Helpers.__New(__JsGlobalObjects.ReferenceError)) end
   -- this is incorrect
   return val
 end
