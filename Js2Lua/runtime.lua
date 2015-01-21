@@ -837,6 +837,9 @@ local __IntrinsicTable={
     __TernaryRestore=__TernaryRestore,
     __Iterate=__Iterate,
     __RefCheck=__RefCheck,
+    __MakeArguments=__MakeArguments,
+    __MakeArray=__MakeArray,
+    __MakeObject=__MakeObject,
     --
     bit32=bit32,
     -- in globalobj
