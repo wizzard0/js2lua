@@ -15,6 +15,7 @@
     "esprima": "^1.2.2",
     "esutils": "^1.1.6",
     "execsync-ng": "0.0.6",
-    "glob": "^4.3.2"
+    "glob": "^4.3.2",
+    "readtoend": "0.0.1"
   }
 }

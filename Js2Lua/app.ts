@@ -3,7 +3,7 @@ import fs = require("fs");
 import sh = require("execsync-ng");
 import emitter = require("./emitter");
 import glob = require("glob");
-var vm = require("vm");
+import vm = require("vm");
 
 
 function RunProgram(src: string, ff: string, profile: boolean) {
