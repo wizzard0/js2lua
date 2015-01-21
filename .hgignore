@@ -9,3 +9,4 @@ Js2Lua/test/**/*.lua
 .ntvs_analysis.dat.tmp
 Js2Lua/bench/**/*.lua
 Js2Lua/bench/*.lua
+Js2Lua/__eval.js

@@ -788,20 +788,24 @@ __JsGlobalObjects.parseInt = parseInt
 local parseFloat = __DefineFunction(function(self, str) return tonumber(str) end) -- TODO int
 __JsGlobalObjects.parseFloat = parseFloat
 
-local function eval(code) -- uses js translator currently
-    local file = io.popen('node just_translate.js')
-    file:write(code)
+local function eval(dummy, code) -- uses js translator currently
+    -- print('BEFORE EV')
+    local tmpf = io.open('__eval.js','w')
+    tmpf:write(__ToString(code))
+    tmpf:close()
+    local file = io.popen('node just_translate.js < __eval.js','rb')
     -- This will read all of the output, as always
     local output = file:read('*all')
     -- This will get a table with some return stuff
     -- rc[1] will be true, false or nil
     -- rc[3] will be the signal
     local rc = {file:close()}
-
+    -- print('IN EV')
     if output:sub(1,10)=='SyntaxError' then 
         error("SyntaxError") 
     else
-        func = loadstring(output)
+        -- print( '<<'..output..'>>')
+        local func = load(output, '__evalcode__', nil, {__JsGlobalObjects=__JsGlobalObjects,__RefCheck=__RefCheck,__CallMember=__CallMember})
         return func()
     end
 end

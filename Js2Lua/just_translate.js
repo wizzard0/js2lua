@@ -33,9 +33,13 @@ function encoding(encoding) {
         }
     };
 }
+function encode(data, options) {
+    return typeof data === "string" ? new Buffer(data, typeof options === "string" ? options : options && options.encoding !== null ? options.encoding : "utf8") : data;
+}
+;
 function readStdinSync(options) {
     var fd = process.stdin.fd;
-    var decoder = decode(options);
+    var decoder = decode();
     while (true) {
         try {
             var buffer = new Buffer(32768), bytesRead = fs.readSync(fd, buffer, 0, 32768, undefined);
@@ -53,20 +57,41 @@ function readStdinSync(options) {
     fs.closeSync(fd);
     return decoder.value();
 }
+function writeStdoutSync(data, options) {
+    var fd = process.stdout.fd, bytesWritten = 0, bytesTotal = (data = encode(data, options)).length;
+    while (bytesWritten < bytesTotal) {
+        try {
+            bytesWritten += fs.writeSync(fd, data, bytesWritten, bytesTotal - bytesWritten, null);
+        }
+        catch (error) {
+            if (error.code === "EPIPE")
+                break; // ignore broken pipe, e.g., | head
+            fs.closeSync(fd);
+            throw error;
+        }
+    }
+    fs.closeSync(fd);
+}
+;
 try {
-    var data = readStdinSync();
+    var data = readStdinSync().toString().replace(/\0/g, '');
+    //process.stderr.write("READ OK\r\n");
+    //process.stderr.write("ERRx:" + encodeURIComponent(data) + ">>\r\n");
     //console.log(data);
-    var translated = emitter.convertFile(data.toString(), '__evalcode__', false);
+    var translated = emitter.convertFile(data, '__evalcode__', false);
     // no polyfills here, because we're supposed to eval in context
-    console.log(translated);
+    //console.log(translated);
+    //process.stderr.write("WRITING\r\n");
+    writeStdoutSync(translated);
 }
 catch (e) {
+    //process.stderr.write("TRANSLATE FAIL\r\n");
     //console.log(e.message);
     if (e.message.substr(0, 5) == 'Line ') {
         console.log("SyntaxError ", e);
     }
     else {
-        console.log(e);
+        console.log(e.toString());
     }
 }
 //# sourceMappingURL=just_translate.js.map
