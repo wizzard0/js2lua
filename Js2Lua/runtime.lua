@@ -1,42 +1,42 @@
 ﻿-- DEBUGGING
 function table_print (tt, indent, done)
-  done = done or {}
-  indent = indent or 0
-  if type(tt) == "table" then
-    local sb = {}
-    for key, value in pairs (tt) do
-      if string.sub(key, 1,2)~='__' then -- ignore impl
-          table.insert(sb, string.rep (" ", indent)) -- indent it
-          if type (value) == "table" and not done [value] then
-            done [value] = true
-            table.insert(sb, string.format("%s = {\n", tostring(key)));
-            table.insert(sb, table_print (value, indent + 2, done))
-            table.insert(sb, string.rep (" ", indent)) -- indent it
-            table.insert(sb, "}\n");
-          elseif "number" == type(key) then
-            table.insert(sb, string.format("\"%s\"\n", tostring(value)))
-          else
-            table.insert(sb, string.format(
-                "%s = \"%s\"\n", tostring (key), tostring(value)))
-          end
-      end
+    done = done or {}
+    indent = indent or 0
+    if type(tt) == "table" then
+        local sb = {}
+        for key, value in pairs (tt) do
+            if string.sub(key, 1,2)~='__' then -- ignore impl
+                table.insert(sb, string.rep (" ", indent)) -- indent it
+                if type (value) == "table" and not done [value] then
+                    done [value] = true
+                    table.insert(sb, string.format("%s = {\n", tostring(key)));
+                    table.insert(sb, table_print (value, indent + 2, done))
+                    table.insert(sb, string.rep (" ", indent)) -- indent it
+                    table.insert(sb, "}\n");
+                elseif "number" == type(key) then
+                    table.insert(sb, string.format("\"%s\"\n", tostring(value)))
+                else
+                    table.insert(sb, string.format(
+                            "%s = \"%s\"\n", tostring (key), tostring(value)))
+                end
+            end
+        end
+        return table.concat(sb)
+    else
+        return tt .. "\n"
     end
-    return table.concat(sb)
-  else
-    return tt .. "\n"
-  end
 end
 
 function to_string( tbl )
-  if  "nil"       == type( tbl ) then
-    return tostring(nil)
-  elseif  "table" == type( tbl ) then
-    return table_print(tbl)
-  elseif  "string" == type( tbl ) then
-    return tbl
-  else
-    return tostring(tbl)
-  end
+    if  "nil"       == type( tbl ) then
+        return tostring(nil)
+    elseif  "table" == type( tbl ) then
+        return table_print(tbl)
+    elseif  "string" == type( tbl ) then
+        return tbl
+    else
+        return tostring(tbl)
+    end
 end
 -- JS RUNTIME
 local bit32 = require("bit")
@@ -69,85 +69,85 @@ local function __LastXpCall(err)
 end
 
 local function __Typeof(value)
-  if type(value) == 'boolean' or type(value) == 'number' or type(value) == 'string' then
-    return type(value)
-  end
-  if type(value) == 'function' then
-    return 'function' -- maybe better to wrap?
-  end
-  if type(value) == 'table' and value.__Prototype then return 'object' end
-  if type(value) == 'table' and value.__TypeofValue then return value.__TypeofValue end
-  if value == nil then return 'undefined' end
+    if type(value) == 'boolean' or type(value) == 'number' or type(value) == 'string' then
+        return type(value)
+    end
+    if type(value) == 'function' then
+        return 'function' -- maybe better to wrap?
+    end
+    if type(value) == 'table' and value.__Prototype then return 'object' end
+    if type(value) == 'table' and value.__TypeofValue then return value.__TypeofValue end
+    if value == nil then return 'undefined' end
 
-  print("__Typeof: unsupported! got " .. type(value) ..'='.. to_string(value))
-  return '_unknown';
+    print("__Typeof: unsupported! got " .. type(value) ..'='.. to_string(value))
+    return '_unknown';
 end
 
 local function __ToString(value)
-  if value == nil then return 'undefined' end
-  if value == __JsGlobalObjects.null then return 'null' end
-  if type(value) == 'string' then return value end
-  if type(value) == 'table' then
-    if value.__Prototype then return __Helpers.__CallMember(value, 'toString') end
-    return '[native '..to_string(value)..']'
-  end
-  return tostring(value)
+    if value == nil then return 'undefined' end
+    if value == __JsGlobalObjects.null then return 'null' end
+    if type(value) == 'string' then return value end
+    if type(value) == 'table' then
+        if value.__Prototype then return __Helpers.__CallMember(value, 'toString') end
+        return '[native '..to_string(value)..']'
+    end
+    return tostring(value)
 end
 -- print("Tb")
 local function __ToBoolean(value)
-  -- print(value, type(value))
-  if nil == value then return false end
-  if __JsGlobalObjects.null == value then return false end
-  if type(value) == 'boolean' then return value end
-  if type(value) == 'number' then
-    if ((value == 0) or (value ~= value)) then
-        return false
-    else
-        return true
+    -- print(value, type(value))
+    if nil == value then return false end
+    if __JsGlobalObjects.null == value then return false end
+    if type(value) == 'boolean' then return value end
+    if type(value) == 'number' then
+        if ((value == 0) or (value ~= value)) then
+            return false
+        else
+            return true
+        end
     end
-  end
-  if type(value) == 'string' then return value ~= "" end
-  if type(value)=='table' then return true end
-  if type(value)=='function' then return true end
-  error("__ToBoolean: unsupported! got " .. __ToString(value))
+    if type(value) == 'string' then return value ~= "" end
+    if type(value)=='table' then return true end
+    if type(value)=='function' then return true end
+    error("__ToBoolean: unsupported! got " .. __ToString(value))
 end
 
 local function __Delete(location, key)
-  location[key] = nil
-  return true
+    location[key] = nil
+    return true
 end
 
 local function __ToObject(val)
-  -- print("ToObject"..tostring(val))
-  if type(val) == 'function' then return __Helpers.__DefineFunction(val) end -- todo cache this?
-  if type(val) == 'string' then return __Helpers.__New(__JsGlobalObjects.String, val) end
-  if type(val) == 'boolean' then return __Helpers.__New(__JsGlobalObjects.Boolean, val) end
-  if type(val) == 'number' then return __Helpers.__New(__JsGlobalObjects.Number, val) end
-  local jsType = __Typeof(val)
-  error("__ToObject not implemented for " .. jsType .. "/" .. type(val) .. "/" .. tostring(val))
+    -- print("ToObject"..tostring(val))
+    if type(val) == 'function' then return __Helpers.__DefineFunction(val) end -- todo cache this?
+    if type(val) == 'string' then return __Helpers.__New(__JsGlobalObjects.String, val) end
+    if type(val) == 'boolean' then return __Helpers.__New(__JsGlobalObjects.Boolean, val) end
+    if type(val) == 'number' then return __Helpers.__New(__JsGlobalObjects.Number, val) end
+    local jsType = __Typeof(val)
+    error("__ToObject not implemented for " .. jsType .. "/" .. type(val) .. "/" .. tostring(val))
 end
 __Helpers.__ToObject = __ToObject
 
 local function __ToNumber(val)
-  if val == nil or val == false or val == __JsGlobalObjects.null then return 0 end
-  if val == true then return 1 end
-  if type(val) == 'number' then return val end
-  if type(val) == 'function' then error("TypeError: valueof function") end
-  if type(val) == 'string' then return tonumber(val) end
-  if type(val) == 'table' and val.__Value then return val.__Value end
-  if type(val) == 'table' and val.__Prototype then return __Helpers.__CallMember(val, 'valueOf') end
-  local jsType = __Typeof(val)
-  return 0/0
-  -- error("__ToNumber not implemented for " .. jsType .. "/" .. type(val) .. "/" .. tostring(val))
+    if val == nil or val == false or val == __JsGlobalObjects.null then return 0 end
+    if val == true then return 1 end
+    if type(val) == 'number' then return val end
+    if type(val) == 'function' then error("TypeError: valueof function") end
+    if type(val) == 'string' then return tonumber(val) end
+    if type(val) == 'table' and val.__Value then return val.__Value end
+    if type(val) == 'table' and val.__Prototype then return __Helpers.__CallMember(val, 'valueOf') end
+    local jsType = __Typeof(val)
+    return 0/0
+    -- error("__ToNumber not implemented for " .. jsType .. "/" .. type(val) .. "/" .. tostring(val))
 end
 __Helpers.__ToObject = __ToObject
 
 local function __PlusOp(left, right)
-  if type(left) == 'string' or type(right) == 'string' then
-    return __ToString(left) .. __ToString(right)
-  else
-    return __ToNumber(left) + __ToNumber(right)
-  end
+    if type(left) == 'string' or type(right) == 'string' then
+        return __ToString(left) .. __ToString(right)
+    else
+        return __ToNumber(left) + __ToNumber(right)
+    end
 end
 
 local function __CmpLess(x, y) -- not really compliant?
@@ -195,38 +195,38 @@ local function __CmpGreaterEqual(x, y) -- not really compliant?
 end
 
 local function __Get(table, key, inGetter)
-  if type(table) ~= 'table' then
-    error("Tried to access member " .. __ToString(key) .. " of non-table: " .. to_string(table))
-  end
-  if not inGetter then
-      local getter = __Get(table, '__Get_'..key,true)
-    if getter then
-        return getter(table,key)
+    if type(table) ~= 'table' then
+        error("Tried to access member " .. __ToString(key) .. " of non-table: " .. to_string(table))
     end
-end
-  local result
-  local iter = table
-  repeat
-    result = rawget(iter, key)
-    iter = rawget(iter, "__Prototype")
-  until (result ~= nil) or (nil == iter)
-  return result
+    if not inGetter then
+        local getter = __Get(table, '__Get_'..key,true)
+        if getter then
+            return getter(table,key)
+        end
+    end
+    local result
+    local iter = table
+    repeat
+        result = rawget(iter, key)
+        iter = rawget(iter, "__Prototype")
+    until (result ~= nil) or (nil == iter)
+    return result
 end
 
 local function __InstanceOf(table, ctor)
-  if table == nil then return false end
-  if type(table) ~= 'table' then
-    table = __ToObject(table)
-  end
-  local iter = table
-  repeat
-    local result = rawget(iter, 'constructor')
-    if result ~= nil and result == ctor then
-        return true
+    if table == nil then return false end
+    if type(table) ~= 'table' then
+        table = __ToObject(table)
     end
-    iter = rawget(iter, "__Prototype")
-  until nil == iter
-  return false
+    local iter = table
+    repeat
+        local result = rawget(iter, 'constructor')
+        if result ~= nil and result == ctor then
+            return true
+        end
+        iter = rawget(iter, "__Prototype")
+    until nil == iter
+    return false
 end
 
 local function __DiscardThis(f)
@@ -236,39 +236,39 @@ local function __DiscardThis(f)
 end
 
 local function __CallMember(table, key, ...)
-  -- print("calling " .. __ToString(key))
-  if table == nil then
-    error("Tried to call member " .. __ToString(key) .. " of undefined")
-  end
-  if type(table) ~= 'table' then
-    table = __ToObject(table)
-  end
-  local unboundMethod = rawget(table, key)
-  if unboundMethod ~= nil then
---      print('cm3')
-      return unboundMethod(table, ...) 
-  end
-  if table.__Prototype then
-    local boundMethod = __Get(table.__Prototype, key)
-    -- print('got boundmethod '..tostring(table)..'.'..tostring(key)..'='..tostring(boundMethod)..'='..tostring(boundMethod ~= nil))
-    if boundMethod ~= nil then
-      if type(boundMethod) ~= 'function' and boundMethod.__CallImpl then
-   --    print('cm4')
-        return boundMethod.__CallImpl(table, ...) -- wrapped
-      else 
-   --    print('cm5')
-        return boundMethod(table, ...) -- builtin
-      end
+    -- print("calling " .. __ToString(key))
+    if table == nil then
+        error("Tried to call member " .. __ToString(key) .. " of undefined")
     end
-  end
-  error("Tried to call method " .. __ToString(key) .. " of " .. __ToString(table) .. " which is missing")
+    if type(table) ~= 'table' then
+        table = __ToObject(table)
+    end
+    local unboundMethod = rawget(table, key)
+    if unboundMethod ~= nil then
+--      print('cm3')
+        return unboundMethod(table, ...) 
+    end
+    if table.__Prototype then
+        local boundMethod = __Get(table.__Prototype, key)
+        -- print('got boundmethod '..tostring(table)..'.'..tostring(key)..'='..tostring(boundMethod)..'='..tostring(boundMethod ~= nil))
+        if boundMethod ~= nil then
+            if type(boundMethod) ~= 'function' and boundMethod.__CallImpl then
+                --    print('cm4')
+                return boundMethod.__CallImpl(table, ...) -- wrapped
+            else 
+                --    print('cm5')
+                return boundMethod(table, ...) -- builtin
+            end
+        end
+    end
+    error("Tried to call method " .. __ToString(key) .. " of " .. __ToString(table) .. " which is missing")
 end
 __Helpers.__CallMember = __CallMember
 
 local function __Call(table, ...)
-  local ci = table.__CallImpl
-  if not ci then error("TypeError: Tried to call "..__ToString(table).." which is not callable") end
-  return ci(...) -- CurrentThis
+    local ci = table.__CallImpl
+    if not ci then error("TypeError: Tried to call "..__ToString(table).." which is not callable") end
+    return ci(...) -- CurrentThis
 end
 
 local function __Put(table, k, v)
@@ -276,13 +276,13 @@ local function __Put(table, k, v)
     if putter then
         putter(table,v)
     end
-  rawset(table, k, v)
-  if type(k)=='number' then
-    rawset(table, tostring(k), v)
-  end
-  if(string.sub(k,1,2)~='__')then
-    rawset(table, '__propEnumerable_'..k, true)
-  end
+    rawset(table, k, v)
+    if type(k)=='number' then
+        rawset(table, tostring(k), v)
+    end
+    if(string.sub(k,1,2)~='__')then
+        rawset(table, '__propEnumerable_'..k, true)
+    end
 end
 
 local function __ArrayPut(table, k, v)
@@ -322,40 +322,40 @@ local function __ArrayGet(table, k)
 end
 
 local __ObjectMetatable = {
-  __index = __Get,
-  __call = __Call,
-  __newindex = __Put,
+    __index = __Get,
+    __call = __Call,
+    __newindex = __Put,
 }
 
 local __ArrayMetatable = {
-  __index = __ArrayGet,
-  __call = __Call,
-  __newindex = __ArrayPut,
+    __index = __ArrayGet,
+    __call = __Call,
+    __newindex = __ArrayPut,
 }
 
 -- wrap Lua function as js function
 local function __DefineFunction(definition)
-  local obj = {}
-  -- TODO function proto
-  setmetatable(obj, __ObjectMetatable)
-  obj.__CallImpl = definition
-  obj.__TypeofValue = "function"
-  obj.prototype = __Helpers.__New(__JsGlobalObjects.Object)
-  obj.__Prototype = __JsGlobalObjects.Function.prototype
-  __JsGlobalObjects.Object.defineProperty(__JsGlobalObjects.Object, obj.prototype,'constructor',{["value"]=obj,["writable"]=true,["configurable"]=true})
-  return obj
+    local obj = {}
+    -- TODO function proto
+    setmetatable(obj, __ObjectMetatable)
+    obj.__CallImpl = definition
+    obj.__TypeofValue = "function"
+    obj.prototype = __Helpers.__New(__JsGlobalObjects.Object)
+    obj.__Prototype = __JsGlobalObjects.Function.prototype
+    __JsGlobalObjects.Object.defineProperty(__JsGlobalObjects.Object, obj.prototype,'constructor',{["value"]=obj,["writable"]=true,["configurable"]=true})
+    return obj
 end
 __Helpers.__DefineFunction = __DefineFunction
 
 local function __RefCheck(val, place)
-  if nil == val then error(__Helpers.__New(__JsGlobalObjects.ReferenceError, place)) end
-  return val
+    if nil == val then error(__Helpers.__New(__JsGlobalObjects.ReferenceError, place)) end
+    return val
 end
 
 local function __MakeEvalRefCheck(code)
     return function(val, place)
-      if nil == val then error(__Helpers.__New(__JsGlobalObjects.ReferenceError, place, code)) end
-      return val
+        if nil == val then error(__Helpers.__New(__JsGlobalObjects.ReferenceError, place, code)) end
+        return val
     end
 end
 
@@ -374,23 +374,23 @@ end
 __Helpers.__New = __New
 
 local function __Iterate(obj)
-  local results = {}
-  for k, v in pairs(obj) do        
-    if type(k)=='string' and string.sub(k,1,2)~='__' then
-      if obj['__propEnumerable_'..k] then
-        results[k]=v
-      end
+    local results = {}
+    for k, v in pairs(obj) do        
+        if type(k)=='string' and string.sub(k,1,2)~='__' then
+            if obj['__propEnumerable_'..k] then
+                results[k]=v
+            end
+        end
     end
-  end
-  return pairs(results)
+    return pairs(results)
 end
 
 local function __ContainsKey(key, obj)
-  if obj[key] ~= nil then return true end
-  for k,v in pairs(obj) do -- TODO PERF need some optimization here
-    if k == key then return true end
-  end
-  return false
+    if obj[key] ~= nil then return true end
+    for k,v in pairs(obj) do -- TODO PERF need some optimization here
+        if k == key then return true end
+    end
+    return false
 end
 
 local function __Sink()
@@ -399,21 +399,23 @@ end
 local __TernaryStack={} -- HOLY FUCK
 local __TernaryUndefined={}
 -- Ternary via stack!
-local __TernarySave,__TernaryReplace, __TernaryRestore do
-  -- local o_saved -- nope, wont work with nested
-  __TernarySave = function(o)
-  if(o==nil)then 
-    table.insert(__TernaryStack,__TernaryUndefined) 
-    else 
-   table.insert(__TernaryStack, o) 
-   end
-   return __ToBoolean(o) end
-  __TernaryReplace = function(o) __TernaryStack[#__TernaryStack]=o; return true end
-  __TernaryRestore = function() 
-  local a =table.remove(__TernaryStack)
-  if a==__TernaryUndefined then a=nil end
-  return a
-   end
+local __TernarySave,__TernaryReplace, __TernaryRestore
+do
+    -- local o_saved -- nope, wont work with nested
+    __TernarySave = function(o)
+        if(o==nil)then 
+            table.insert(__TernaryStack,__TernaryUndefined) 
+        else 
+            table.insert(__TernaryStack, o) 
+        end
+        return __ToBoolean(o)
+    end
+    __TernaryReplace = function(o) __TernaryStack[#__TernaryStack]=o; return true end
+    __TernaryRestore = function() 
+        local a =table.remove(__TernaryStack)
+        if a==__TernaryUndefined then a=nil end
+        return a
+    end
 end
 
 -- Null
@@ -457,66 +459,67 @@ local Math = __MathProto
 -- Object
 local Object = { ["prototype"] = {} }
 Object.getOwnPropertyDescriptor = function(self_o,object, key)
-  local isAccessorDescriptor = __Get(object, '__Put_'..key, true) -- put is Sink or func
-  local isEnumerable = __Get(object, '__propEnumerable_'..key, true) -- put is Sink or func
-  if isAccessorDescriptor then
-    if rawequal(isAccessorDescriptor, __Sink) then isAccessorDescriptor = nil end
-    return {
-        ["get"]=__Get(object, '__Get_'..key,true),
-        ["put"]=isAccessorDescriptor,
-        ["enumerable"] = isEnumerable,
-        ["configurable"] = true
-    }
-  else
-      return {
-        ["value"] = object[key],
-        ["writable"] = true,
-        ["enumerable"] = isEnumerable,
-        ["configurable"] = true
-      }
-  end
+    local isAccessorDescriptor = __Get(object, '__Put_'..key, true) -- put is Sink or func
+    local isEnumerable = __Get(object, '__propEnumerable_'..key, true) -- put is Sink or func
+    if isAccessorDescriptor then
+        if rawequal(isAccessorDescriptor, __Sink) then isAccessorDescriptor = nil end
+        return {
+            ["get"]=__Get(object, '__Get_'..key,true),
+            ["put"]=isAccessorDescriptor,
+            ["enumerable"] = isEnumerable,
+            ["configurable"] = true
+        }
+    else
+        return {
+            ["value"] = object[key],
+            ["writable"] = true,
+            ["enumerable"] = isEnumerable,
+            ["configurable"] = true
+        }
+    end
 end
 Object.getPrototypeOf = function(x,obj) return obj.__Prototype end
 Object.getOwnPropertyNames = function(x,obj)
-  return pairs(obj)
+    return pairs(obj)
 end
 Object.prototype.hasOwnProperty = function(self, key)
-  if(string.sub(key, 1, 2)=='__') then return false end -- __Prototype, whoops
-  return nil ~= rawget(self, key)
+    if(string.sub(key, 1, 2)=='__') then return false end -- __Prototype, whoops
+    return nil ~= rawget(self, key)
 end
 Object.prototype.propertyIsEnumerable = function(self, key)
-  return true == rawget(self, '__propEnumerable_'..key)
+    return true == rawget(self, '__propEnumerable_'..key)
 end
 Object.prototype.toString = function(self)
-  local t = __Typeof(self)
-  -- why doesnt this wopk?
-  -- if self.constructor==__JsGlobalObjects.Array then t='array' end
-  if self.__BackingStore then t='array' end
-  return "[object " .. string.upper(string.sub(t, 1, 1)) .. string.sub(t, 2) .. "]"
-  -- return __ToString(self)
+    local t = __Typeof(self)
+    -- why doesnt this wopk?
+    -- if self.constructor==__JsGlobalObjects.Array then t='array' end
+    if self.__BackingStore then t='array' end
+    return "[object " .. string.upper(string.sub(t, 1, 1)) .. string.sub(t, 2) .. "]"
+    -- return __ToString(self)
 end
 Object.defineProperty = function(o, self, key, descriptor)
 --print(to_string(key))
     if not descriptor.configurable then
-    print('DC:', tostring(__Get(descriptor,'configurable')))
-    print(to_string(key))
-     error("Error: unconf props NYI") end
-  if descriptor.enumerable then rawset(self, '__propEnumerable_'..key, true) end
-  if descriptor.get or descriptor.set then
-    rawset(self,'__Get_'..key, descriptor.get)
-    rawset(self,'__Put_'..key, descriptor.set or __Sink) -- so put is always set, we'll use this
-  else
-    if not descriptor.writable then error("Error: readonly props NYI") end
-    rawset(self, key, descriptor.value)
-  end
+        print('DC:', tostring(__Get(descriptor,'configurable')))
+        print(to_string(key))
+        error("Error: unconf props NYI") 
+    end
+    if descriptor.enumerable then rawset(self, '__propEnumerable_'..key, true) end
+    if descriptor.get or descriptor.set then
+        rawset(self,'__Get_'..key, descriptor.get)
+        rawset(self,'__Put_'..key, descriptor.set or __Sink) -- so put is always set, we'll use this
+    else
+        if not descriptor.writable then error("Error: readonly props NYI") end
+        rawset(self, key, descriptor.value)
+    end
 end
 Object.create = (function(self_o, proto, ...) 
-    if __Typeof(proto) == 'function' then
-      return __New(proto, ...)
-    else
-      return __New(Object)
-    end
-  end)
+        if __Typeof(proto) == 'function' then
+            return __New(proto, ...)
+        else
+            return __New(Object)
+        end
+    end)
 Object.__CallImpl = function(self) return self end -- function Empty() {}, aka Object.__Prototype
 setmetatable(Object, __ObjectMetatable)
 setmetatable(Object.prototype, __ObjectMetatable)
@@ -527,24 +530,24 @@ __JsGlobalObjects.Object = Object
 local Function = __New(Object)
 Function.__TypeofValue = "function"
 Function.__CallImpl = function(self, code) 
-  -- print(to_string(self))
-  self.prototype = __New(Object)
-  self.length = 0
+    -- print(to_string(self))
+    self.prototype = __New(Object)
+    self.length = 0
 end
 Function.prototype = __New(Object) -- obj and func are special
 Function.prototype.toString = function(self)
-  return "function() { [unknown code] }"
+    return "function() { [unknown code] }"
 end
 Function.prototype.call = function(self, ...)
-  return self.__CallImpl(...)
+    return self.__CallImpl(...)
 end
 Function.prototype.apply = function(self, self2, argArray)
-   local narg={}
-   if argArray then
-       local i
-       for i=0,argArray.length-1 do table.insert(narg, argArray[i]) end
-   end
-  return self.__CallImpl(self2, unpack(narg))
+    local narg={}
+    if argArray then
+        local i
+        for i=0,argArray.length-1 do table.insert(narg, argArray[i]) end
+    end
+    return self.__CallImpl(self2, unpack(narg))
 end
 Object.__Prototype = Function.prototype -- maybe wrong
 Function.__Prototype = Function.prototype
@@ -561,13 +564,13 @@ Number.NEGATIVE_INFINITY = -Infinity
 Number.MIN_VALUE = 5e-324
 Number.MAX_VALUE = 1.79E+308
 Number.__CallImpl = function(self, val)
-  -- print('new number' .. val)
-  self.__Value = val
+    -- print('new number' .. val)
+    self.__Value = val
 end
 Number.prototype.toString = __DefineFunction(function(self)
-    -- print('returning '..tostring(self.__Value))
-    return tostring(self.__Value)
-  end)
+        -- print('returning '..tostring(self.__Value))
+        return tostring(self.__Value)
+    end)
 
 
 local isNaN = function(self,v) return v ~= v end
@@ -578,70 +581,70 @@ __JsGlobalObjects.isNaN = isNaN
 local Array = __New(Function)
 __JsGlobalObjects.Array = Array
 Array.__CallImpl = function(self, ...) -- number or varargs...
-  self = self or __New(Array)
-  self.__BackingStore = {["length"]=0}
-  setmetatable(self, __ArrayMetatable)
-  local orig = {...}
-  -- print('array with ' .. #orig .. ' args')
-  local idx = 0
-  for k,v in ipairs(orig) do
-    self[idx] = v
-    idx = idx + 1
-  end
-  self.length = idx
-  if self.length == 1 then
-    self.length = self[0]
-  end
-  return self
+    self = self or __New(Array)
+    self.__BackingStore = {["length"]=0}
+    setmetatable(self, __ArrayMetatable)
+    local orig = {...}
+    -- print('array with ' .. #orig .. ' args')
+    local idx = 0
+    for k,v in ipairs(orig) do
+        self[idx] = v
+        idx = idx + 1
+    end
+    self.length = idx
+    if self.length == 1 then
+        self.length = self[0]
+    end
+    return self
 end
 Array.isArray = function(self,arr)
-  return arr.__Prototype == Array.prototype
+    return arr.__Prototype == Array.prototype
 end
 Array.prototype.forEach = function(self, cb, otherSelf)
-  local sl = bit32.arshift(self.length,0)
-  local os = otherSelf or self -- NOPE, should inherit this
-  for i=0,sl-1 do
-    cb(os, self[i], i)
-  end
+    local sl = bit32.arshift(self.length,0)
+    local os = otherSelf or self -- NOPE, should inherit this
+    for i=0,sl-1 do
+        cb(os, self[i], i)
+    end
 end
 Array.prototype.indexOf = function(self, item, fromIndex)
-  local sl = bit32.arshift(self.length,0)
-  local fi = bit32.arshift(fromIndex or 0, 0)
-  local os = otherSelf or self -- NOPE, should inherit this
-  for i=fi,sl-1 do
-    if(rawequal(self[i], item)) then return i end
-  end
-  return -1
+    local sl = bit32.arshift(self.length,0)
+    local fi = bit32.arshift(fromIndex or 0, 0)
+    local os = otherSelf or self -- NOPE, should inherit this
+    for i=fi,sl-1 do
+        if(rawequal(self[i], item)) then return i end
+    end
+    return -1
 end
 Array.prototype.lastIndexOf = function(self, item, fromIndex)
-  local sl = bit32.arshift(self.length,0)
-  local os = otherSelf or self -- NOPE, should inherit this
-  for i=fromIndex or (sl-1),0,-1 do
-    if(rawequal(self[i], item)) then return i end
-  end
-  return -1
+    local sl = bit32.arshift(self.length,0)
+    local os = otherSelf or self -- NOPE, should inherit this
+    for i=fromIndex or (sl-1),0,-1 do
+        if(rawequal(self[i], item)) then return i end
+    end
+    return -1
 end
 Array.prototype.push = function(self, element)
-  if not self.length then error("Malformed array without length") end
-  self[self.length] = element
+    if not self.length then error("Malformed array without length") end
+    self[self.length] = element
 end
 Array.prototype.pop = function(self)
-  if not self.length then error("Malformed array without length") end
-  local rv = self[self.length - 1]
-  self.length = self.length - 1
-  return rv
+    if not self.length then error("Malformed array without length") end
+    local rv = self[self.length - 1]
+    self.length = self.length - 1
+    return rv
 end
 Array.prototype.toString = __DefineFunction(function(self)
-    -- print('atos')
-    -- return 'Array['..self.length..']'
-    if self.length == 0 then return '' end
-    local str = (self[0]~=nil) and __ToString(self[0]) or ''
-    local sl = bit32.arshift(self.length,0)
-    for i=1,sl-1 do
-      str = str .. ',' .. ((self[i]~=nil) and __ToString(self[i]) or '')
-    end
-    return str
-  end)
+        -- print('atos')
+        -- return 'Array['..self.length..']'
+        if self.length == 0 then return '' end
+        local str = (self[0]~=nil) and __ToString(self[0]) or ''
+        local sl = bit32.arshift(self.length,0)
+        for i=1,sl-1 do
+            str = str .. ',' .. ((self[i]~=nil) and __ToString(self[i]) or '')
+        end
+        return str
+    end)
 Object.defineProperty(Object, Array.prototype, 'constructor',{["value"]=Array,["writable"]=true,["configurable"]=true})
 local __MakeArray = function(rawArray)
     local front = {["__BackingStore"]=rawArray}
@@ -661,24 +664,24 @@ local __MakeArguments = function(n, rawArray)
     return front
 end
 local __MakeObject = function(raw)
-  setmetatable(raw, __ObjectMetatable)
-  raw.__Prototype = Object.prototype
-  for k,v in pairs(raw) do
-    rawset(raw, '__propEnumerable_'..k, true)
-  end
-  return raw
+    setmetatable(raw, __ObjectMetatable)
+    raw.__Prototype = Object.prototype
+    for k,v in pairs(raw) do
+        rawset(raw, '__propEnumerable_'..k, true)
+    end
+    return raw
 end
 -- Boolean
 local Boolean = __New(Function)
 Boolean.__CallImpl = function(self, val) 
-  -- print ('Boolean ctor: ' .. val)
-  self.__Value = __ToBoolean(val)
-  self.__Prototype = Boolean.prototype
+    -- print ('Boolean ctor: ' .. val)
+    self.__Value = __ToBoolean(val)
+    self.__Prototype = Boolean.prototype
 end
 
 Boolean.prototype.toString = __DefineFunction(function(self)
-    return tostring(self.__Value)
-  end)
+        return tostring(self.__Value)
+    end)
 Object.defineProperty(Object, Boolean.prototype, 'constructor',{["value"]=Boolean,["writable"]=true,["configurable"]=true})
 __JsGlobalObjects.Boolean = Boolean
 
@@ -686,89 +689,89 @@ __JsGlobalObjects.Boolean = Boolean
 -- String
 local String = __New(Function)
 local function Utf8to32(utf8str) -- utterly useless, need to utf16
-  assert(type(utf8str) == "string")
-  local res, seq, val = {}, 0, nil
-  for i = 1, #utf8str do
-    local c = string.byte(utf8str, i)
-    if seq == 0 then			
-      table.insert(res, val)
-      seq = c < 0x80 and 1 or c < 0xE0 and 2 or c < 0xF0 and 3 or
-      c < 0xF8 and 4 or --c < 0xFC and 5 or c < 0xFE and 6 or
-      error("invalid UTF-8 character sequence")
-      val = bit32.band(c, 2^(8-seq) - 1)
-    else
-      val = bit32.bor(bit32.lshift(val, 6), bit32.band(c, 0x3F))
+    assert(type(utf8str) == "string")
+    local res, seq, val = {}, 0, nil
+    for i = 1, #utf8str do
+        local c = string.byte(utf8str, i)
+        if seq == 0 then			
+            table.insert(res, val)
+            seq = c < 0x80 and 1 or c < 0xE0 and 2 or c < 0xF0 and 3 or
+            c < 0xF8 and 4 or --c < 0xFC and 5 or c < 0xFE and 6 or
+            error("invalid UTF-8 character sequence")
+            val = bit32.band(c, 2^(8-seq) - 1)
+        else
+            val = bit32.bor(bit32.lshift(val, 6), bit32.band(c, 0x3F))
+        end
+        seq = seq - 1
     end
-    seq = seq - 1
-  end
-  table.insert(res, val)
-  -- table.insert(res, 0)
-  return res
+    table.insert(res, val)
+    -- table.insert(res, 0)
+    return res
 end
 
 local function __split(str, pat)
-  local t = {}  -- NOTE: use {n = 0} in Lua-5.0
-  local fpat = "(.-)" .. pat
-  local last_end = 1
-  local s, e, cap = str:find(fpat, 1)
-  local idx = 0
-  while s do
-    if s ~= 1 or cap ~= "" then
-      t[idx]=cap
-      idx=idx+1
+    local t = {}  -- NOTE: use {n = 0} in Lua-5.0
+    local fpat = "(.-)" .. pat
+    local last_end = 1
+    local s, e, cap = str:find(fpat, 1)
+    local idx = 0
+    while s do
+        if s ~= 1 or cap ~= "" then
+            t[idx]=cap
+            idx=idx+1
+        end
+        last_end = e+1
+        s, e, cap = str:find(fpat, last_end)
+        if s == last_end then
+            s = s+1
+            e = e+1
+            cap = string.sub(str, s, e)
+        end
     end
-    last_end = e+1
-    s, e, cap = str:find(fpat, last_end)
-    if s == last_end then
-      s = s+1
-      e = e+1
-      cap = string.sub(str, s, e)
+    if last_end <= #str then
+        cap = str:sub(last_end)
+        t[idx]=cap
+        idx=idx+1
     end
-  end
-  if last_end <= #str then
-    cap = str:sub(last_end)
-    t[idx]=cap
-    idx=idx+1
-  end
-  t.length = idx
-  return t
+    t.length = idx
+    return t
 end
 String.__CallImpl = function(self, val) 
-  -- print ('string ctor: ' .. val)
-  ns = __New(Object)
-  val = __ToString(val)
-  local uni = Utf8to32(val)
-  ns.__ToStringValue = val
-  ns.__Unicode = uni
-  ns.__Prototype = String.prototype
-  ns.length = #uni
-  return ns
+    -- print ('string ctor: ' .. val)
+    ns = __New(Object)
+    val = __ToString(val)
+    local uni = Utf8to32(val)
+    ns.__ToStringValue = val
+    ns.__Unicode = uni
+    ns.__Prototype = String.prototype
+    ns.length = #uni
+    return ns
 end
 String.fromCharCode = function(self, ...)
     return string.char(...)
 end
 String.prototype.charCodeAt = function(self, idx)
-  return self.__Unicode[idx+1] -- TODO unicode!
+    return self.__Unicode[idx+1] -- TODO unicode!
 end
 String.prototype.toString = __DefineFunction(function(self)
-    return self.__ToStringValue
-  end)
+        return self.__ToStringValue
+    end)
 String.prototype.valueOf = String.prototype.toString
 String.prototype.split = __DefineFunction(function(self, pat)
-    return __MakeArray(__split(self.__ToStringValue, pat))
-  end)
+        return __MakeArray(__split(self.__ToStringValue, pat))
+    end)
 Object.defineProperty(Object, String.prototype, 'constructor',{["value"]=String,["writable"]=true,["configurable"]=true})
 __JsGlobalObjects.String = String
 
 -- Date
 local Date = __New(Function)
 Date.__CallImpl = function(self, val) 
-  -- print ('date ctor: ' .. val)
-  -- self.__Value = val or (os.time() * 1000)
-  self.__Value = val or (os.clock() * 1000) -- prefer benchmark version
+    -- print ('date ctor: ' .. val)
+    -- self.__Value = val or (os.time() * 1000)
+    self.__Value = val or (os.clock() * 1000) -- prefer benchmark version
 end
 Date.prototype.getTime = function(self)
-  return self.__Value
+    return self.__Value
 end
 Date.prototype.toLocaleTimeString = __DefineFunction(__id)
 Object.defineProperty(Object, Date.prototype, 'constructor',{["value"]=Date,["writable"]=true,["configurable"]=true})
@@ -780,16 +783,16 @@ local RegExp = __New(Function)
 Object.defineProperty(Object, RegExp.prototype, 'constructor',{["value"]=RegExp,["writable"]=true,["configurable"]=true})
 __JsGlobalObjects.RegExp = RegExp
 RegExp.__CallImpl = function(self, val) 
-  -- print ('RegExp ctor: ' .. val)
-  self.__RegexValue = val
+    -- print ('RegExp ctor: ' .. val)
+    self.__RegexValue = val
 end
 RegExp.prototype.exec = __DefineFunction(function(self)return null end)
 
 -- Error
 local Error = __New(Function)
 Error.__CallImpl = function(self, ...) 
-  -- print ('Error ctor: ')
-  self.__Args = {...}
+    -- print ('Error ctor: ')
+    self.__Args = {...}
 end
 Object.defineProperty(Object, Error.prototype, 'constructor',{["value"]=Error,["writable"]=true,["configurable"]=true})
 __JsGlobalObjects.Error = Error
@@ -826,7 +829,7 @@ local parseFloat = __DefineFunction(function(self, str) return tonumber(str) end
 __JsGlobalObjects.parseFloat = parseFloat
 
 local __IntrinsicTable={
-   __PlusOp=__PlusOp,
+    __PlusOp=__PlusOp,
     __CmpLess=__CmpLess,
     __CmpLessEqual=__CmpLessEqual,
     __CmpGreater=__CmpGreater,
@@ -834,7 +837,7 @@ local __IntrinsicTable={
     __ContainsKey=__ContainsKey,
     __InstanceOf=__InstanceOf,
 
-     __ToString=__ToString,
+    __ToString=__ToString,
     __ToBoolean=__ToBoolean,
     __ToPrimitive=__ToPrimitive,
     __ToObject=__ToObject,
@@ -898,7 +901,7 @@ end
 local self = __JsGlobalObjects
 
 local function fnGlobalObject()
-  return __JsGlobalObjects
+    return __JsGlobalObjects
 end
 
 -- HARNESS END
