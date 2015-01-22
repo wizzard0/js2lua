@@ -788,8 +788,10 @@ RegExp.__CallImpl = function(self, val, flags)
     -- print ('RegExp ctor: ' .. val)
     self.__RegexValue = val
     self.__Flags = flags
+    self.lastIndex = 0
+    local ss = self
     succ, err = pcall(function()
-        self.cre = re.compile(val)
+        ss.cre = re.compile(val)
     end)
     if not succ then
         error(__New(__JsGlobalObjects.SyntaxError))
@@ -797,13 +799,17 @@ RegExp.__CallImpl = function(self, val, flags)
 end
 RegExp.prototype.exec = __DefineFunction(function(self, str)
     str = __ToString(str)
-    local preResult = self.cre.match(self.cre, str)
+    local preResult = self.cre.match(self.cre, string.sub(str, self.lastIndex + 1))
     -- print(to_string(preResult))
-    if preResult == nil then return nil end
+    if preResult == nil then
+        self.lastIndex = 0
+        return nil
+    end
     -- print(to_string(#(preResult.groups)), self.cre.patternProps.numGroups)
     local rv = __New(Array, self.cre.patternProps.numGroups + 1)
     rv[0] = string.sub(str, preResult._start, preResult._end)
-    for i=1,self.cre.patternProps.numGroups do
+    self.lastIndex = self.lastIndex + preResult._end -- maybe -1?
+    for i=1, self.cre.patternProps.numGroups do
         local group = preResult.groups[i]
         if group then
             rv[i] = string.sub(str, group[1], group[2])
@@ -812,7 +818,11 @@ RegExp.prototype.exec = __DefineFunction(function(self, str)
     rv.index = preResult._start - 1
     rv.input = str
     return rv
- end)
+end)
+RegExp.prototype.test = __DefineFunction(function(self, str)
+    local match = __CallMember(self, 'exec', str)
+    return match ~= nil
+end)
 
 -- Error
 local Error = __New(Function)
