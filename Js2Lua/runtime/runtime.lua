@@ -362,9 +362,8 @@ local function __MakeEvalRefCheck(code)
 end
 
 local function __New(ctor, ...)
-    if ctor == nil then
-        error("new NULL!")
-    end
+    if ctor == nil then error(__New(ReferenceError)) end
+    if ctor.__CallImpl == nil then error(__New(TypeError)) end
     local obj = {}
     setmetatable(obj, __ObjectMetatable)
     obj.__Prototype = ctor.prototype    
@@ -786,9 +785,9 @@ Object.defineProperty(Object, RegExp.prototype, 'constructor',{["value"]=RegExp,
 __JsGlobalObjects.RegExp = RegExp
 RegExp.__CallImpl = function(self, val, flags) 
     -- print ('RegExp ctor: ' .. val)
-    self.__RegexValue = val
-    self.__Flags = flags
-    self.lastIndex = 0
+    self.source = val
+    self.__Flags = flags or ''
+    __JsGlobalObjects.Object.defineProperty(__JsGlobalObjects.Object, self,'lastIndex',{["value"]=0,["writable"]=true,["configurable"]=true})
     local ss = self
     succ, err = pcall(function()
         ss.cre = re.compile(val)
@@ -823,6 +822,9 @@ RegExp.prototype.test = __DefineFunction(function(self, str)
     local match = __CallMember(self, 'exec', str)
     return match ~= nil
 end)
+RegExp.prototype.toString = __DefineFunction(function(self)
+    return "/"..self.source.."/"..self.__Flags
+end)
 
 -- Error
 local Error = __New(Function)
@@ -853,6 +855,10 @@ __JsGlobalObjects.ReferenceError = ReferenceError
 __JsGlobalObjects.SyntaxError = SyntaxError
 __JsGlobalObjects.TypeError = TypeError
 __JsGlobalObjects.URIError = URIError
+
+local __LiteralCallFail = function()
+    error(__New(TypeError))
+end
 
 -- Global functions
 local escape = __DefineFunction(function(self, str) return str end) -- TODO actually escape :)
