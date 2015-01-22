@@ -791,9 +791,15 @@ RegExp.__CallImpl = function(self, val, flags)
     self.cre = re.compile(val)
 end
 RegExp.prototype.exec = __DefineFunction(function(self, str)
+    str = __ToString(str)
     local preResult = self.cre.match(self.cre, str)
-    print(to_string(preResult))
-    return nil
+    -- print(to_string(preResult))
+    if preResult == nil then return nil end
+    local rv = __New(Array)
+    rv[0] = string.sub(str, preResult._start, preResult._end)
+    rv.index = preResult._start - 1
+    rv.input = str
+    return rv
  end)
 
 -- Error
