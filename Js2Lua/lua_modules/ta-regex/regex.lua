@@ -227,11 +227,11 @@ local function charset_to_peg(charfrag)
     end
 end
 
-local function re_to_peg(retab, k)
+local function re_to_peg(retab, k, patternProps)
     local t = retab[0]
     if t == "pattern" then
         assert(#retab == 1)
-        local pat = re_to_peg(retab[1], k)
+        local pat = re_to_peg(retab[1], k, patternProps)
         -- Add match start/end markers
         pat = _start * pat * _end
         if not retab.anchorstart then
@@ -245,20 +245,24 @@ local function re_to_peg(retab, k)
         return pat
     elseif t == "group" then
         assert(#retab == 2)
+        -- print(debug.traceback())
+        patternProps.numGroups = patternProps.numGroups + 1
         local grpname = tostring(retab[2])
         local newk = Cg(Cp()/sub1, "e"..grpname) * k
-        local pat = re_to_peg(retab[1], newk)
+        local pat = re_to_peg(retab[1], newk, patternProps)
         pat = Cg(Cp(), "s"..grpname) * pat
         return pat
     elseif t == "alt" then
         if #retab == 1 then
-            return re_to_peg(retab[1], k)
+            return re_to_peg(retab[1], k, patternProps)
         else
-            local parts = map(function(x) return re_to_peg(x, k) end, retab)
+            local parts = map(function(x) 
+                    return re_to_peg(x, k, patternProps) 
+                end, retab)
             return foldr(add, parts)
         end
     elseif t == "concat" then
-        return foldr(re_to_peg, retab, k)
+        return foldr(function(retab_f, k_f) return re_to_peg(retab_f, k_f, patternProps) end, retab, k)
     elseif t == "char" then
         assert(#retab == 1)
         return P(retab[1]) * k
@@ -269,15 +273,15 @@ local function re_to_peg(retab, k)
         end
         return charset_pat * k
     elseif t == "*" then
-        return P{"A", A=re_to_peg(retab[1], V"A") + k}
+        return P{"A", A=re_to_peg(retab[1], V"A", patternProps) + k}
     elseif t == "+" then
-        return re_to_peg(retab[1], P{"A", A=re_to_peg(retab[1], V"A") + k})
+        return re_to_peg(retab[1], P{"A", A=re_to_peg(retab[1], V"A", patternProps) + k}, patternProps)
     elseif t == "." then
         assert(#retab == 0)
         return (P(1) - P"\n") * k
     elseif t == "?" then
         assert(#retab == 1)
-        return re_to_peg(retab[1], k) + k
+        return re_to_peg(retab[1], k, patternProps) + k
     elseif t == "\\<" then
         assert(#retab == 0)
         return -B(wordchar) * #wordchar * k
@@ -312,9 +316,11 @@ function M.compile(re)
     if retab == nil then
         error("Failed to parse regular expression: {"..re.."}", 2)
     end
-    local _pat = re_to_peg(retab, P(0))
+    local patternProps = { numGroups = 0 }
+    local _pat = re_to_peg(retab, P(0), patternProps)
     return setmetatable({
-        _pat = Ct(_pat)
+        _pat = Ct(_pat),
+        patternProps = patternProps
     }, mt)
 end
 

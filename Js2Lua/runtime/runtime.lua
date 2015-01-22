@@ -795,8 +795,15 @@ RegExp.prototype.exec = __DefineFunction(function(self, str)
     local preResult = self.cre.match(self.cre, str)
     -- print(to_string(preResult))
     if preResult == nil then return nil end
-    local rv = __New(Array)
+    -- print(to_string(#(preResult.groups)), self.cre.patternProps.numGroups)
+    local rv = __New(Array, self.cre.patternProps.numGroups + 1)
     rv[0] = string.sub(str, preResult._start, preResult._end)
+    for i=1,self.cre.patternProps.numGroups do
+        local group = preResult.groups[i]
+        if group then
+            rv[i] = string.sub(str, group[1], group[2])
+        end
+    end
     rv.index = preResult._start - 1
     rv.input = str
     return rv
