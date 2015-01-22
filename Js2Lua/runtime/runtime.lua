@@ -700,7 +700,7 @@ local function Utf8to32(utf8str) -- utterly useless, need to utf16
             error("invalid UTF-8 character sequence")
             val = bit32.band(c, 2^(8-seq) - 1)
         else
-            val = bit32.bor(bit32.lshift(val, 6), bit32.band(c, 0x3F))
+            val = bit32.bor ( bit32.lshift(val, 6), bit32.band(c, (63 --[[0x3F]]) ))
         end
         seq = seq - 1
     end
