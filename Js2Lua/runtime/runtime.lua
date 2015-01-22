@@ -128,6 +128,7 @@ local function __ToObject(val)
     if type(val) == 'boolean' then return __Helpers.__New(__JsGlobalObjects.Boolean, val) end
     if type(val) == 'number' then return __Helpers.__New(__JsGlobalObjects.Number, val) end
     local jsType = __Typeof(val)
+    if jsType == 'object' then return val end -- how to optimize this fastpath?
     error("__ToObject not implemented for " .. jsType .. "/" .. type(val) .. "/" .. tostring(val))
 end
 __Helpers.__ToObject = __ToObject
