@@ -1,0 +1,15 @@
+syntax: glob
+Js2Lua/node_modules/*
+*/bin/*
+*/obj/*
+*.suo
+.ntvs_analysis.dat
+*.js.map
+Js2Lua/test/**/*.lua
+.ntvs_analysis.dat.tmp
+*.tmp
+node_modules/*
+bin/*
+obj/*
+test/*.lua
+test/**/*.lua
