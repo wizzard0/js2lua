@@ -77,7 +77,8 @@ local function __Typeof(value)
     if type(value) == 'function' then
         return 'function' -- maybe better to wrap?
     end
-    if type(value) == 'table' and value.__Prototype then return 'object' end
+    if type(value) == 'table' and rawget(value, '__CallImpl') then return 'function' end
+    if type(value) == 'table' and rawget(value, '__Prototype') then return 'object' end
     if type(value) == 'table' and value.__TypeofValue then return value.__TypeofValue end
     if value == nil then return 'undefined' end
 
@@ -128,7 +129,8 @@ local function __ToObject(val)
     if type(val) == 'boolean' then return __Helpers.__New(__JsGlobalObjects.Boolean, val) end
     if type(val) == 'number' then return __Helpers.__New(__JsGlobalObjects.Number, val) end
     local jsType = __Typeof(val)
-    if jsType == 'object' then return val end -- how to optimize this fastpath?
+    if jsType == 'object' or jsType == 'function' then return val end -- how to optimize this fastpath?
+    -- NOTE function is safe only because we tested for luatype beforehand
     error("__ToObject not implemented for " .. jsType .. "/" .. type(val) .. "/" .. tostring(val))
 end
 __Helpers.__ToObject = __ToObject
@@ -266,14 +268,14 @@ local function __CallMember(table, key, ...)
             end
         end
     end
-    error("Tried to call method " .. __ToString(key) .. " of " .. __ToString(table) .. " which is missing")
+    error(__Helpers.__New(__JsGlobalObjects.TypeError, "Tried to call method " .. __ToString(key) .. " of " .. __ToString(table) .. " which is missing"))
 end
 __Helpers.__CallMember = __CallMember
 
-local function __Call(table, ...)
+local function __Call(table, ...) -- maybe inline it?
     local ci = table.__CallImpl
     if not ci then error("TypeError: Tried to call "..__ToString(table).." which is not callable") end
-    return ci(...) -- CurrentThis
+    return ci(...) -- CurrentThis, maybe pass the table? is it ever used useful other than for lua-to-js callbacks? we never emit it directly
 end
 
 local function __Put(table, k, v)
@@ -319,10 +321,32 @@ local function __ArrayGet(table, k)
         local ol = bit32.tobit(tonumber(bs.length))
         return bs.length
     elseif oi~=nil then
-        local ol = bit32.tobit(tonumber(bs.length))
+        -- local ol = bit32.tobit(tonumber(bs.length))
         return bs[oi]
     else -- non-numeric property
-        return rawget(table, k)
+        local val = rawget(table, k)
+        if val == nil then -- inlined proto
+            ap = rawget(table, '__Prototype')
+            val = rawget(ap, k)
+        end
+        return val
+    end
+end
+
+local function __StringGet(table, k)
+    local oi = bit32.tobit(tonumber(k) or 1/0)
+    local bs = rawget(table, '__ToStringValue')
+    if k=='length' then
+        return #bs
+    elseif oi~=nil then
+        return string.sub(bs, oi-1, oi-1)
+    else -- non-numeric property
+        local val = rawget(table, k)
+        if val == nil then -- inlined proto
+            ap = rawget(table, '__Prototype')
+            val = rawget(ap, k)
+        end
+        return val
     end
 end
 
@@ -336,6 +360,12 @@ local __ArrayMetatable = {
     __index = __ArrayGet,
     __call = __Call,
     __newindex = __ArrayPut,
+}
+
+local __StringMetatable = {
+    __index = __StringGet,
+    __call = __Call,
+    __newindex = __id, -- silent ignore
 }
 
 -- wrap Lua function as js function
@@ -750,21 +780,26 @@ String.__CallImpl = function(self, val)
     ns.__Unicode = uni
     ns.__Prototype = String.prototype
     ns.length = #uni
+    setmetatable(ns, __StringMetatable)
     return ns
 end
 String.fromCharCode = function(self, ...)
     return string.char(...)
 end
-String.prototype.charCodeAt = function(self, idx)
+String.prototype.charCodeAt = __DefineFunction(function(self, idx)
     return self.__Unicode[idx+1] -- TODO unicode!
-end
-String.prototype.toString = __DefineFunction(function(self)
-        return self.__ToStringValue
-    end)
+end,1)
+-- TODO indexer metatable
+String.prototype.substring = __DefineFunction(function(self, start, _end)
+        return string.sub(self.__ToStringValue, start-1, _end-1)
+end, 2)
+String.prototype.substr = __DefineFunction(function(self, start, len)
+    local adjusted = start - 1
+    return string.sub(self.__ToStringValue, adjusted, adjusted + len)
+end, 2)
+String.prototype.toString = __DefineFunction(function(self) return self.__ToStringValue end)
 String.prototype.valueOf = String.prototype.toString
-String.prototype.split = __DefineFunction(function(self, pat)
-        return __MakeArray(__split(self.__ToStringValue, pat))
-    end)
+String.prototype.split = __DefineFunction(function(self, pat) return __MakeArray(__split(self.__ToStringValue, pat)) end)
 Object.defineProperty(Object, String.prototype, 'constructor',{["value"]=String,["writable"]=true,["configurable"]=true})
 __JsGlobalObjects.String = String
 
@@ -839,6 +874,7 @@ Date.prototype.setUTCMonth = __DefineFunction(function(self, m, v) self.__Value 
 Date.prototype.setFullYear = __DefineFunction(function(self, y, m, v) self.__Value = __ToUnix(date_module(time):setyear(y, m, v)); return self.__Value end)
 Date.prototype.setUTCFullYear = __DefineFunction(function(self, y, m, v) self.__Value = __ToUnix(date_module(time):setyear(y, m, v)); return self.__Value end)
 Date.prototype.toISOString = __DefineFunction(function(self) return date_module(self.__Value):fmt("%FT%H-%M-%\fZ") end)
+-- missing setYear
 Object.defineProperty(Object, Date.prototype, 'constructor',{["value"]=Date,["writable"]=true,["configurable"]=true})
 __JsGlobalObjects.Date = Date
 

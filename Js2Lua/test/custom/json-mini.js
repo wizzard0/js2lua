@@ -13,9 +13,20 @@ console.log(w);
 }
 }
 console.log(Object.prototype.toString.apply([]))
+console.log(Object.prototype.toString.apply([5]))
+console.log(Object.prototype.toString.apply(new Array()))
+console.log(Object.prototype.toString.apply(new Array(1)))
+console.log(Object.prototype.toString.apply(new Array(1,1)))
+console.log(typeof([]))
+console.log(typeof([5]))
+console.log(typeof(new Array()))
+console.log(typeof(new Array(1)))
+console.log(typeof(new Array(1,1)))
 console.log(undefined||null)
 test(null);
 test([]);
+test([3]);
+test([5,6]);
 test({});
 test({a:1});
 //test({a:1,b:[1,2,3]});// fails because key ordering
