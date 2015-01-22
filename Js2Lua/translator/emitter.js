@@ -1002,7 +1002,10 @@ function EmitLiteral(ex, emit, alloc, scope) {
     if (ex.value instanceof RegExp) {
         //console.log("R");
         emit("__New(RegExp,");
-        emit(JSON.stringify(ex.raw)); // TODO https://github.com/o080o/reLua!
+        var rparts = ex.raw.split('/');
+        emit(JSON.stringify(rparts[1])); // body
+        emit(",");
+        emit(JSON.stringify(rparts[2])); // flags
         emit(")");
     }
     else {

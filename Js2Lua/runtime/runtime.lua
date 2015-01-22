@@ -39,7 +39,9 @@ function to_string( tbl )
     end
 end
 -- JS RUNTIME
+package.path = package.path .. ";./lua_modules/?.lua;./lua_modules/?/?.lua;./lua_modules/?/src/?.lua;./lua_modules/lpeglj/src/?.lua"
 local bit32 = require("bit")
+local re = require("ta-regex/regex")
 
 local __Singletons = {}
 local __JsGlobalObjects = {}
@@ -782,11 +784,17 @@ __JsGlobalObjects.Date = Date
 local RegExp = __New(Function)
 Object.defineProperty(Object, RegExp.prototype, 'constructor',{["value"]=RegExp,["writable"]=true,["configurable"]=true})
 __JsGlobalObjects.RegExp = RegExp
-RegExp.__CallImpl = function(self, val) 
+RegExp.__CallImpl = function(self, val, flags) 
     -- print ('RegExp ctor: ' .. val)
     self.__RegexValue = val
+    self.__Flags = flags
+    self.cre = re.compile(val)
 end
-RegExp.prototype.exec = __DefineFunction(function(self)return null end)
+RegExp.prototype.exec = __DefineFunction(function(self, str)
+    local preResult = self.cre.match(self.cre, str)
+    print(to_string(preResult))
+    return nil
+ end)
 
 -- Error
 local Error = __New(Function)

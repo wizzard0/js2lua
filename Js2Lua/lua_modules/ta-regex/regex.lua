@@ -4,7 +4,7 @@
 -- Support for regular expressions (parsed and implemented with LPeg).
 local M = {}
 
-local lpeg = require('lpeg')
+local lpeg = require('lpeglj')
 local P = lpeg.P
 local R = lpeg.R
 local S = lpeg.S
