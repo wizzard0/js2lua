@@ -10,7 +10,7 @@ For example, each ternary expression (?:) generates 4 function calls and a closu
 
 Runs on vanilla LuaJIT, without any C modules or hacking the VM (e.g. Tessel runs on Lua, too, but on heavily modified runtime, which I didnt like)
 
-Oh, and it probably can't bootstrap itself right now :( You can try to push it to that point? That would be cool!
+Oh, and it probably can't bootstrap itself right now. Anyone willing to make it self-hosting? That would be cool :)
 
 Results on ES5 test suite in 10 days:
 `Passed: 3659 Failed: 7753 Cannot Translate: 138 Skipped: 175 Total: 11725 Time:  1479.842`
