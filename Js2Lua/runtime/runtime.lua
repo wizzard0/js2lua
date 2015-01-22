@@ -783,10 +783,11 @@ Date.__CallImpl = function(self, val, month, date, hours, minutes, seconds, mill
         if __Typeof(val) == 'string' then
             self.__Value = __ToUnix(date_module(__ToString(val)))
         else
-            self.__Value = val or (os.time() * 1000) -- time, but 1-second precision due to lua runtime
+            self.__Value = val or (os.time() * 1) -- time, but 1-second precision due to lua runtime
         end
     end
     -- self.__Value = val or (os.clock() * 1000) -- benchmark version
+    return self -- why builtins have to return self?
 end
 Date.parse = __DefineFunction(function(self, str) return __ToUnix(date_module(__ToString(str))) end)
 Date.UTC = __DefineFunction(function(self,  y, month, date, hours, minutes, seconds, milliseconds)
