@@ -362,8 +362,7 @@ local function __MakeEvalRefCheck(code)
 end
 
 local function __New(ctor, ...)
-    if ctor == nil then error(__New(ReferenceError)) end
-    if ctor.__CallImpl == nil then error(__New(TypeError)) end
+    if ctor == nil or ctor.__CallImpl == nil then error(__New(__JsGlobalObjects.TypeError)) end
     local obj = {}
     setmetatable(obj, __ObjectMetatable)
     obj.__Prototype = ctor.prototype    
