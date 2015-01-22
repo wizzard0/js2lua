@@ -115,6 +115,8 @@ local function __ToBoolean(value)
 end
 
 local function __Delete(location, key)
+    if type(location) ~= 'table' then return false end -- builtins
+    -- TODO DontDelete properties
     location[key] = nil
     return true
 end
@@ -791,8 +793,9 @@ end, 7)
 Date.now = __DefineFunction(function(self) return __ToUnix(date_module(false)) end)
 -- TODO The Date prototype object is itself a Date object (its [[Class]] is "Date") whose [[PrimitiveValue]] is NaN.
 -- TODO we assume locale=UTC here
-Date.prototype.getTime = function(self) return self.__Value end
+Date.prototype.getTime = __DefineFunction(function(self) return self.__Value end)
 Date.prototype.toString = __DefineFunction(function(self) return date_module(self.__Value):fmt("${http}%z") end)
+Date.prototype.toUTCString = __DefineFunction(function(self) return date_module(self.__Value):fmt("${http}%z") end)
 Date.prototype.toDateString = __DefineFunction(function(self) return date_module(self.__Value):fmt("%D") end)
 Date.prototype.toTimeString = __DefineFunction(function(self) return date_module(self.__Value):fmt("%T") end)
 Date.prototype.toLocaleString = __DefineFunction(function(self) return date_module(self.__Value):fmt("%a, %d %b %Y %T") end)
