@@ -338,7 +338,7 @@ local __ArrayMetatable = {
 }
 
 -- wrap Lua function as js function
-local function __DefineFunction(definition)
+local function __DefineFunction(definition, length)
     local obj = {}
     -- TODO function proto
     setmetatable(obj, __ObjectMetatable)
@@ -347,6 +347,8 @@ local function __DefineFunction(definition)
     obj.prototype = __Helpers.__New(__JsGlobalObjects.Object)
     obj.__Prototype = __JsGlobalObjects.Function.prototype
     __JsGlobalObjects.Object.defineProperty(__JsGlobalObjects.Object, obj.prototype,'constructor',{["value"]=obj,["writable"]=true,["configurable"]=true})
+    -- todo length should be RO
+    __JsGlobalObjects.Object.defineProperty(__JsGlobalObjects.Object, obj,'length',{["value"]=(length or 0),["writable"]=true,["configurable"]=true})
     return obj
 end
 __Helpers.__DefineFunction = __DefineFunction
