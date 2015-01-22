@@ -7,7 +7,7 @@
  * If it fails, it tries to match the right Disjunction (followed by the sequel of the regular expression)
  *
  * @path ch15/15.10/15.10.2/15.10.2.3/S15.10.2.3_A1_T2.js
- * @description Execute /((a)|(ab))((c)|(bc))/.exec("abc") and check results
+ * @description Execute /((a)|(ab)).?((c)|(bc))/.exec("abc") and check results
  */
 
 __executed = /((a)|(ab))((c)|(bc))/.exec("abc");

@@ -9,6 +9,7 @@
  * @path ch15/15.10/15.10.2/15.10.2.3/S15.10.2.3_A1_T17.js
  * @description Execute /|()/.exec("") and check results
  */
+// LUA_SKIP - not yet supported
 
 __executed = /|()/.exec("");
 

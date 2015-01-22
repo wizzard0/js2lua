@@ -788,7 +788,12 @@ RegExp.__CallImpl = function(self, val, flags)
     -- print ('RegExp ctor: ' .. val)
     self.__RegexValue = val
     self.__Flags = flags
-    self.cre = re.compile(val)
+    succ, err = pcall(function()
+        self.cre = re.compile(val)
+    end)
+    if not succ then
+        error(__New(__JsGlobalObjects.SyntaxError))
+    end
 end
 RegExp.prototype.exec = __DefineFunction(function(self, str)
     str = __ToString(str)
