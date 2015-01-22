@@ -34,13 +34,15 @@
   </PropertyGroup>
   <ItemGroup>
     <Content Include="runtime\runtime.lua" />
-    <TypeScriptCompile Include="app.ts" />
+    <Content Include="test\r1.cmd" />
+    <TypeScriptCompile Include="Scripts\typings\misc.d.ts" />
+    <TypeScriptCompile Include="test\test.ts" />
     <Content Include="package.json" />
     <Content Include="README.md" />
     <TypeScriptCompile Include="translator\argfinder.ts" />
     <TypeScriptCompile Include="translator\ast-hoist.ts" />
     <TypeScriptCompile Include="translator\emitter.ts" />
-    <TypeScriptCompile Include="just_translate.ts" />
+    <TypeScriptCompile Include="translator\just_translate.ts" />
     <TypeScriptCompile Include="translator\lua-ast.ts" />
     <TypeScriptCompile Include="run.ts" />
     <TypeScriptCompile Include="translator\scoping.ts" />
@@ -51,6 +53,7 @@
     <Folder Include="lua_modules\date\" />
     <Folder Include="lua_modules\" />
     <Folder Include="lua_modules\unused\" />
+    <Folder Include="test\" />
     <Folder Include="translator\" />
     <Folder Include="runtime\" />
     <Folder Include="Scripts\" />

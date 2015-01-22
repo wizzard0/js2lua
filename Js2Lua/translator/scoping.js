@@ -1,3 +1,4 @@
+// Lexical and Object environments for ES5
 var ScopeStack = (function () {
     function ScopeStack() {
         this.scope = [];

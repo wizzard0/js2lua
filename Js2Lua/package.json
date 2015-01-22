@@ -1,12 +1,9 @@
 {
-  "name": "Js2Lua",
-  "version": "0.0.0",
+  "name": "js2lua",
+  "version": "1.0.0",
   "description": "Js2Lua",
   "main": "app.js",
-  "author": {
-    "name": "User",
-    "email": ""
-  },
+  "author": "Oleksandr Nikitin <oleksandr@tvori.info>",
   "dependencies": {
     "ast-types": "^0.6.7",
     "escodegen": "^1.6.0",
@@ -16,5 +13,20 @@
     "esutils": "^1.1.6",
     "execsync-ng": "0.0.6",
     "glob": "^4.3.2"
-  }
+  },
+  "directories": {
+    "test": "test"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "node test\\test.js es5\\**\\*.js"
+  },
+  "keywords": [
+    "javascript",
+    "lua",
+    "transpiler",
+    "translator",
+    "luajit"
+  ],
+  "license": "MIT"
 }

@@ -873,10 +873,10 @@ local __IntrinsicTable={
 
 local function eval(dummy, code) -- uses js translator currently
     -- print('BEFORE EV')
-    local tmpf = io.open('__eval.js','w')
+    local tmpf = io.open('__eval.tmp','w') -- todo get rid of tmp files, and of running node altogether
     tmpf:write(__ToString(code))
     tmpf:close()
-    local file = io.popen('node just_translate.js < __eval.js','rb')
+    local file = io.popen('node translator/just_translate.js < __eval.tmp','rb')
     -- This will read all of the output, as always
     local output = file:read('*all')
     -- This will get a table with some return stuff

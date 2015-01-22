@@ -1,7 +1,7 @@
 'use strict';
 import map = require('esmap')
 
-// fugly code style
+// todo switch to upstream again, my PR was accepted
 
 function hoister(node, recurse) {
   if (node.type !== 'Program' && node.type !== 'FunctionDeclaration' && node.type !== 'FunctionExpression')

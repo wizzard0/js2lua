@@ -1,7 +1,7 @@
 ﻿'use strict';
 import types = require("ast-types");
 
-// fugly code style
+// Find things defined in given JS scope
 
 import scoping = require("./scoping");
 
