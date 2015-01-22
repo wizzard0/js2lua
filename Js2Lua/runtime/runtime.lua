@@ -763,75 +763,75 @@ String.prototype.split = __DefineFunction(function(self, pat)
 Object.defineProperty(Object, String.prototype, 'constructor',{["value"]=String,["writable"]=true,["configurable"]=true})
 __JsGlobalObjects.String = String
 
-local date = import("date") -- ====================== DATE
-date.ticks(1000) -- set ticks to 1 ms, for better js compat; TPD= 86400000
+local date_module = require("date") -- ====================== DATE
+date_module.ticks(1000) -- set ticks to 1 ms, for better js compat; TPD= 86400000
 local Date = __New(Function) -- 0= Jan 01, 1970 UTC, 00:00 -- 0..11, 1..31, 0..6 [Sun-Sat]
 local __ToUnix = function(dateObject)
-    return (dateobject - date(1970, 1, 1)):spanticks()
+    return (dateobject - date_module(1970, 1, 1)):spanticks()
 end
 Date.__CallImpl = function(self, val, month, date, hours, minutes, seconds, milliseconds) 
     if rawequal(self, Date) then -- 15.9.2
         return __CallMember(__New(Date), 'toString')
     end
     if month then -- 15.9.3.1
-        self.__Value = __ToUnix(date(val, month, date, hours, minutes, seconds, milliseconds))
+        self.__Value = __ToUnix(date_module(val, month, date, hours, minutes, seconds, milliseconds))
     else -- 15.9.3.2
         if __Typeof(val) == 'string' then
-            self.__Value = __ToUnix(date(__ToString(val)))
+            self.__Value = __ToUnix(date_module(__ToString(val)))
         else
             self.__Value = val or (os.time() * 1000) -- time, but 1-second precision due to lua runtime
         end
     end
     -- self.__Value = val or (os.clock() * 1000) -- benchmark version
 end
-Date.parse = __DefineFunction(function(self, str) return __ToUnix(date(__ToString(str))) end)
+Date.parse = __DefineFunction(function(self, str) return __ToUnix(date_module(__ToString(str))) end)
 Date.UTC = __DefineFunction(function(self,  y, month, date, hours, minutes, seconds, milliseconds)
-    return __ToUnix(date(y, month, date, hours, minutes, seconds, milliseconds))
+    return __ToUnix(date_module(y, month, date, hours, minutes, seconds, milliseconds))
 end, 7)
-Date.now = __DefineFunction(function(self) return __ToUnix(date(false)) end)
+Date.now = __DefineFunction(function(self) return __ToUnix(date_module(false)) end)
 -- TODO The Date prototype object is itself a Date object (its [[Class]] is "Date") whose [[PrimitiveValue]] is NaN.
 -- TODO we assume locale=UTC here
 Date.prototype.getTime = function(self) return self.__Value end
-Date.prototype.toString = __DefineFunction(function(self) return date(self.__Value):fmt("${http}%z") end)
-Date.prototype.toDateString = __DefineFunction(function(self) return date(self.__Value):fmt("%D") end)
-Date.prototype.toTimeString = __DefineFunction(function(self) return date(self.__Value):fmt("%T") end)
-Date.prototype.toLocaleString = __DefineFunction(function(self) return date(self.__Value):fmt("%a, %d %b %Y %T") end)
-Date.prototype.toLocaleDateString = __DefineFunction(function(self) return date(self.__Value):fmt("%D") end)
-Date.prototype.toLocaleTimeString = __DefineFunction(function(self) return date(self.__Value):fmt("%T") end)
+Date.prototype.toString = __DefineFunction(function(self) return date_module(self.__Value):fmt("${http}%z") end)
+Date.prototype.toDateString = __DefineFunction(function(self) return date_module(self.__Value):fmt("%D") end)
+Date.prototype.toTimeString = __DefineFunction(function(self) return date_module(self.__Value):fmt("%T") end)
+Date.prototype.toLocaleString = __DefineFunction(function(self) return date_module(self.__Value):fmt("%a, %d %b %Y %T") end)
+Date.prototype.toLocaleDateString = __DefineFunction(function(self) return date_module(self.__Value):fmt("%D") end)
+Date.prototype.toLocaleTimeString = __DefineFunction(function(self) return date_module(self.__Value):fmt("%T") end)
 Date.prototype.valueOf = function(self) return self.__Value end
-Date.prototype.getFullYear = __DefineFunction(function(self) return date(self.__Value):getyear() end)
-Date.prototype.getUTCFullYear = __DefineFunction(function(self) return date(self.__Value):getyear() end)
-Date.prototype.getMonth = __DefineFunction(function(self) return date(self.__Value):getmonth() end)
-Date.prototype.getUTCMonth = __DefineFunction(function(self) return date(self.__Value):getmonth() end)
-Date.prototype.getDate = __DefineFunction(function(self) return date(self.__Value):getday() end)
-Date.prototype.getUTCDate = __DefineFunction(function(self) return date(self.__Value):getday() end)
-Date.prototype.getDay = __DefineFunction(function(self) return date(self.__Value):getweekday() end)
-Date.prototype.getUTCDay = __DefineFunction(function(self) return date(self.__Value):getweekday() end)
-Date.prototype.getHours = __DefineFunction(function(self) return date(self.__Value):gethours() end)
-Date.prototype.getUTCHours = __DefineFunction(function(self) return date(self.__Value):gethours() end)
-Date.prototype.getMinutes = __DefineFunction(function(self) return date(self.__Value):getminutes() end)
-Date.prototype.getUTCMinutes = __DefineFunction(function(self) return date(self.__Value):getminutes() end)
-Date.prototype.getSeconds = __DefineFunction(function(self) return date(self.__Value):getseconds() end)
-Date.prototype.getUTCSeconds = __DefineFunction(function(self) return date(self.__Value):getseconds() end)
-Date.prototype.getMilliseconds = __DefineFunction(function(self) return date(self.__Value):getticks() end)
-Date.prototype.getUTCMilliseconds = __DefineFunction(function(self) return date(self.__Value):getticks() end)
+Date.prototype.getFullYear = __DefineFunction(function(self) return date_module(self.__Value):getyear() end)
+Date.prototype.getUTCFullYear = __DefineFunction(function(self) return date_module(self.__Value):getyear() end)
+Date.prototype.getMonth = __DefineFunction(function(self) return date_module(self.__Value):getmonth() end)
+Date.prototype.getUTCMonth = __DefineFunction(function(self) return date_module(self.__Value):getmonth() end)
+Date.prototype.getDate = __DefineFunction(function(self) return date_module(self.__Value):getday() end)
+Date.prototype.getUTCDate = __DefineFunction(function(self) return date_module(self.__Value):getday() end)
+Date.prototype.getDay = __DefineFunction(function(self) return date_module(self.__Value):getweekday() end)
+Date.prototype.getUTCDay = __DefineFunction(function(self) return date_module(self.__Value):getweekday() end)
+Date.prototype.getHours = __DefineFunction(function(self) return date_module(self.__Value):gethours() end)
+Date.prototype.getUTCHours = __DefineFunction(function(self) return date_module(self.__Value):gethours() end)
+Date.prototype.getMinutes = __DefineFunction(function(self) return date_module(self.__Value):getminutes() end)
+Date.prototype.getUTCMinutes = __DefineFunction(function(self) return date_module(self.__Value):getminutes() end)
+Date.prototype.getSeconds = __DefineFunction(function(self) return date_module(self.__Value):getseconds() end)
+Date.prototype.getUTCSeconds = __DefineFunction(function(self) return date_module(self.__Value):getseconds() end)
+Date.prototype.getMilliseconds = __DefineFunction(function(self) return date_module(self.__Value):getticks() end)
+Date.prototype.getUTCMilliseconds = __DefineFunction(function(self) return date_module(self.__Value):getticks() end)
 Date.prototype.getTimezoneOffset = __DefineFunction(function(self) return 0 end)
 Date.prototype.setTime = __DefineFunction(function(self, time) self.__Value = __ToNumber(time); return self.__Value end)
-Date.prototype.setMilliseconds = __DefineFunction(function(self, ms) self.__Value = __ToUnix(date(time):setticks(ms)); return self.__Value end)
-Date.prototype.setUTCMilliseconds = __DefineFunction(function(self, ms) self.__Value = __ToUnix(date(time):setticks(ms)); return self.__Value end)
-Date.prototype.setSeconds = __DefineFunction(function(self, s, ms) self.__Value = __ToUnix(date(time):setseconds(s, ms)); return self.__Value end)
-Date.prototype.setUTCSeconds = __DefineFunction(function(self, s, ms) self.__Value = __ToUnix(date(time):setseconds(s, ms)); return self.__Value end)
-Date.prototype.setMinutes = __DefineFunction(function(self, m, s, ms) self.__Value = __ToUnix(date(time):setminutes(m, s, ms)); return self.__Value end)
-Date.prototype.setUTCMinutes = __DefineFunction(function(self, m, s, ms) self.__Value = __ToUnix(date(time):setminutes(m, s, ms)); return self.__Value end)
-Date.prototype.setHours = __DefineFunction(function(self,h, m, s, ms) self.__Value = __ToUnix(date(time):sethours(h, m, s, ms)); return self.__Value end)
-Date.prototype.setUTCHours = __DefineFunction(function(self,h, m, s, ms) self.__Value = __ToUnix(date(time):sethours(h, m, s, ms)); return self.__Value end)
-Date.prototype.setDate = __DefineFunction(function(self, v) self.__Value = __ToUnix(date(time):setday(v)); return self.__Value end)
-Date.prototype.setUTCDate = __DefineFunction(function(self, v) self.__Value = __ToUnix(date(time):setday(v)); return self.__Value end)
-Date.prototype.setMonth = __DefineFunction(function(self, m, v) self.__Value = __ToUnix(date(time):setmonth(m, v)); return self.__Value end)
-Date.prototype.setUTCMonth = __DefineFunction(function(self, m, v) self.__Value = __ToUnix(date(time):setmonth(m, v)); return self.__Value end)
-Date.prototype.setFullYear = __DefineFunction(function(self, y, m, v) self.__Value = __ToUnix(date(time):setyear(y, m, v)); return self.__Value end)
-Date.prototype.setUTCFullYear = __DefineFunction(function(self, y, m, v) self.__Value = __ToUnix(date(time):setyear(y, m, v)); return self.__Value end)
-Date.prototype.toISOString = __DefineFunction(function(self) return date(self.__Value):fmt("%FT%H-%M-%\fZ") end)
+Date.prototype.setMilliseconds = __DefineFunction(function(self, ms) self.__Value = __ToUnix(date_module(time):setticks(ms)); return self.__Value end)
+Date.prototype.setUTCMilliseconds = __DefineFunction(function(self, ms) self.__Value = __ToUnix(date_module(time):setticks(ms)); return self.__Value end)
+Date.prototype.setSeconds = __DefineFunction(function(self, s, ms) self.__Value = __ToUnix(date_module(time):setseconds(s, ms)); return self.__Value end)
+Date.prototype.setUTCSeconds = __DefineFunction(function(self, s, ms) self.__Value = __ToUnix(date_module(time):setseconds(s, ms)); return self.__Value end)
+Date.prototype.setMinutes = __DefineFunction(function(self, m, s, ms) self.__Value = __ToUnix(date_module(time):setminutes(m, s, ms)); return self.__Value end)
+Date.prototype.setUTCMinutes = __DefineFunction(function(self, m, s, ms) self.__Value = __ToUnix(date_module(time):setminutes(m, s, ms)); return self.__Value end)
+Date.prototype.setHours = __DefineFunction(function(self,h, m, s, ms) self.__Value = __ToUnix(date_module(time):sethours(h, m, s, ms)); return self.__Value end)
+Date.prototype.setUTCHours = __DefineFunction(function(self,h, m, s, ms) self.__Value = __ToUnix(date_module(time):sethours(h, m, s, ms)); return self.__Value end)
+Date.prototype.setDate = __DefineFunction(function(self, v) self.__Value = __ToUnix(date_module(time):setday(v)); return self.__Value end)
+Date.prototype.setUTCDate = __DefineFunction(function(self, v) self.__Value = __ToUnix(date_module(time):setday(v)); return self.__Value end)
+Date.prototype.setMonth = __DefineFunction(function(self, m, v) self.__Value = __ToUnix(date_module(time):setmonth(m, v)); return self.__Value end)
+Date.prototype.setUTCMonth = __DefineFunction(function(self, m, v) self.__Value = __ToUnix(date_module(time):setmonth(m, v)); return self.__Value end)
+Date.prototype.setFullYear = __DefineFunction(function(self, y, m, v) self.__Value = __ToUnix(date_module(time):setyear(y, m, v)); return self.__Value end)
+Date.prototype.setUTCFullYear = __DefineFunction(function(self, y, m, v) self.__Value = __ToUnix(date_module(time):setyear(y, m, v)); return self.__Value end)
+Date.prototype.toISOString = __DefineFunction(function(self) return date_module(self.__Value):fmt("%FT%H-%M-%\fZ") end)
 Object.defineProperty(Object, Date.prototype, 'constructor',{["value"]=Date,["writable"]=true,["configurable"]=true})
 __JsGlobalObjects.Date = Date
 
