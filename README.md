@@ -15,6 +15,8 @@ Oh, and it probably can't bootstrap itself right now. Anyone willing to make it 
 Results on ES5 test suite in 10 days:
 `Passed: 3659 Failed: 7753 Cannot Translate: 138 Skipped: 175 Total: 11725 Time:  1479.842`
 
+**UPDATE: For more complete variants, see https://github.com/PaulBernier/castl. Also, https://github.com/Etiene/js2lua**
+
 ## Requirements and usage
 
 Uses LuaJIT, esprima, lua-date, lpeglj, ta-regex, ast-hoist, esutils, escodegen
